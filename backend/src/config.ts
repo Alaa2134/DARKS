@@ -40,6 +40,17 @@ export const config = {
     workspace: path.resolve(process.env.COMMAND_WORKSPACE ?? "./workspace"),
     timeoutMs: int(process.env.COMMAND_TIMEOUT_MS, 20_000),
   },
+
+  db: {
+    path: path.resolve(process.env.DB_PATH ?? "./data/horus.db"),
+  },
+
+  engines: {
+    // Allow invoking external scanners (semgrep/bandit/npm audit) via the
+    // sandboxed runner. They're optional — Horus falls back to heuristics.
+    enabled: bool(process.env.ENABLE_SCAN_ENGINES, true),
+    timeoutMs: int(process.env.SCAN_TIMEOUT_MS, 60_000),
+  },
 };
 
 export type AppConfig = typeof config;

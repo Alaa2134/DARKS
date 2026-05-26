@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { evaluateText } from "../safety/safetyFilter";
 import { chat, type ChatMessage } from "../services/llmService";
+import { logSafety } from "../db/database";
 
 export const chatRouter = Router();
 
@@ -29,6 +30,13 @@ chatRouter.post("/", async (req, res) => {
   const safety = evaluateText(lastUser?.content ?? "");
 
   if (!safety.allowed) {
+    logSafety({
+      decision: "refuse",
+      category: safety.category,
+      reason: safety.reason,
+      excerpt: lastUser?.content ?? "",
+      context: `chat:${mode}`,
+    });
     return res.json({
       refused: true,
       safety,
@@ -44,6 +52,8 @@ chatRouter.post("/", async (req, res) => {
       },
     });
   }
+
+  logSafety({ decision: "allow", excerpt: lastUser?.content ?? "", context: `chat:${mode}` });
 
   try {
     const reply = await chat(mode, messages);

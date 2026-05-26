@@ -10,11 +10,13 @@ import {
   FileText,
   Settings,
   Eye,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/agent", label: "Agent Console", icon: Bot },
   { to: "/chat", label: "Cyber Chat Agent", icon: MessagesSquare },
   { to: "/scope", label: "Target Scope", icon: Crosshair },
   { to: "/ctf", label: "CTF Helper", icon: Flag },

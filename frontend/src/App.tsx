@@ -4,6 +4,7 @@ import { ScopeProvider } from "@/lib/scopeStore";
 import { FindingsProvider } from "@/lib/findingsStore";
 import { Dashboard } from "@/pages/Dashboard";
 import { CyberChat } from "@/pages/CyberChat";
+import { AgentConsole } from "@/pages/AgentConsole";
 import { TargetScope } from "@/pages/TargetScope";
 import { CtfHelper } from "@/pages/CtfHelper";
 import { WebAudit } from "@/pages/WebAudit";
@@ -22,6 +23,7 @@ export default function App() {
           <div className="mx-auto max-w-6xl px-6 py-8">
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/agent" element={<AgentConsole />} />
               <Route path="/chat" element={<CyberChat />} />
               <Route path="/scope" element={<TargetScope />} />
               <Route path="/ctf" element={<CtfHelper />} />

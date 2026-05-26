@@ -9,7 +9,7 @@ import {
 import { PageHeader } from "@/components/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { api, type AllowlistInfo } from "@/lib/api";
+import { api, type AllowlistInfo, type SafetyLogEntry, type SafetyStats } from "@/lib/api";
 
 const EXAMPLE_PROMPTS = [
   "Review this code for SQL injection",
@@ -40,10 +40,14 @@ export function Settings() {
     null
   );
   const [allowlist, setAllowlist] = useState<AllowlistInfo | null>(null);
+  const [safety, setSafety] = useState<{ entries: SafetyLogEntry[]; stats: SafetyStats } | null>(
+    null
+  );
 
   useEffect(() => {
     api.health().then(setHealth).catch(() => {});
     api.allowlist().then(setAllowlist).catch(() => {});
+    api.safetyLog().then(setSafety).catch(() => {});
   }, []);
 
   return (
@@ -151,6 +155,50 @@ export function Settings() {
           </CardContent>
         </Card>
       </div>
+
+      {safety && (
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-400" /> Safety telemetry
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="mb-4 flex flex-wrap gap-2 text-sm">
+              <Badge variant="muted">{safety.stats.total} requests evaluated</Badge>
+              <Badge variant="muted" className="border-severity-critical/30 text-severity-critical">
+                {safety.stats.refusals} refused
+              </Badge>
+              {safety.stats.byCategory.map((c) => (
+                <Badge key={c.category} variant="muted">
+                  {c.category}: {c.count}
+                </Badge>
+              ))}
+            </div>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Every refusal is logged server-side for transparency. Most recent:
+            </p>
+            <div className="space-y-1.5">
+              {safety.entries
+                .filter((e) => e.decision === "refuse")
+                .slice(0, 8)
+                .map((e) => (
+                  <div
+                    key={e.id}
+                    className="rounded-lg border border-border bg-background/40 px-3 py-2 text-xs"
+                  >
+                    <span className="text-severity-high">refused</span>{" "}
+                    <span className="text-muted-foreground">[{e.category}]</span>{" "}
+                    <span className="text-foreground">{e.excerpt}</span>
+                  </div>
+                ))}
+              {safety.entries.filter((e) => e.decision === "refuse").length === 0 && (
+                <p className="text-xs text-muted-foreground">No refusals logged yet.</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

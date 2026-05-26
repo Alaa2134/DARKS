@@ -16,6 +16,9 @@ import { chatRouter } from "./routes/chat";
 import { commandRouter } from "./routes/command";
 import { auditRouter } from "./routes/audit";
 import { analysisRouter } from "./routes/analysis";
+import { agentRouter } from "./routes/agent";
+import { dataRouter } from "./routes/data";
+import "./db/database"; // initialize the database on startup
 
 const app = express();
 
@@ -42,6 +45,8 @@ app.use("/api/chat", chatRouter);
 app.use("/api/command", commandRouter);
 app.use("/api/audit", auditRouter);
 app.use("/api/analysis", analysisRouter);
+app.use("/api/agent", agentRouter);
+app.use("/api", dataRouter);
 
 app.use((_req, res) => {
   res.status(404).json({ error: "Not found" });

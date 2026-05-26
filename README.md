@@ -12,6 +12,11 @@ phishing, credential theft, or unauthorized attacks.
 It is **not** malware, not WormGPT, not a phishing kit, not an exploit bot.
 Every request passes through a server-side safety filter that is **always on**.
 
+It now includes an **agentic core** that plans a goal into safe local tool calls,
+runs **real scanners** (semgrep/bandit/npm audit when present), grounds answers
+in a **knowledge base (RAG)**, **persists** findings/reports in SQLite, and keeps
+a **safety audit log** of every refusal.
+
 ---
 
 ## Table of contents
@@ -48,9 +53,14 @@ Every request passes through a server-side safety filter that is **always on**.
 | 9 | Report generator | **Reports** |
 | 10 | Remediation / fix generator | Built into reviews & audits |
 | 11 | Safety filter that refuses illegal/harmful requests | `safetyFilter.ts` (server-side) |
+| 12 | **Agentic core** — plans a goal, runs tools, streams the result | **Agent Console** |
+| 13 | **Deep scan engines** — semgrep / bandit / npm audit (optional) | **Secure Code Review** |
+| 14 | **Knowledge base (RAG)** — grounded, citeable answers | `knowledge/` + Agent |
+| 15 | **Persistence** — findings & reports stored in SQLite | `db/` |
+| 16 | **Safety telemetry** — every refusal logged + stats | **Settings** |
 
-**Pages:** Dashboard · Cyber Chat Agent · Target Scope · CTF Helper · Web Audit ·
-Secure Code Review · Terminal Logs · Reports · Settings.
+**Pages:** Dashboard · Agent Console · Cyber Chat Agent · Target Scope · CTF Helper ·
+Web Audit · Secure Code Review · Terminal Logs · Reports · Settings.
 
 **Agent modes:** CTF · Web Audit · Secure Code Review · Log Analysis · Report.
 
@@ -91,6 +101,32 @@ restricts active-testing guidance to `localhost`, private RFC1918 ranges,
 
 ---
 
+## Power features (the "strongest AI" upgrades)
+
+**1. Agentic core + streaming** — `POST /api/agent/stream` (SSE). Given a goal
+(plus optional code/log/target), the agent: runs the safety gate → plans steps →
+executes safe local tools (`scope_check`, `owasp_checklist`, `code_review`,
+`analyze_logs`, `generate_report`, `kb_search`) → grounds with the knowledge base
+→ synthesizes a streamed answer. The **Agent Console** page shows the live plan,
+per-tool results, cited sources, and the streaming answer. Deterministic planner
+(reliable + tested); the LLM is used for the final synthesis when a key exists.
+
+**2. Real scan engines** — `POST /api/analysis/scan` always runs Horus's
+heuristics and, **if installed**, also runs `semgrep` and `bandit` (Python) via
+the sandboxed runner, merging results. `POST /api/analysis/audit-deps` runs
+`npm audit` in the workspace. Engines degrade gracefully when absent — the UI
+shows which ran.
+
+**3. Knowledge base (RAG)** — `backend/src/knowledge/` holds a curated,
+defensive corpus (OWASP/CWE/headers/CTF) with a dependency-free TF-IDF
+retriever. Answers cite passage ids (e.g. `[owasp-a03-injection]`).
+`GET /api/kb/search?q=…` exposes it.
+
+**4. Persistence + safety telemetry** — `backend/src/db/database.ts` uses Node's
+built-in `node:sqlite` (no native deps). Findings and generated reports persist
+across sessions; every safety decision is recorded in a `safety_log` with
+category stats surfaced on the Settings page.
+
 ## Tech stack
 
 **Frontend:** React · Vite · TypeScript · Tailwind CSS · shadcn/ui-style
@@ -121,8 +157,17 @@ DARKS/
 │       ├── safety/
 │       │   ├── safetyFilter.ts      # ★ ethical guardrails + scope checks
 │       │   └── safetyFilter.test.ts # safety unit tests
+│       ├── agent/
+│       │   ├── agentLoop.ts         # ★ plan → run tools → ground → stream
+│       │   └── tools.ts             # safe local tools the agent can call
+│       ├── db/
+│       │   └── database.ts          # node:sqlite persistence + safety log
+│       ├── knowledge/
+│       │   ├── corpus.ts            # curated RAG knowledge docs
+│       │   └── retriever.ts         # dependency-free TF-IDF retrieval
 │       ├── services/
 │       │   ├── commandRunner.ts     # ★ allowlist-only, no-shell runner
+│       │   ├── scanEngines.ts       # semgrep/bandit/npm audit (optional)
 │       │   ├── llmService.ts        # Anthropic/OpenAI + offline fallback
 │       │   ├── offlineResponder.ts  # template responses (no API key)
 │       │   ├── codeReview.ts        # static security heuristics
@@ -130,9 +175,11 @@ DARKS/
 │       │   └── reportGenerator.ts   # pentest-style Markdown reports
 │       ├── routes/
 │       │   ├── chat.ts              # POST /api/chat (safety-filtered)
+│       │   ├── agent.ts             # POST /api/agent/stream (SSE)
 │       │   ├── command.ts           # /api/command/*
 │       │   ├── audit.ts             # /api/audit/*
-│       │   └── analysis.ts          # /api/analysis/*
+│       │   ├── analysis.ts          # /api/analysis/* (review, scan, deps)
+│       │   └── data.ts              # findings, reports, safety log, kb
 │       ├── data/
 │       │   ├── allowlist.ts         # ★ command allow/deny lists
 │       │   ├── owasp.ts             # OWASP Top 10 knowledge base
@@ -370,12 +417,19 @@ refuses and offers a defensive alternative.
 |--------|----------|---------|
 | GET  | `/api/health` | Status + config |
 | POST | `/api/chat` | Safety-filtered chat (`{ mode, messages }`) |
+| POST | `/api/agent/stream` | **Agentic loop, streamed over SSE** |
 | GET  | `/api/audit/checklist` | OWASP Top 10 data |
 | GET  | `/api/audit/headers` | Recommended security headers |
 | POST | `/api/audit/scope-check` | Validate a target against scope |
 | POST | `/api/analysis/code-review` | Static security review of code |
+| POST | `/api/analysis/scan` | **Deep scan: heuristics + semgrep/bandit** |
+| POST | `/api/analysis/audit-deps` | **npm audit in the workspace** |
 | POST | `/api/analysis/logs` | Defensive log analysis |
 | POST | `/api/analysis/report` | Generate Markdown report |
+| GET  | `/api/kb/search?q=` | **Knowledge-base (RAG) search** |
+| GET/POST/DELETE | `/api/findings` | **Persisted findings (SQLite)** |
+| GET/POST | `/api/reports` | **Persisted reports** |
+| GET  | `/api/safety/log` | **Safety audit log + stats** |
 | GET  | `/api/command/allowlist` | Allowed/blocked commands |
 | POST | `/api/command/validate` | Dry-run command safety check |
 | POST | `/api/command/run` | Execute an allowlisted command |

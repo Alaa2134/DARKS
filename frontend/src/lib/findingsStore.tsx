@@ -1,8 +1,10 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { api, type DbFinding } from "./api";
 import type { Severity } from "./utils";
 
-export interface StoredFinding {
-  id: string;
+export type StoredFinding = DbFinding;
+
+export interface NewFinding {
   title: string;
   severity: Severity;
   description: string;
@@ -14,49 +16,83 @@ export interface StoredFinding {
 
 interface FindingsContextValue {
   findings: StoredFinding[];
-  addFinding: (f: Omit<StoredFinding, "id">) => void;
-  addMany: (fs: Omit<StoredFinding, "id">[]) => void;
-  removeFinding: (id: string) => void;
-  clear: () => void;
+  loading: boolean;
+  addFinding: (f: NewFinding) => Promise<void>;
+  addMany: (fs: NewFinding[]) => Promise<void>;
+  removeFinding: (id: number) => Promise<void>;
+  clear: () => Promise<void>;
+  reload: () => Promise<void>;
 }
 
 const FindingsContext = createContext<FindingsContextValue | null>(null);
-const STORAGE_KEY = "horus.findings";
 
 export function FindingsProvider({ children }: { children: React.ReactNode }) {
-  const [findings, setFindings] = useState<StoredFinding[]>(() => {
+  const [findings, setFindings] = useState<StoredFinding[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const reload = useCallback(async () => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as StoredFinding[]) : [];
+      const { findings } = await api.listFindings();
+      setFindings(findings);
     } catch {
-      return [];
+      /* API offline — keep current state */
+    } finally {
+      setLoading(false);
     }
-  });
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(findings));
-  }, [findings]);
+    reload();
+  }, [reload]);
 
-  const makeId = () =>
-    `f_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
+  const addFinding = useCallback(
+    async (f: NewFinding) => {
+      try {
+        await api.addFinding(f);
+        await reload();
+      } catch {
+        /* ignore */
+      }
+    },
+    [reload]
+  );
 
-  const addFinding = (f: Omit<StoredFinding, "id">) =>
-    setFindings((prev) => [...prev, { ...f, id: makeId() }]);
+  const addMany = useCallback(
+    async (fs: NewFinding[]) => {
+      try {
+        await Promise.all(fs.map((f) => api.addFinding(f)));
+        await reload();
+      } catch {
+        /* ignore */
+      }
+    },
+    [reload]
+  );
 
-  const addMany = (fs: Omit<StoredFinding, "id">[]) =>
-    setFindings((prev) => [
-      ...prev,
-      ...fs.map((f) => ({ ...f, id: makeId() })),
-    ]);
+  const removeFinding = useCallback(
+    async (id: number) => {
+      setFindings((prev) => prev.filter((f) => f.id !== id));
+      try {
+        await api.deleteFinding(id);
+      } catch {
+        /* ignore */
+      }
+    },
+    []
+  );
 
-  const removeFinding = (id: string) =>
-    setFindings((prev) => prev.filter((f) => f.id !== id));
-
-  const clear = () => setFindings([]);
+  const clear = useCallback(async () => {
+    setFindings([]);
+    try {
+      await api.clearFindings();
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   return (
     <FindingsContext.Provider
-      value={{ findings, addFinding, addMany, removeFinding, clear }}
+      value={{ findings, loading, addFinding, addMany, removeFinding, clear, reload }}
     >
       {children}
     </FindingsContext.Provider>

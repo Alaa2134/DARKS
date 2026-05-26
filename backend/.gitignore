@@ -3,5 +3,6 @@ dist/
 .env
 .env.local
 workspace/
+data/
 *.log
 .DS_Store

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SeverityBadge } from "@/components/SeverityBadge";
-import { api, type CodeReviewResult, type CodeFinding } from "@/lib/api";
+import { api, type ScanResult, type CodeFinding } from "@/lib/api";
 import { useFindings } from "@/lib/findingsStore";
 import type { Severity } from "@/lib/utils";
 
@@ -26,7 +26,7 @@ res.cookie("session", token);`;
 export function SecureCodeReview() {
   const { addFinding } = useFindings();
   const [code, setCode] = useState("");
-  const [result, setResult] = useState<CodeReviewResult | null>(null);
+  const [result, setResult] = useState<ScanResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [added, setAdded] = useState<Record<string, boolean>>({});
 
@@ -35,7 +35,7 @@ export function SecureCodeReview() {
     setLoading(true);
     setAdded({});
     try {
-      setResult(await api.codeReview(code));
+      setResult(await api.deepScan(code));
     } catch {
       setResult(null);
     } finally {
@@ -106,6 +106,24 @@ export function SecureCodeReview() {
               <span className="ml-auto self-center text-sm text-muted-foreground">
                 {result.summary.total} finding(s)
               </span>
+            </div>
+          )}
+
+          {result && (
+            <div className="mb-4 flex flex-wrap gap-1.5">
+              {result.engines.map((e) => (
+                <span
+                  key={e.name}
+                  title={e.note}
+                  className={`rounded-full border px-2.5 py-0.5 text-xs ${
+                    e.ran
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                      : "border-border bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {e.name}: {e.ran ? `${e.findingCount}` : "skipped"}
+                </span>
+              ))}
             </div>
           )}
 

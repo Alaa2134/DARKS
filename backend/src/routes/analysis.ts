@@ -2,9 +2,25 @@ import { Router } from "express";
 import { reviewCode } from "../services/codeReview";
 import { analyzeLogs } from "../services/logAnalyzer";
 import { generateReport, type ReportInput } from "../services/reportGenerator";
+import { deepScan, auditDependencies } from "../services/scanEngines";
 import { evaluateText } from "../safety/safetyFilter";
 
 export const analysisRouter = Router();
+
+/** POST /api/analysis/scan — deep scan: heuristics + optional semgrep/bandit. */
+analysisRouter.post("/scan", async (req, res) => {
+  const code = typeof req.body?.code === "string" ? req.body.code : "";
+  const language = typeof req.body?.language === "string" ? req.body.language : undefined;
+  if (!code.trim()) {
+    return res.status(400).json({ error: "code is required" });
+  }
+  res.json(await deepScan(code, language));
+});
+
+/** POST /api/analysis/audit-deps — run npm audit in the sandboxed workspace. */
+analysisRouter.post("/audit-deps", async (_req, res) => {
+  res.json(await auditDependencies());
+});
 
 /** POST /api/analysis/code-review — body: { code: string } */
 analysisRouter.post("/code-review", (req, res) => {

@@ -130,6 +130,111 @@ export interface ReportFindingInput {
   evidence?: string;
 }
 
+export interface EngineStatus {
+  name: string;
+  available: boolean;
+  ran: boolean;
+  note?: string;
+  findingCount: number;
+}
+
+export interface ScanResult extends CodeReviewResult {
+  engines: EngineStatus[];
+}
+
+export interface KbDoc {
+  id: string;
+  title: string;
+  source: string;
+  text: string;
+  score: number;
+}
+
+export interface DbFinding {
+  id: number;
+  title: string;
+  severity: Severity;
+  description: string;
+  impact?: string | null;
+  remediation?: string | null;
+  evidence?: string | null;
+  source: string;
+  created_at: string;
+}
+
+export interface SafetyLogEntry {
+  id: number;
+  decision: string;
+  category?: string | null;
+  reason?: string | null;
+  excerpt?: string | null;
+  context?: string | null;
+  created_at: string;
+}
+
+export interface SafetyStats {
+  total: number;
+  refusals: number;
+  byCategory: { category: string; count: number }[];
+}
+
+export type AgentEvent =
+  | { type: "plan"; steps: string[] }
+  | { type: "step"; tool: string; input: string; index: number }
+  | { type: "tool_result"; tool: string; summary: string; ok: boolean; index: number }
+  | { type: "token"; text: string }
+  | { type: "sources"; sources: { id: string; title: string; source: string }[] }
+  | { type: "refused"; reason: string; category?: string; safeAlternative?: string }
+  | { type: "done"; findings: ReportFindingInput[] }
+  | { type: "error"; message: string };
+
+export interface AgentInput {
+  goal: string;
+  code?: string;
+  language?: string;
+  log?: string;
+  target?: string;
+  confirmedScope?: string[];
+}
+
+/** Stream the agent's progress over SSE (POST + ReadableStream). */
+export async function streamAgent(
+  input: AgentInput,
+  onEvent: (e: AgentEvent) => void,
+  signal?: AbortSignal
+): Promise<void> {
+  const res = await fetch(`${BASE}/agent/stream`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+    signal,
+  });
+  if (!res.ok || !res.body) {
+    throw new Error(`Agent request failed (${res.status})`);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+    const frames = buffer.split("\n\n");
+    buffer = frames.pop() ?? "";
+    for (const frame of frames) {
+      const line = frame.split("\n").find((l) => l.startsWith("data: "));
+      if (!line) continue;
+      const json = line.slice(6).trim();
+      if (!json) continue;
+      try {
+        onEvent(JSON.parse(json) as AgentEvent);
+      } catch {
+        /* ignore malformed frame */
+      }
+    }
+  }
+}
+
 // ---- API ----
 
 export const api = {
@@ -146,6 +251,36 @@ export const api = {
 
   codeReview: (code: string) =>
     post<CodeReviewResult>("/analysis/code-review", { code }),
+  deepScan: (code: string, language?: string) =>
+    post<ScanResult>("/analysis/scan", { code, language }),
+  auditDeps: () =>
+    post<{ available: boolean; ran: boolean; note?: string; vulnerabilities: { name: string; severity: string; title?: string }[]; totals: Record<string, number> }>(
+      "/analysis/audit-deps",
+      {}
+    ),
+
+  kbSearch: (q: string, k = 5) =>
+    get<{ results: KbDoc[] }>(`/kb/search?q=${encodeURIComponent(q)}&k=${k}`),
+
+  listFindings: () => get<{ findings: DbFinding[] }>("/findings"),
+  addFinding: (f: Omit<DbFinding, "id" | "created_at">) =>
+    post<{ finding: DbFinding }>("/findings", f),
+  deleteFinding: (id: number) =>
+    fetch(`${BASE}/findings/${id}`, { method: "DELETE" }).then((r) => r.json()),
+  clearFindings: () =>
+    fetch(`${BASE}/findings`, { method: "DELETE" }).then((r) => r.json()),
+
+  listReports: () =>
+    get<{ reports: { id: number; title: string; client?: string | null; finding_count: number; created_at: string }[] }>(
+      "/reports"
+    ),
+  getReport: (id: number) =>
+    get<{ report: { id: number; title: string; markdown: string } }>(`/reports/${id}`),
+  saveReport: (r: { title: string; client?: string; markdown: string; finding_count: number }) =>
+    post<{ report: { id: number } }>("/reports", r),
+
+  safetyLog: () =>
+    get<{ entries: SafetyLogEntry[]; stats: SafetyStats }>("/safety/log"),
 
   analyzeLogs: (log: string) =>
     post<LogAnalysisResult>("/analysis/logs", { log }),

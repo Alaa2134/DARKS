@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   FileText,
   Loader2,
@@ -32,6 +32,14 @@ export function Reports() {
   const [author, setAuthor] = useState("Horus Cyber Agent");
   const [markdown, setMarkdown] = useState("");
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [recent, setRecent] = useState<
+    { id: number; title: string; finding_count: number; created_at: string }[]
+  >([]);
+
+  useEffect(() => {
+    api.listReports().then((r) => setRecent(r.reports)).catch(() => {});
+  }, []);
 
   // manual finding form
   const [mTitle, setMTitle] = useState("");
@@ -40,6 +48,7 @@ export function Reports() {
 
   async function generate() {
     setLoading(true);
+    setSaved(false);
     try {
       const res = await api.generateReport({
         title,
@@ -50,17 +59,36 @@ export function Reports() {
           title: f.title,
           severity: f.severity,
           description: f.description,
-          impact: f.impact,
-          remediation: f.remediation,
-          evidence: f.evidence,
+          impact: f.impact ?? undefined,
+          remediation: f.remediation ?? undefined,
+          evidence: f.evidence ?? undefined,
         })),
       });
       setMarkdown(res.markdown);
+      try {
+        await api.saveReport({
+          title,
+          client,
+          markdown: res.markdown,
+          finding_count: findings.length,
+        });
+        setSaved(true);
+        loadReports();
+      } catch {
+        /* persistence optional */
+      }
     } catch (e) {
       setMarkdown(`> Failed to generate report: ${e instanceof Error ? e.message : "error"}`);
     } finally {
       setLoading(false);
     }
+  }
+
+  function loadReports() {
+    api
+      .listReports()
+      .then((r) => setRecent(r.reports))
+      .catch(() => {});
   }
 
   function download() {
@@ -198,11 +226,45 @@ export function Reports() {
               </Button>
             </CardContent>
           </Card>
+
+          {recent.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Saved reports ({recent.length})</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {recent.map((r) => (
+                  <button
+                    key={r.id}
+                    onClick={() =>
+                      api.getReport(r.id).then((res) => {
+                        setMarkdown(res.report.markdown);
+                        setSaved(false);
+                      })
+                    }
+                    className="flex w-full items-center justify-between rounded-lg border border-border bg-background/40 px-3 py-2 text-left text-sm hover:border-neon-blue/40"
+                  >
+                    <span className="truncate">{r.title}</span>
+                    <span className="ml-2 shrink-0 text-xs text-muted-foreground">
+                      {r.finding_count} · {new Date(r.created_at).toLocaleDateString()}
+                    </span>
+                  </button>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         <Card className="lg:sticky lg:top-8 lg:self-start">
           <CardHeader className="flex-row items-center justify-between">
-            <CardTitle>Report preview</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              Report preview
+              {saved && (
+                <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-300">
+                  saved
+                </span>
+              )}
+            </CardTitle>
             {markdown && (
               <Button variant="outline" size="sm" onClick={download}>
                 <Download className="h-4 w-4" /> Export .md
