@@ -18,6 +18,7 @@ import { auditRouter } from "./routes/audit";
 import { analysisRouter } from "./routes/analysis";
 import { agentRouter } from "./routes/agent";
 import { dataRouter } from "./routes/data";
+import { ctfRouter } from "./routes/ctf";
 import "./db/database"; // initialize the database on startup
 
 const app = express();
@@ -46,6 +47,7 @@ app.use("/api/command", commandRouter);
 app.use("/api/audit", auditRouter);
 app.use("/api/analysis", analysisRouter);
 app.use("/api/agent", agentRouter);
+app.use("/api/ctf", ctfRouter);
 app.use("/api", dataRouter);
 
 app.use((_req, res) => {

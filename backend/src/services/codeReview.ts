@@ -4,6 +4,8 @@
  * pattern matches meant to teach and to seed a deeper review.
  */
 
+import { mapCompliance } from "../data/compliance";
+
 export type Severity = "critical" | "high" | "medium" | "low" | "info";
 
 export interface CodeFinding {
@@ -14,6 +16,8 @@ export interface CodeFinding {
   snippet: string;
   why: string;
   fix: string;
+  cwe?: string;
+  owasp?: string;
 }
 
 interface Rule {
@@ -124,6 +128,74 @@ const RULES: Rule[] = [
     why: "Math.random is not cryptographically secure (tokens, IDs).",
     fix: "Use crypto.randomBytes / crypto.randomUUID for security-sensitive values.",
   },
+  // ---- Python ----
+  {
+    id: "py-subprocess-shell",
+    title: "Python: shell=True with subprocess",
+    severity: "high",
+    pattern: /subprocess\.(run|call|Popen|check_output)\s*\([^)]*shell\s*=\s*True/i,
+    why: "shell=True with interpolated input enables command injection.",
+    fix: "Pass an argument list and shell=False; validate inputs.",
+  },
+  {
+    id: "py-pickle",
+    title: "Python: insecure deserialization (pickle)",
+    severity: "high",
+    pattern: /\b(pickle|cPickle)\.(loads?|load)\s*\(/,
+    why: "Unpickling untrusted data can execute arbitrary code.",
+    fix: "Use JSON or a safe schema; never unpickle untrusted input.",
+  },
+  {
+    id: "py-yaml-load",
+    title: "Python: unsafe yaml.load",
+    severity: "high",
+    pattern: /yaml\.load\s*\((?![^)]*Loader\s*=\s*yaml\.SafeLoader)/,
+    why: "yaml.load without SafeLoader can instantiate arbitrary objects.",
+    fix: "Use yaml.safe_load() or specify Loader=yaml.SafeLoader.",
+  },
+  {
+    id: "py-flask-debug",
+    title: "Python: Flask debug mode enabled",
+    severity: "medium",
+    pattern: /app\.run\s*\([^)]*debug\s*=\s*True/i,
+    why: "Flask debug mode exposes an interactive debugger (RCE) in production.",
+    fix: "Disable debug in production; gate it behind an env flag.",
+  },
+  // ---- PHP ----
+  {
+    id: "php-superglobal-sink",
+    title: "PHP: tainted superglobal in dangerous sink",
+    severity: "critical",
+    pattern: /\b(eval|system|exec|include|require|passthru|shell_exec)\s*\(\s*\$_(GET|POST|REQUEST|COOKIE)/i,
+    why: "User-controlled superglobals flowing into code/command/file sinks enable RCE/LFI.",
+    fix: "Never pass request input to these sinks; validate and allowlist.",
+  },
+  // ---- Java ----
+  {
+    id: "java-runtime-exec",
+    title: "Java: Runtime.exec with concatenation",
+    severity: "high",
+    pattern: /Runtime\.getRuntime\(\)\.exec\s*\([^)]*\+/,
+    why: "Building a command string from input enables command injection.",
+    fix: "Use ProcessBuilder with an argument list; validate inputs.",
+  },
+  {
+    id: "java-statement-concat",
+    title: "Java: SQL built via Statement + concatenation",
+    severity: "critical",
+    pattern: /(createStatement\(\)|executeQuery\s*\()[^;]*\+\s*\w/,
+    why: "String-built SQL with Statement is injectable.",
+    fix: "Use PreparedStatement with bound parameters.",
+  },
+  // ---- Go ----
+  {
+    id: "go-sprintf-sql",
+    title: "Go: SQL built with fmt.Sprintf",
+    severity: "high",
+    pattern: /fmt\.Sprintf\s*\(\s*"[^"]*(SELECT|INSERT|UPDATE|DELETE)[^"]*%/i,
+    why: "Formatting user input into SQL is injectable.",
+    fix: "Use parameterized queries (db.Query with $1/? placeholders).",
+  },
 ];
 
 export interface CodeReviewResult {
@@ -138,6 +210,7 @@ export function reviewCode(code: string): CodeReviewResult {
   lines.forEach((lineText, idx) => {
     for (const rule of RULES) {
       if (rule.pattern.test(lineText)) {
+        const compliance = mapCompliance(`${rule.title} ${rule.id}`);
         findings.push({
           id: `${rule.id}-${idx + 1}`,
           title: rule.title,
@@ -146,6 +219,8 @@ export function reviewCode(code: string): CodeReviewResult {
           snippet: lineText.trim().slice(0, 200),
           why: rule.why,
           fix: rule.fix,
+          cwe: compliance.cwe,
+          owasp: compliance.owasp,
         });
       }
     }

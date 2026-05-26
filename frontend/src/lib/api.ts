@@ -57,6 +57,43 @@ export interface CodeFinding {
   snippet: string;
   why: string;
   fix: string;
+  cwe?: string;
+  owasp?: string;
+}
+
+export interface DashboardStats {
+  findingsBySeverity: Record<Severity, number>;
+  totalFindings: number;
+  totalReports: number;
+  refusals: number;
+}
+
+export interface CvssResult {
+  baseScore: number;
+  severity: Severity;
+  vector: string;
+}
+
+export interface Threat {
+  category: string;
+  component: string;
+  threat: string;
+  mitigation: string;
+  severityHint: Severity;
+}
+
+export interface ThreatModelResult {
+  system: string;
+  components: string[];
+  threats: Threat[];
+  trustBoundaries: string[];
+}
+
+export interface CtfResult {
+  op: string;
+  ok: boolean;
+  output: string;
+  note?: string;
 }
 
 export interface CodeReviewResult {
@@ -281,6 +318,19 @@ export const api = {
 
   safetyLog: () =>
     get<{ entries: SafetyLogEntry[]; stats: SafetyStats }>("/safety/log"),
+
+  stats: () => get<DashboardStats>("/stats"),
+
+  cvss: (vector: string) => post<CvssResult>("/analysis/cvss", { vector }),
+  cvssMetrics: (metrics: Record<string, string>) =>
+    post<CvssResult>("/analysis/cvss", { metrics }),
+
+  threatModel: (system: string, components?: string[]) =>
+    post<ThreatModelResult>("/analysis/threat-model", { system, components }),
+
+  ctfOps: () => get<{ ops: string[] }>("/ctf/ops"),
+  ctfTransform: (op: string, input: string, param?: string) =>
+    post<CtfResult>("/ctf/transform", { op, input, param }),
 
   analyzeLogs: (log: string) =>
     post<LogAnalysisResult>("/analysis/logs", { log }),

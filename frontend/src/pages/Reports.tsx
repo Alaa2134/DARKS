@@ -45,6 +45,19 @@ export function Reports() {
   const [mTitle, setMTitle] = useState("");
   const [mSev, setMSev] = useState<Severity>("medium");
   const [mDesc, setMDesc] = useState("");
+  const [mVector, setMVector] = useState("");
+  const [mScore, setMScore] = useState<number | null>(null);
+
+  async function scoreCvss() {
+    if (!mVector.trim()) return;
+    try {
+      const r = await api.cvss(mVector.trim());
+      setMScore(r.baseScore);
+      setMSev(r.severity);
+    } catch {
+      setMScore(null);
+    }
+  }
 
   async function generate() {
     setLoading(true);
@@ -221,6 +234,22 @@ export function Reports() {
                 value={mDesc}
                 onChange={(e) => setMDesc(e.target.value)}
               />
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+                  value={mVector}
+                  onChange={(e) => setMVector(e.target.value)}
+                  className="font-mono text-xs"
+                />
+                <Button variant="outline" onClick={scoreCvss} disabled={!mVector.trim()}>
+                  Score
+                </Button>
+                {mScore !== null && (
+                  <span className="shrink-0 rounded-md border border-neon-blue/40 bg-neon-blue/10 px-2 py-1 text-sm font-bold text-neon-blue">
+                    {mScore}
+                  </span>
+                )}
+              </div>
               <Button onClick={addManual} disabled={!mTitle.trim()} variant="secondary">
                 <Plus className="h-4 w-4" /> Add finding
               </Button>

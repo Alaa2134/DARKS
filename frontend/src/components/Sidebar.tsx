@@ -11,6 +11,8 @@ import {
   Settings,
   Eye,
   Bot,
+  Wrench,
+  ShieldHalf,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +22,9 @@ const NAV = [
   { to: "/chat", label: "Cyber Chat Agent", icon: MessagesSquare },
   { to: "/scope", label: "Target Scope", icon: Crosshair },
   { to: "/ctf", label: "CTF Helper", icon: Flag },
+  { to: "/toolkit", label: "CTF Toolkit", icon: Wrench },
   { to: "/audit", label: "Web Audit", icon: ShieldCheck },
+  { to: "/threat-model", label: "Threat Model", icon: ShieldHalf },
   { to: "/code-review", label: "Secure Code Review", icon: FileCode2 },
   { to: "/logs", label: "Terminal Logs", icon: Terminal },
   { to: "/reports", label: "Reports", icon: FileText },

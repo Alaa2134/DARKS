@@ -13,6 +13,8 @@ import path from "node:path";
 import os from "node:os";
 import { config } from "../config";
 import { reviewCode, type CodeFinding, type Severity } from "./codeReview";
+import { scanSecrets } from "./secretsScanner";
+import { mapCompliance } from "../data/compliance";
 
 interface RunResult {
   code: number | null;
@@ -116,12 +118,26 @@ export async function deepScan(
   // Built-in heuristics always run.
   const heuristic = reviewCode(code);
   const findings: CodeFinding[] = [...heuristic.findings];
+
+  // Built-in secrets scanner always runs.
+  const secrets = scanSecrets(code).map((f) => ({
+    ...f,
+    ...mapCompliance(f.title),
+  }));
+  findings.push(...secrets);
+
   const engines: EngineStatus[] = [
     {
       name: "horus-heuristics",
       available: true,
       ran: true,
       findingCount: heuristic.findings.length,
+    },
+    {
+      name: "secrets-scanner",
+      available: true,
+      ran: true,
+      findingCount: secrets.length,
     },
   ];
 

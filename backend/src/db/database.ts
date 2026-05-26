@@ -173,6 +173,38 @@ export function listSafetyLog(limit = 100): DbSafetyLog[] {
     .all(limit) as unknown as DbSafetyLog[];
 }
 
+export function dashboardStats(): {
+  findingsBySeverity: Record<string, number>;
+  totalFindings: number;
+  totalReports: number;
+  refusals: number;
+} {
+  const rows = db
+    .prepare(`SELECT severity, COUNT(*) c FROM findings GROUP BY severity`)
+    .all() as unknown as { severity: string; c: number }[];
+  const findingsBySeverity: Record<string, number> = {
+    critical: 0,
+    high: 0,
+    medium: 0,
+    low: 0,
+    info: 0,
+  };
+  let totalFindings = 0;
+  for (const r of rows) {
+    findingsBySeverity[r.severity] = r.c;
+    totalFindings += r.c;
+  }
+  const totalReports = (
+    db.prepare(`SELECT COUNT(*) c FROM reports`).get() as unknown as { c: number }
+  ).c;
+  const refusals = (
+    db
+      .prepare(`SELECT COUNT(*) c FROM safety_log WHERE decision = 'refuse'`)
+      .get() as unknown as { c: number }
+  ).c;
+  return { findingsBySeverity, totalFindings, totalReports, refusals };
+}
+
 export function safetyStats(): {
   total: number;
   refusals: number;

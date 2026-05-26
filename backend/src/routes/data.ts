@@ -9,11 +9,18 @@ import {
   getReport,
   listSafetyLog,
   safetyStats,
+  dashboardStats,
   type DbFinding,
 } from "../db/database";
 import { retrieve } from "../knowledge/retriever";
 
 export const dataRouter = Router();
+
+// ---- Dashboard analytics ----
+
+dataRouter.get("/stats", (_req, res) => {
+  res.json(dashboardStats());
+});
 
 // ---- Findings persistence ----
 

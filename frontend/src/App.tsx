@@ -7,6 +7,8 @@ import { CyberChat } from "@/pages/CyberChat";
 import { AgentConsole } from "@/pages/AgentConsole";
 import { TargetScope } from "@/pages/TargetScope";
 import { CtfHelper } from "@/pages/CtfHelper";
+import { CtfToolkit } from "@/pages/CtfToolkit";
+import { ThreatModel } from "@/pages/ThreatModel";
 import { WebAudit } from "@/pages/WebAudit";
 import { SecureCodeReview } from "@/pages/SecureCodeReview";
 import { TerminalLogs } from "@/pages/TerminalLogs";
@@ -27,6 +29,8 @@ export default function App() {
               <Route path="/chat" element={<CyberChat />} />
               <Route path="/scope" element={<TargetScope />} />
               <Route path="/ctf" element={<CtfHelper />} />
+              <Route path="/toolkit" element={<CtfToolkit />} />
+              <Route path="/threat-model" element={<ThreatModel />} />
               <Route path="/audit" element={<WebAudit />} />
               <Route path="/code-review" element={<SecureCodeReview />} />
               <Route path="/logs" element={<TerminalLogs />} />

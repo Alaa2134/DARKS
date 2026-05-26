@@ -125,4 +125,32 @@ export const KNOWLEDGE: KnowledgeDoc[] = [
     source: "Secure design",
     text: "Critical flows (login, password reset, payment, URL fetch) need abuse protection: per-IP and per-account rate limits, exponential backoff or lockout after repeated failures, CAPTCHA where appropriate, and MFA. This resists brute force, credential stuffing, and resource exhaustion.",
   },
+  {
+    id: "api-bola",
+    title: "API Security — Broken Object Level Authorization (BOLA)",
+    tags: ["api", "bola", "idor", "authorization"],
+    source: "OWASP API Security Top 10 (2023) API1",
+    text: "BOLA is the most common API flaw: an endpoint returns or modifies an object based on an id without checking the caller owns it. Defend by enforcing object-level ownership checks on every request server-side, using unpredictable ids, and adding automated authorization tests per endpoint.",
+  },
+  {
+    id: "api-mass-assignment",
+    title: "API Security — Mass assignment",
+    tags: ["api", "mass assignment", "validation"],
+    source: "OWASP API Security Top 10 API6",
+    text: "Binding client-provided JSON directly to internal objects lets attackers set fields they shouldn't (e.g. role=admin). Defend by allowlisting bindable fields (DTOs), never trusting client-set privilege fields, and validating input schemas.",
+  },
+  {
+    id: "deserialization",
+    title: "Insecure deserialization",
+    tags: ["deserialization", "pickle", "yaml", "rce"],
+    source: "CWE-502 / OWASP A08",
+    text: "Deserializing untrusted data (pickle, unsafe yaml.load, Java/PHP object streams) can execute arbitrary code. Defend by using data-only formats (JSON), safe loaders (yaml.safe_load), schema validation, and never deserializing attacker-controlled blobs.",
+  },
+  {
+    id: "stride",
+    title: "STRIDE threat modeling",
+    tags: ["threat model", "stride", "design"],
+    source: "Threat modeling",
+    text: "STRIDE classifies threats as Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, and Elevation of Privilege. For each component and trust boundary, enumerate applicable threats and assign mitigations (auth+MFA, integrity checks, audit logging, encryption+authorization, rate limiting, server-side RBAC).",
+  },
 ];

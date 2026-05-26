@@ -58,9 +58,15 @@ a **safety audit log** of every refusal.
 | 14 | **Knowledge base (RAG)** — grounded, citeable answers | `knowledge/` + Agent |
 | 15 | **Persistence** — findings & reports stored in SQLite | `db/` |
 | 16 | **Safety telemetry** — every refusal logged + stats | **Settings** |
+| 17 | **CTF Toolkit** — encoders/decoders, hash-id, JWT decode, ciphers | **CTF Toolkit** |
+| 18 | **STRIDE threat modeling** — threats + mitigations per component | **Threat Model** |
+| 19 | **CVSS v3.1 calculator** + **CWE/OWASP compliance mapping** | Reports / findings |
+| 20 | **Built-in secrets scanner** + multi-language code rules | **Secure Code Review** |
+| 21 | **Dashboard analytics** — findings/severity/reports/refusals | **Dashboard** |
 
 **Pages:** Dashboard · Agent Console · Cyber Chat Agent · Target Scope · CTF Helper ·
-Web Audit · Secure Code Review · Terminal Logs · Reports · Settings.
+CTF Toolkit · Web Audit · Threat Model · Secure Code Review · Terminal Logs ·
+Reports · Settings.
 
 **Agent modes:** CTF · Web Audit · Secure Code Review · Log Analysis · Report.
 
@@ -422,10 +428,14 @@ refuses and offers a defensive alternative.
 | GET  | `/api/audit/headers` | Recommended security headers |
 | POST | `/api/audit/scope-check` | Validate a target against scope |
 | POST | `/api/analysis/code-review` | Static security review of code |
-| POST | `/api/analysis/scan` | **Deep scan: heuristics + semgrep/bandit** |
+| POST | `/api/analysis/scan` | **Deep scan: heuristics + secrets + semgrep/bandit** |
 | POST | `/api/analysis/audit-deps` | **npm audit in the workspace** |
+| POST | `/api/analysis/cvss` | **CVSS v3.1 score from vector/metrics** |
+| POST | `/api/analysis/threat-model` | **STRIDE threat model** |
 | POST | `/api/analysis/logs` | Defensive log analysis |
 | POST | `/api/analysis/report` | Generate Markdown report |
+| GET/POST | `/api/ctf/ops`, `/api/ctf/transform` | **CTF toolkit transforms** |
+| GET  | `/api/stats` | **Dashboard analytics** |
 | GET  | `/api/kb/search?q=` | **Knowledge-base (RAG) search** |
 | GET/POST/DELETE | `/api/findings` | **Persisted findings (SQLite)** |
 | GET/POST | `/api/reports` | **Persisted reports** |

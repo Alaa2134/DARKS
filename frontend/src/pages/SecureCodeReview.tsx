@@ -161,8 +161,18 @@ export function SecureCodeReview() {
                       )}
                     </Button>
                   </div>
-                  <div className="mt-2 font-mono text-xs text-muted-foreground">
-                    line {f.line}
+                  <div className="mt-2 flex flex-wrap items-center gap-2 font-mono text-xs text-muted-foreground">
+                    <span>line {f.line}</span>
+                    {f.cwe && (
+                      <span className="rounded border border-border px-1.5 py-0.5 text-neon-purple">
+                        {f.cwe}
+                      </span>
+                    )}
+                    {f.owasp && (
+                      <span className="rounded border border-border px-1.5 py-0.5 text-neon-blue">
+                        {f.owasp}
+                      </span>
+                    )}
                   </div>
                   <code className="mt-1 block overflow-x-auto rounded bg-[#0a0e1a] p-2 font-mono text-xs text-severity-high">
                     {f.snippet}

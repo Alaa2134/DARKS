@@ -16,7 +16,9 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { api } from "@/lib/api";
+import { SeverityBadge } from "@/components/SeverityBadge";
+import { api, type DashboardStats } from "@/lib/api";
+import type { Severity } from "@/lib/utils";
 
 const MODES = [
   {
@@ -73,13 +75,17 @@ export function Dashboard() {
     null
   );
   const [err, setErr] = useState(false);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
 
   useEffect(() => {
     api
       .health()
       .then(setHealth)
       .catch(() => setErr(true));
+    api.stats().then(setStats).catch(() => {});
   }, []);
+
+  const sevOrder: Severity[] = ["critical", "high", "medium", "low", "info"];
 
   return (
     <div>
@@ -117,6 +123,36 @@ export function Dashboard() {
           <Badge variant="muted">Owned / lab targets only</Badge>
         </div>
       </div>
+
+      {stats && (
+        <div className="mb-6 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <StatCard label="Findings logged" value={stats.totalFindings} />
+          <StatCard label="Reports saved" value={stats.totalReports} />
+          <StatCard label="Requests refused" value={stats.refusals} accent="high" />
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                Findings by severity
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {sevOrder
+                  .filter((s) => stats.findingsBySeverity[s] > 0)
+                  .map((s) => (
+                    <div key={s} className="flex items-center gap-1">
+                      <SeverityBadge severity={s} />
+                      <span className="text-sm font-semibold">
+                        {stats.findingsBySeverity[s]}
+                      </span>
+                    </div>
+                  ))}
+                {stats.totalFindings === 0 && (
+                  <span className="text-sm text-muted-foreground">none yet</span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         {MODES.map((m) => (
@@ -183,6 +219,31 @@ export function Dashboard() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  accent,
+}: {
+  label: string;
+  value: number;
+  accent?: "high";
+}) {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+        <div
+          className={`mt-1 text-3xl font-bold ${
+            accent === "high" ? "text-severity-high" : "neon-text"
+          }`}
+        >
+          {value}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
