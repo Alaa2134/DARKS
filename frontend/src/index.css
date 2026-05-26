@@ -1,0 +1,128 @@
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 6%;
+    --foreground: 210 40% 96%;
+    --card: 222 45% 9%;
+    --card-foreground: 210 40% 96%;
+    --primary: 187 92% 53%;
+    --primary-foreground: 222 47% 6%;
+    --secondary: 263 70% 60%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 30% 16%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 263 70% 60%;
+    --accent-foreground: 210 40% 98%;
+    --border: 222 30% 18%;
+    --input: 222 30% 16%;
+    --ring: 187 92% 53%;
+    --radius: 0.6rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: "Inter", system-ui, sans-serif;
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(34, 211, 238, 0.07), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(168, 85, 247, 0.07), transparent 40%);
+    background-attachment: fixed;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted));
+    border-radius: 6px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(222 30% 26%);
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply rounded-xl border border-border bg-card/70 backdrop-blur-sm;
+  }
+
+  .neon-text {
+    @apply bg-gradient-to-r from-neon-blue to-neon-purple bg-clip-text text-transparent;
+  }
+
+  .terminal {
+    @apply rounded-lg border border-border bg-[#0a0e1a] p-4 font-mono text-sm;
+  }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+    background-size: 28px 28px;
+  }
+
+  /* Markdown rendering */
+  .prose-cyber {
+    @apply text-sm leading-relaxed text-foreground/90;
+  }
+  .prose-cyber h1,
+  .prose-cyber h2,
+  .prose-cyber h3 {
+    @apply mb-2 mt-4 font-semibold text-foreground;
+  }
+  .prose-cyber h1 {
+    @apply text-lg;
+  }
+  .prose-cyber h2 {
+    @apply text-base;
+  }
+  .prose-cyber h3 {
+    @apply text-sm;
+  }
+  .prose-cyber p {
+    @apply my-2;
+  }
+  .prose-cyber ul {
+    @apply my-2 list-disc space-y-1 pl-5;
+  }
+  .prose-cyber ol {
+    @apply my-2 list-decimal space-y-1 pl-5;
+  }
+  .prose-cyber code {
+    @apply rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-neon-blue;
+  }
+  .prose-cyber pre {
+    @apply my-3 overflow-x-auto rounded-lg border border-border bg-[#0a0e1a] p-3;
+  }
+  .prose-cyber pre code {
+    @apply bg-transparent p-0 text-foreground/90;
+  }
+  .prose-cyber a {
+    @apply text-neon-blue underline;
+  }
+  .prose-cyber blockquote {
+    @apply border-l-2 border-neon-purple/60 pl-3 italic text-muted-foreground;
+  }
+  .prose-cyber table {
+    @apply my-3 w-full border-collapse text-xs;
+  }
+  .prose-cyber th,
+  .prose-cyber td {
+    @apply border border-border px-2 py-1 text-left;
+  }
+  .prose-cyber strong {
+    @apply text-foreground;
+  }
+}
