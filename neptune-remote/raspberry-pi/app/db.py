@@ -266,6 +266,13 @@ class Database:
             self._conn.commit()
             return cursor
 
+    def executescript(self, sql: str) -> None:
+        """Run a multi-statement script. Used by modules that own their own
+        tables so their schema lives beside their code."""
+        with self._lock:
+            self._conn.executescript(sql)
+            self._conn.commit()
+
     def executemany(self, sql: str, seq: Iterable[Sequence[Any]]) -> None:
         with self._lock:
             self._conn.executemany(sql, seq)
