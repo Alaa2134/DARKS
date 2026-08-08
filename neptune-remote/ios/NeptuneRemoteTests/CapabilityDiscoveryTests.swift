@@ -244,16 +244,33 @@ final class CapabilityDiscoveryTests: XCTestCase {
         XCTAssertEqual(macros.first { $0.name == "PRINT_START" }?.hasParameters, false)
     }
 
-    func testMovingOrHeatingMacrosRequireConfirmation() {
-        XCTAssertTrue(PrinterCapabilities.MacroSpec(
-            name: "PRINT_START", description: nil, hasParameters: false
-        ).needsConfirmation)
-        XCTAssertTrue(PrinterCapabilities.MacroSpec(
-            name: "UNLOAD_FILAMENT", description: nil, hasParameters: false
-        ).needsConfirmation)
-        XCTAssertFalse(PrinterCapabilities.MacroSpec(
-            name: "STATUS_LEDS", description: nil, hasParameters: false
-        ).needsConfirmation)
+    /// Confirmation is the default. A keyword list of dangerous verbs was tried
+    /// first and under-flagged: PRINT_START heats the bed and moves the
+    /// toolhead while matching none of the obvious words.
+    func testMacrosRequireConfirmationByDefault() {
+        func macro(_ name: String) -> PrinterCapabilities.MacroSpec {
+            PrinterCapabilities.MacroSpec(name: name, description: nil, hasParameters: false)
+        }
+
+        // Moves or heats the machine.
+        XCTAssertTrue(macro("PRINT_START").needsConfirmation)
+        XCTAssertTrue(macro("UNLOAD_FILAMENT").needsConfirmation)
+        XCTAssertTrue(macro("G32").needsConfirmation)
+        // A name the app has never seen is confirmed rather than assumed safe.
+        XCTAssertTrue(macro("WIGGLE").needsConfirmation)
+
+        // Clearly just reports state.
+        XCTAssertFalse(macro("STATUS_LEDS").needsConfirmation)
+        XCTAssertFalse(macro("QUERY_PROBE").needsConfirmation)
+    }
+
+    /// Every macro discovered on a real config gets a confirmation unless it is
+    /// a reporting macro - checked against the fixture so the default cannot
+    /// quietly invert.
+    func testDiscoveredMacrosAreConfirmedByDefault() {
+        for macro in build().macros {
+            XCTAssertTrue(macro.needsConfirmation, "\(macro.name) should confirm")
+        }
     }
 
     // MARK: - Feature flags

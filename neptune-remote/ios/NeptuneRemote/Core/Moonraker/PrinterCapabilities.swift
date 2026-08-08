@@ -175,18 +175,24 @@ struct PrinterCapabilities: Equatable {
             lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
         }
 
-        /// Macros that move the machine, heat it, or rewrite configuration get a
-        /// confirmation step. Matching is on the verb rather than an allowlist,
-        /// because the whole point is that these names are the user's own.
+        /// Whether running this macro should ask first. **Confirmed by default.**
+        ///
+        /// A list of dangerous verbs was tried first and is the wrong shape: it
+        /// under-flags. `PRINT_START` heats the bed and slams the toolhead
+        /// around, and matches none of the obvious words. The app cannot read a
+        /// macro body's intent, and these names are the user's own, so any
+        /// keyword list is a guess about someone else's vocabulary.
+        ///
+        /// Failing safe costs one tap on a harmless macro. Failing unsafe runs
+        /// something destructive with no warning. Only names that clearly just
+        /// report state skip the confirmation.
         var needsConfirmation: Bool {
             let upper = name.uppercased()
-            let dangerous = [
-                "CALIBRATE", "SAVE_CONFIG", "RESTART", "SHUTDOWN", "CANCEL",
-                "HOME", "PROBE", "MESH", "LEVEL", "TILT", "PID", "TEST",
-                "UNLOAD", "LOAD", "PURGE", "PRIME", "CLEAN", "PARK", "MOVE",
-                "OFF", "RESET", "ERASE", "DELETE", "FLASH", "FIRMWARE"
+            let readOnly = [
+                "STATUS", "QUERY", "LIST", "SHOW", "REPORT", "DUMP",
+                "GET_", "_INFO", "NOTIFY", "LED", "M117"
             ]
-            return dangerous.contains { upper.contains($0) }
+            return !readOnly.contains { upper.contains($0) }
         }
     }
 
