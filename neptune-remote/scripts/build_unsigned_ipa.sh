@@ -21,9 +21,10 @@ PROJECT="${ROOT}/ios/NeptuneRemote.xcodeproj"
 SCHEME="NeptuneRemote"
 CONFIGURATION="${CONFIGURATION:-Release}"
 BUILD_DIR="${ROOT}/build"
+DIST_DIR="${ROOT}/dist"
 DERIVED="${BUILD_DIR}/DerivedData"
 PAYLOAD="${BUILD_DIR}/Payload"
-IPA="${BUILD_DIR}/NeptuneRemote-unsigned.ipa"
+IPA="${DIST_DIR}/NeptuneRemote-unsigned.ipa"
 
 C_OK=$'\033[0;32m'; C_ERR=$'\033[0;31m'; C_INFO=$'\033[0;36m'; C_OFF=$'\033[0m'
 step() { printf '%s==>%s %s\n' "${C_INFO}" "${C_OFF}" "$*"; }
@@ -56,6 +57,11 @@ EOF
 fi
 
 command -v xcodebuild >/dev/null 2>&1 || die "xcodebuild not found. Install Xcode and run: sudo xcode-select -s /Applications/Xcode.app"
+
+# Regenerate so a newly added source file is never silently left out of the IPA.
+if command -v python3 >/dev/null 2>&1; then
+    python3 "${SCRIPT_DIR}/generate_xcodeproj.py" >/dev/null || die "Could not regenerate the Xcode project"
+fi
 [[ -d "${PROJECT}" ]] || die "Xcode project not found at ${PROJECT}"
 
 ok "$(xcodebuild -version | head -1)"
@@ -66,7 +72,7 @@ ok "Project: ${PROJECT}"
 # --------------------------------------------------------------------------- #
 step "Cleaning previous output"
 rm -rf "${PAYLOAD}" "${IPA}"
-mkdir -p "${BUILD_DIR}"
+mkdir -p "${BUILD_DIR}" "${DIST_DIR}"
 
 step "Building ${SCHEME} (${CONFIGURATION}, unsigned)"
 set +e
@@ -113,18 +119,20 @@ cp -R "${APP_PATH}" "${PAYLOAD}/"
 rm -rf "${PAYLOAD}/$(basename "${APP_PATH}")/_CodeSignature" 2>/dev/null || true
 rm -f  "${PAYLOAD}/$(basename "${APP_PATH}")/embedded.mobileprovision" 2>/dev/null || true
 
-( cd "${BUILD_DIR}" && zip -qry "$(basename "${IPA}")" Payload )
+( cd "${BUILD_DIR}" && zip -qry "${IPA}" Payload )
 rm -rf "${PAYLOAD}"
 
 [[ -f "${IPA}" ]] || die "Packaging failed - no IPA at ${IPA}"
 
 SIZE="$(du -h "${IPA}" | cut -f1)"
+SHA="$(shasum -a 256 "${IPA}" | cut -d' ' -f1)"
 cat <<EOF
 
 ${C_OK}Unsigned IPA created.${C_OFF}
 
-  Path : ${IPA}
-  Size : ${SIZE}
+  Path   : ${IPA}
+  Size   : ${SIZE}
+  SHA256 : ${SHA}
 
   It contains Payload/$(basename "${APP_PATH}") and is NOT code signed.
   Sign it with your own certificate, or install it with a sideloading tool.

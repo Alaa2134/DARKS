@@ -80,6 +80,12 @@ done
 # --------------------------------------------------------------------------- #
 step "Installing system packages"
 APT_PACKAGES=(python3 python3-venv python3-pip python3-dev build-essential curl ca-certificates)
+# Optional but strongly recommended: FFmpeg powers recording and timelapse,
+# v4l-utils lets the backend enumerate USB cameras and their modes.
+# Set SKIP_MEDIA=1 to leave them out.
+if [[ "${SKIP_MEDIA:-0}" != "1" ]]; then
+    APT_PACKAGES+=(ffmpeg v4l-utils)
+fi
 MISSING=()
 for pkg in "${APT_PACKAGES[@]}"; do
     dpkg -s "${pkg}" >/dev/null 2>&1 || MISSING+=("${pkg}")
@@ -211,6 +217,49 @@ else
 
 SLICERHELP
     fi
+fi
+
+# --------------------------------------------------------------------------- #
+# 7b. Camera, FFmpeg and the print monitor
+# --------------------------------------------------------------------------- #
+step "Checking camera and video tooling"
+if command -v ffmpeg >/dev/null 2>&1; then
+    ok "ffmpeg found: $(ffmpeg -version 2>/dev/null | head -1 | cut -d' ' -f1-3)"
+else
+    warn "ffmpeg not installed - recording and timelapse will report themselves as unavailable"
+fi
+
+if command -v v4l2-ctl >/dev/null 2>&1; then
+    ok "v4l2-ctl found - camera modes can be detected"
+else
+    warn "v4l-utils not installed - camera detection falls back to /dev/video* only"
+fi
+
+VIDEO_DEVICES=()
+for dev in /dev/video*; do
+    [[ -e "${dev}" ]] && VIDEO_DEVICES+=("${dev}")
+done
+if [[ ${#VIDEO_DEVICES[@]} -gt 0 ]]; then
+    ok "Camera device(s): ${VIDEO_DEVICES[*]}"
+    if ! id -nG "${RUN_USER}" 2>/dev/null | tr ' ' '\n' | grep -qx video; then
+        warn "User ${RUN_USER} is not in the 'video' group; adding it"
+        as_root usermod -aG video "${RUN_USER}" || warn "Could not add ${RUN_USER} to 'video'"
+        warn "Log out and back in (or reboot) for the group change to take effect"
+    fi
+else
+    warn "No /dev/video* device found - camera features will report 'no camera detected'"
+fi
+
+if [[ -n "$(command -v crowsnest 2>/dev/null)" ]] || systemctl list-unit-files 2>/dev/null | grep -q '^crowsnest'; then
+    ok "crowsnest detected - point camera.stream_url at its MJPEG endpoint"
+fi
+
+# The print-failure monitor works without any extra install (built-in heuristic).
+# ONNX Runtime is optional and installed separately by scripts/install_vision.sh.
+if "${VENV_DIR}/bin/python" -c "import onnxruntime" >/dev/null 2>&1; then
+    ok "onnxruntime available - the monitor can load a trained model"
+else
+    ok "onnxruntime not installed - the monitor uses its built-in image heuristic"
 fi
 
 # --------------------------------------------------------------------------- #
