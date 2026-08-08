@@ -1,0 +1,239 @@
+import Foundation
+
+/// G-code files (from Moonraker) and uploaded models (on the Raspberry Pi).
+@MainActor
+final class FilesStore: ObservableObject {
+
+    @Published private(set) var gcodes: [BackendGCodeFile] = []
+    @Published private(set) var models: [BackendModelFile] = []
+    @Published private(set) var isLoadingGCodes = false
+    @Published private(set) var isLoadingModels = false
+    @Published var uploadProgressLabel: String?
+    @Published var lastError: APIError?
+
+    private let settings: AppSettings
+    private let printer: PrinterStore
+
+    init(settings: AppSettings, printer: PrinterStore) {
+        self.settings = settings
+        self.printer = printer
+    }
+
+    // MARK: - G-code
+
+    func loadGCodes() async {
+        guard !isLoadingGCodes else { return }
+        isLoadingGCodes = true
+        defer { isLoadingGCodes = false }
+
+        if settings.demoMode {
+            gcodes = DemoSimulator.demoGCodes
+            return
+        }
+
+        // Prefer the backend (it merges Moonraker + locally sliced files);
+        // fall back to talking to Moonraker directly if the backend is down.
+        do {
+            gcodes = try await printer.backend.gcodes()
+            lastError = nil
+            return
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+        }
+
+        do {
+            let files = try await printer.moonraker.listGCodes()
+            gcodes = files.map(Self.convert)
+            lastError = nil
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+        }
+    }
+
+    static func convert(_ file: MoonrakerFile) -> BackendGCodeFile {
+        BackendGCodeFile(
+            path: file.path,
+            filename: file.filename,
+            size: file.size ?? 0,
+            modified: file.modified ?? 0,
+            estimatedTime: file.estimatedTime,
+            filamentTotalMM: file.filamentTotal,
+            filamentWeightG: file.filamentWeightTotal,
+            layerHeight: file.layerHeight,
+            firstLayerHeight: file.firstLayerHeight,
+            objectHeight: file.objectHeight,
+            filamentType: file.filamentType,
+            filamentName: file.filamentName,
+            slicer: file.slicer,
+            thumbnailPath: file.thumbnailPath,
+            layerCount: nil,
+            source: "moonraker"
+        )
+    }
+
+    func delete(_ file: BackendGCodeFile) async {
+        guard !settings.demoMode else {
+            gcodes.removeAll { $0.id == file.id }
+            return
+        }
+        do {
+            if file.source == "backend" {
+                try await printer.backend.deleteLocalGCode(name: file.filename)
+            } else {
+                try await printer.moonraker.deleteGCode(path: file.path)
+            }
+            gcodes.removeAll { $0.id == file.id }
+            Haptics.success()
+            lastError = nil
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            Haptics.error()
+        }
+    }
+
+    func startPrint(_ file: BackendGCodeFile) async {
+        if settings.demoMode {
+            printer.demoStartPrint(
+                filename: file.filename,
+                estimatedSeconds: file.estimatedTime ?? 2_700,
+                layers: file.layerCount ?? 240
+            )
+            return
+        }
+        if file.source == "backend" {
+            do {
+                _ = try await printer.backend.sendLocalGCodeToPrinter(name: file.filename, startPrint: true)
+                Haptics.success()
+            } catch {
+                lastError = APIError.from(error, host: settings.host)
+                Haptics.error()
+            }
+            return
+        }
+        await printer.startPrint(filename: file.path)
+    }
+
+    func download(_ file: BackendGCodeFile) async -> URL? {
+        guard !settings.demoMode else { return nil }
+        do {
+            let data: Data
+            if file.source == "backend" {
+                data = try await printer.backend.downloadLocalGCode(name: file.filename)
+            } else {
+                data = try await printer.moonraker.downloadGCode(path: file.path)
+            }
+            return try writeTemporary(data: data, filename: file.filename)
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            return nil
+        }
+    }
+
+    func metadata(for file: BackendGCodeFile) async -> MoonrakerFile? {
+        guard !settings.demoMode, file.source == "moonraker" else { return nil }
+        return try? await printer.moonraker.metadata(filename: file.path)
+    }
+
+    func upload(gcodeURL url: URL) async -> Bool {
+        await withSecurityScope(url) { data, filename in
+            if self.settings.demoMode { return true }
+            _ = try await self.printer.moonraker.uploadGCode(filename: filename, data: data)
+            return true
+        }
+    }
+
+    // MARK: - Models
+
+    func loadModels() async {
+        guard !isLoadingModels else { return }
+        isLoadingModels = true
+        defer { isLoadingModels = false }
+
+        if settings.demoMode {
+            models = DemoSimulator.demoModels
+            return
+        }
+        do {
+            models = try await printer.backend.models()
+            lastError = nil
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+        }
+    }
+
+    func upload(modelURL url: URL) async -> BackendModelFile? {
+        guard !settings.demoMode else { return DemoSimulator.demoModels.first }
+
+        var uploaded: BackendModelFile?
+        _ = await withSecurityScope(url) { data, filename in
+            self.uploadProgressLabel = L.t("slicer.uploading", filename)
+            let result = try await self.printer.backend.uploadModel(filename: filename, data: data)
+            uploaded = BackendModelFile(
+                id: result.id,
+                filename: result.filename,
+                size: result.size,
+                modified: Date().timeIntervalSince1970,
+                fileExtension: (filename as NSString).pathExtension.lowercased()
+            )
+            return true
+        }
+        uploadProgressLabel = nil
+        if uploaded != nil { await loadModels() }
+        return uploaded
+    }
+
+    func deleteModel(_ model: BackendModelFile) async {
+        guard !settings.demoMode else {
+            models.removeAll { $0.id == model.id }
+            return
+        }
+        do {
+            try await printer.backend.deleteModel(id: model.id)
+            models.removeAll { $0.id == model.id }
+            Haptics.success()
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            Haptics.error()
+        }
+    }
+
+    func modelData(_ model: BackendModelFile) async -> Data? {
+        guard !settings.demoMode else { return nil }
+        do {
+            return try await printer.backend.downloadModel(id: model.id)
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            return nil
+        }
+    }
+
+    // MARK: - Helpers
+
+    private func withSecurityScope(
+        _ url: URL,
+        _ body: @escaping (Data, String) async throws -> Bool
+    ) async -> Bool {
+        let scoped = url.startAccessingSecurityScopedResource()
+        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
+
+        do {
+            let data = try Data(contentsOf: url)
+            let ok = try await body(data, url.lastPathComponent)
+            if ok { lastError = nil }
+            return ok
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            Haptics.error()
+            return false
+        }
+    }
+
+    private func writeTemporary(data: Data, filename: String) throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("neptune-share", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent(filename)
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+}

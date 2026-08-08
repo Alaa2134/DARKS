@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Shared container used by the widget and App Intents.
+	     When you sign the app with your own team, create this App Group in
+	     your Apple Developer account (or change the identifier here and in
+	     SharedStore.appGroupIdentifier). Without it the app still works -
+	     it falls back to standard UserDefaults and the widget shows the
+	     placeholder. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.neptune.remote</string>
+	</array>
+</dict>
+</plist>

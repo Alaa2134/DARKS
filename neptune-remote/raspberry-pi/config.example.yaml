@@ -1,0 +1,194 @@
+# ---------------------------------------------------------------------------
+# Neptune 3 Plus Remote - backend configuration example
+#
+#   cp config.example.yaml config.yaml
+#   nano config.yaml
+#   sudo systemctl restart neptune-remote
+#
+# config.yaml is git-ignored. Never commit real credentials.
+# Every value here can also be supplied through environment variables
+# (see .env.example) which take priority over this file.
+# ---------------------------------------------------------------------------
+
+server:
+  host: "0.0.0.0"
+  port: 8710
+  # Optional shared secret. When non-empty every /api and /ws request must send
+  # it as the `X-API-Key` header (the iOS app stores it in the Keychain).
+  # Leave empty if you rely on Tailscale alone.
+  api_token: ""
+  cors_origins:
+    - "*"
+  log_level: "info"
+
+moonraker:
+  host: "127.0.0.1"
+  port: 7125
+  use_tls: false
+  # Only needed if you enabled Moonraker's API key authorization.
+  api_key: ""
+  timeout_seconds: 10.0
+
+paths:
+  data_dir: "~/neptune-remote-data"
+  models_dir: "~/neptune-remote-data/models"
+  gcode_dir: "~/neptune-remote-data/gcode"
+  # Slicing profiles shipped with this repository.
+  profiles_dir: "/opt/neptune-remote/profiles"
+  database: "~/neptune-remote-data/neptune.db"
+
+slicer:
+  # prusaslicer (recommended, packaged for arm64) or orcaslicer
+  engine: "prusaslicer"
+  prusaslicer_bin: "prusa-slicer"
+  orcaslicer_bin: "orca-slicer"
+  timeout_seconds: 1800
+  max_concurrent_jobs: 1
+  keep_jobs: 40
+
+power:
+  # tuya | moonraker | webhook | demo | none
+  provider: "none"
+  # Used when provider == moonraker: the [power <name>] section in moonraker.conf
+  moonraker_device: "printer"
+  webhook:
+    on_url: ""
+    off_url: ""
+    status_url: ""
+    method: "POST"
+    headers: {}
+    on_body: ""
+    off_body: ""
+    status_json_path: "state"
+    on_value: "on"
+  safety:
+    enabled: true
+    max_nozzle_temp: 50
+    max_bed_temp: 45
+    block_while_printing: true
+
+# See docs/TUYA_SETUP.md for how to obtain these from iot.tuya.com and how to
+# link your existing Smart Life device.
+tuya:
+  enabled: false
+  access_id: ""
+  access_secret: ""
+  device_id: ""
+  # Data-centre endpoint, must match the region your Smart Life account is in:
+  #   Central Europe   https://openapi.tuyaeu.com
+  #   Western America  https://openapi.tuyaus.com
+  #   China            https://openapi.tuyacn.com
+  #   India            https://openapi.tuyain.com
+  endpoint: "https://openapi.tuyaeu.com"
+  # DP code of the relay. Single-socket plugs are usually switch_1, some are switch.
+  switch_code: "switch_1"
+
+auto_power_off:
+  enabled: false
+  nozzle_below: 50
+  bed_below: 45
+  delay_seconds: 300
+  only_after_successful_print: true
+
+history:
+  enabled: true
+  max_entries: 2000
+
+# ---------------------------------------------------------------------------
+# Storage - everything Neptune Remote writes lives under this one root.
+# It never touches Klipper's own printer_data/config or printer_data/gcodes.
+# ---------------------------------------------------------------------------
+storage:
+  root: "~/printer_data/neptune_remote"
+  # Files copied (read-only) into a backup zip.
+  backup_sources:
+    - "~/printer_data/config/printer.cfg"
+    - "~/printer_data/config/moonraker.conf"
+  max_backups: 10
+
+# ---------------------------------------------------------------------------
+# Camera (USB UVC webcam on the Raspberry Pi 5)
+#
+# Preferred: point at the stream crowsnest already serves, so Mainsail, this
+# backend and the phone can all watch at the same time.
+# Fallback: read /dev/videoN directly with FFmpeg (exclusive access).
+# ---------------------------------------------------------------------------
+camera:
+  enabled: true
+  stream_url: "http://127.0.0.1/webcam/?action=stream"
+  snapshot_url: "http://127.0.0.1/webcam/?action=snapshot"
+  device: ""            # e.g. "/dev/video0" when no streamer is installed
+  width: 1280
+  height: 720
+  fps: 15
+  ffmpeg_binary: "ffmpeg"
+  # Print-bed region used by the failure monitor: [x, y, w, h] as 0..1
+  roi: null
+
+# ---------------------------------------------------------------------------
+# Video recording (real FFmpeg MP4 output)
+# ---------------------------------------------------------------------------
+recording:
+  # off | manual | full | first_layer | last_layer
+  mode: "manual"
+  video_codec: "libx264"
+  preset: "veryfast"
+  crf: 24
+  output_fps: 15
+  max_seconds: 0        # 0 = no limit
+  # never | max_size | keep_last
+  retention_policy: "max_size"
+  retention_max_gb: 8.0
+  retention_keep_last: 20
+
+# ---------------------------------------------------------------------------
+# Timelapse
+#
+# "layer" mode needs a macro in printer.cfg. Neptune Remote NEVER edits
+# printer.cfg - GET /api/timelapse/macro returns the snippet to copy.
+# ---------------------------------------------------------------------------
+timelapse:
+  mode: "off"           # off | interval | layer
+  interval_seconds: 10
+  output_fps: 25
+  crf: 20
+  min_frames: 12
+  max_frames: 20000
+  keep_frames: false
+
+# ---------------------------------------------------------------------------
+# Local print-failure detection
+#
+# Runs entirely on the Pi. No frame ever leaves the machine.
+#   provider: heuristic -> rule-based, needs no model file
+#             onnx      -> your own ONNX model (see docs/AI.md)
+#             disabled  -> off
+#   mode:     off | monitor | warn | auto_pause   (default: warn)
+# The detector can pause a print. It can NEVER switch mains power off.
+# ---------------------------------------------------------------------------
+vision:
+  mode: "warn"
+  provider: "heuristic"
+  model_path: ""
+  labels: []
+  input_size: 320
+  execution_providers: ["CPUExecutionProvider"]
+  fallback_to_heuristic: true
+
+  interval_seconds: 5.0
+  first_layer_seconds: 600
+  first_layer_interval_seconds: 3.0
+  min_confidence: 0.55
+  confirmations: 3
+  window_seconds: 30
+  cooldown_seconds: 180
+  only_while_printing: true
+  max_events: 500
+
+  # Back off automatically so Klipper always keeps its CPU.
+  throttle_cpu_percent: 80
+  throttle_temp_c: 75
+
+  roi: null
+  edge_growth_threshold: 1.55
+  change_threshold: 0.28
