@@ -12,8 +12,8 @@ struct SetupWizardView: View {
     @State private var moonrakerOK: Bool?
     @State private var backendOK: Bool?
     @State private var klipperOK: Bool?
-    @State private var backendMessage: String?
-    @State private var moonrakerMessage: String?
+    @State private var backendError: APIError?
+    @State private var moonrakerError: APIError?
 
     private let lastStep = 7
 
@@ -139,11 +139,26 @@ struct SetupWizardView: View {
             }
             .card()
 
-            if let moonrakerMessage {
-                Text(moonrakerMessage).font(.caption).foregroundStyle(Theme.danger)
-            }
-            if let backendMessage {
-                Text(backendMessage).font(.caption).foregroundStyle(Theme.paused)
+            if moonrakerError != nil || backendError != nil {
+                VStack(alignment: .leading, spacing: 12) {
+                    if let moonrakerError {
+                        FailureNote(
+                            labelKey: "diagnostics.moonraker",
+                            error: moonrakerError,
+                            url: settings.connection.moonrakerBaseURL?.absoluteString,
+                            tint: Theme.danger
+                        )
+                    }
+                    if let backendError {
+                        FailureNote(
+                            labelKey: "diagnostics.backend",
+                            error: backendError,
+                            url: settings.connection.backendBaseURL?.absoluteString,
+                            tint: Theme.paused
+                        )
+                    }
+                }
+                .card()
             }
 
             Button {
@@ -400,7 +415,7 @@ struct SetupWizardView: View {
         moonrakerOK = diagnostics.moonrakerReachable
         klipperOK = diagnostics.klipperReady
         backendOK = diagnostics.backendReachable
-        moonrakerMessage = diagnostics.moonrakerError
-        backendMessage = diagnostics.backendError
+        moonrakerError = diagnostics.moonrakerError
+        backendError = diagnostics.backendError
     }
 }

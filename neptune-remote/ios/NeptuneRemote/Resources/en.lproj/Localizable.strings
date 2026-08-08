@@ -451,18 +451,24 @@
 "error.invalid_url" = "The address is not a valid URL";
 "error.offline" = "No network connection";
 "error.timeout" = "The request timed out";
-"error.cannot_connect" = "Raspberry Pi غير متصل / Raspberry Pi is unreachable";
+"error.cannot_connect" = "Raspberry Pi is unreachable";
 "error.unauthorized" = "Invalid API token";
 "error.not_found" = "Not found";
 "error.server" = "The server returned an error";
 "error.decoding" = "Unexpected response from the server";
-"error.moonraker" = "Moonraker غير متاح / Moonraker is unavailable";
-"error.klipper_not_ready" = "Klipper غير جاهز / Klipper is not ready";
+"error.moonraker" = "Moonraker is unavailable";
+"error.klipper_not_ready" = "Klipper is not ready";
 "error.cancelled" = "Cancelled";
 "error.unknown" = "Something went wrong";
-"error.upload_failed" = "فشل رفع الملف / Upload failed";
-"error.slice_failed" = "فشل التقطيع / Slicing failed";
-"error.power_failed" = "تعذر تشغيل الكهرباء / Could not switch the power";
+
+"error.hint.timeout" = "Nothing answered at all. Check that Tailscale (or the VPN) is connected on this iPhone, that the Raspberry Pi is powered on, and that the address is correct.";
+"error.hint.cannot_connect" = "The Raspberry Pi answered but refused this port — the service is probably not running. Check it with: systemctl status neptune-remote";
+"error.hint.offline" = "This iPhone has no network connection.";
+"error.hint.unauthorized" = "The address is right but the credentials were rejected. Check the API key or the token.";
+"error.hint.not_configured" = "Go back and enter the Raspberry Pi address first.";
+"error.upload_failed" = "Upload failed";
+"error.slice_failed" = "Slicing failed";
+"error.power_failed" = "Could not switch the power";
 
 /* ---------------------------------------------------------------------------
    Phase 2 - smart ecosystem

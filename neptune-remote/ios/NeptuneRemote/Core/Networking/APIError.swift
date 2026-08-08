@@ -47,6 +47,27 @@ enum APIError: LocalizedError, Equatable {
         }
     }
 
+    /// A short "what to check next" pointer, for the failures the user can
+    /// actually act on. A timeout and a refused connection look identical in the
+    /// UI otherwise, even though they mean very different things: nothing
+    /// answered at all, versus the machine answered and turned us away.
+    var troubleshootingKey: String? {
+        switch self {
+        case .timedOut:
+            return "error.hint.timeout"
+        case .cannotConnect:
+            return "error.hint.cannot_connect"
+        case .offline:
+            return "error.hint.offline"
+        case .unauthorized:
+            return "error.hint.unauthorized"
+        case .notConfigured, .invalidURL:
+            return "error.hint.not_configured"
+        case .notFound, .server, .decoding, .moonraker, .unsafeOperation, .cancelled, .unknown:
+            return nil
+        }
+    }
+
     /// Whether offering a "Retry" button makes sense.
     var isRetryable: Bool {
         switch self {

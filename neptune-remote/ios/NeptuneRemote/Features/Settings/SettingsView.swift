@@ -110,8 +110,14 @@ struct SettingsView: View {
         var lines: [String] = []
         lines.append("\(L.t("diagnostics.moonraker")): \(status(diagnostics.moonrakerReachable))")
         lines.append("\(L.t("diagnostics.backend")): \(status(diagnostics.backendReachable))")
-        if let error = diagnostics.moonrakerError { lines.append(error) }
-        if let error = diagnostics.backendError { lines.append(error) }
+        if let error = diagnostics.moonrakerError {
+            lines.append("\(L.t("diagnostics.moonraker")): \(error.localizedDescription)")
+            if let hint = error.troubleshootingKey { lines.append(L.t(hint)) }
+        }
+        if let error = diagnostics.backendError {
+            lines.append("\(L.t("diagnostics.backend")): \(error.localizedDescription)")
+            if let hint = error.troubleshootingKey { lines.append(L.t(hint)) }
+        }
         testResult = lines.joined(separator: "\n")
         Haptics.impact(.light)
     }

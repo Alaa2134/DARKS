@@ -87,6 +87,49 @@ struct InfoRow: View {
     }
 }
 
+// MARK: - Connection failure note
+
+/// One failed connection check, spelled out: which service, which address, what
+/// went wrong, and what to look at next.
+///
+/// Two bare error strings stacked on top of each other are useless when both
+/// checks fail the same way - the user sees "the request timed out" twice and
+/// cannot tell which one is which, or what to do about it.
+struct FailureNote: View {
+    let labelKey: String
+    let error: APIError
+    var url: String?
+    var tint: Color = Theme.danger
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.caption2)
+                Text("\(L.t(labelKey)) — \(error.localizedDescription)")
+                    .font(.caption.weight(.medium))
+            }
+            .foregroundStyle(tint)
+
+            if let url, !url.isEmpty {
+                Text(url)
+                    .font(.caption2)
+                    .monospaced()
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            if let hint = error.troubleshootingKey {
+                Text(localized: hint)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
 // MARK: - Status pill
 
 struct StatusPill: View {

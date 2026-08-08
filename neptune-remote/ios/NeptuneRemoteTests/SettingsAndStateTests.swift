@@ -198,6 +198,27 @@ final class APIErrorTests: XCTestCase {
         XCTAssertEqual(APIError.from(refused, host: "pi"), .cannotConnect("pi"))
     }
 
+    /// A timeout and a refused connection have to read differently: one means
+    /// the Raspberry Pi never answered (VPN down, Pi off, wrong address), the
+    /// other means it answered and the service was not listening. Showing the
+    /// same text for both sends the user looking in the wrong place.
+    func testTroubleshootingHintsDistinguishTimeoutFromRefusal() {
+        let timeout = APIError.timedOut.troubleshootingKey
+        let refused = APIError.cannotConnect("pi").troubleshootingKey
+
+        XCTAssertNotNil(timeout)
+        XCTAssertNotNil(refused)
+        XCTAssertNotEqual(timeout, refused)
+
+        XCTAssertEqual(APIError.offline.troubleshootingKey, "error.hint.offline")
+        XCTAssertEqual(APIError.unauthorized.troubleshootingKey, "error.hint.unauthorized")
+        XCTAssertEqual(APIError.notConfigured.troubleshootingKey, "error.hint.not_configured")
+
+        // Failures the user cannot act on from this screen get no hint.
+        XCTAssertNil(APIError.cancelled.troubleshootingKey)
+        XCTAssertNil(APIError.decoding("bad json").troubleshootingKey)
+    }
+
     func testUnsafeOperationCarriesBlockers() {
         let error = APIError.unsafeOperation(["Nozzle is 180C", "A print is in progress"])
         XCTAssertTrue(error.localizedDescription.contains("Nozzle"))
@@ -226,38 +247,58 @@ final class APIErrorTests: XCTestCase {
 
 final class LocalizationTests: XCTestCase {
 
-    func testEnglishAndArabicHaveTheSameKeys() throws {
-        let bundle = Bundle(for: LocalizationTests.self)
-        // In the test bundle the app's resources are available through the host app;
-        // fall back to the main bundle when running against the app target.
-        let candidates = [bundle, Bundle.main]
-
-        var english: Set<String>?
-        var arabic: Set<String>?
-
-        for candidate in candidates {
-            if english == nil,
-               let path = candidate.path(forResource: "en", ofType: "lproj"),
+    /// Loads one `.lproj` table, looking in the test bundle first and falling
+    /// back to the main bundle when the tests run against the app target.
+    private func strings(_ language: String) -> [String: String]? {
+        for candidate in [Bundle(for: LocalizationTests.self), Bundle.main] {
+            if let path = candidate.path(forResource: language, ofType: "lproj"),
                let dictionary = NSDictionary(
                 contentsOfFile: path + "/Localizable.strings"
                ) as? [String: String] {
-                english = Set(dictionary.keys)
-            }
-            if arabic == nil,
-               let path = candidate.path(forResource: "ar", ofType: "lproj"),
-               let dictionary = NSDictionary(
-                contentsOfFile: path + "/Localizable.strings"
-               ) as? [String: String] {
-                arabic = Set(dictionary.keys)
+                return dictionary
             }
         }
+        return nil
+    }
 
-        guard let english, let arabic else {
+    func testEnglishAndArabicHaveTheSameKeys() throws {
+        guard let english = strings("en"), let arabic = strings("ar") else {
             throw XCTSkip("Localizable.strings not present in the test bundle")
         }
 
-        XCTAssertEqual(english.symmetricDifference(arabic), [], "en/ar key sets differ")
+        XCTAssertEqual(Set(english.keys).symmetricDifference(Set(arabic.keys)), [], "en/ar key sets differ")
         XCTAssertGreaterThan(english.count, 300)
+    }
+
+    /// Every troubleshooting hint has to resolve to real copy in both bundles,
+    /// otherwise the setup wizard shows the raw key to the user.
+    func testTroubleshootingHintsAreLocalized() throws {
+        guard let english = strings("en"), let arabic = strings("ar") else {
+            throw XCTSkip("Localizable.strings not present in the test bundle")
+        }
+
+        let errors: [APIError] = [.timedOut, .cannotConnect("pi"), .offline, .unauthorized, .notConfigured]
+        for error in errors {
+            let key = try XCTUnwrap(error.troubleshootingKey, "\(error) should offer a hint")
+            for (language, table) in [("en", english), ("ar", arabic)] {
+                let text = try XCTUnwrap(table[key], "\(key) is missing from \(language).lproj")
+                XCTAssertFalse(text.isEmpty, "\(key) is empty in \(language).lproj")
+            }
+        }
+    }
+
+    /// The English table is English. Earlier revisions carried "عربي / English"
+    /// double strings that leaked Arabic into the English UI.
+    func testEnglishTableHasNoArabicText() throws {
+        guard let english = strings("en") else {
+            throw XCTSkip("Localizable.strings not present in the test bundle")
+        }
+        let arabicRange = "\u{0600}"..."\u{06FF}"
+        let offenders = english
+            .filter { $0.value.contains { arabicRange.contains(String($0)) } }
+            .keys
+            .sorted()
+        XCTAssertEqual(offenders, [], "English strings containing Arabic text")
     }
 
     func testEveryEnumLocalizationKeyIsNamespaced() {

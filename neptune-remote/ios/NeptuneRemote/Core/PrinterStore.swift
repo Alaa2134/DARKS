@@ -725,8 +725,8 @@ final class PrinterStore: ObservableObject {
         var backendVersion: String?
         var slicerAvailable: Bool?
         var powerProvider: String?
-        var moonrakerError: String?
-        var backendError: String?
+        var moonrakerError: APIError?
+        var backendError: APIError?
     }
 
     func runDiagnostics() async -> Diagnostics {
@@ -738,7 +738,7 @@ final class PrinterStore: ObservableObject {
             result.klipperReady = info.klippyConnected && info.klippyState == "ready"
         } catch {
             result.moonrakerReachable = false
-            result.moonrakerError = APIError.from(error, host: settings.host).localizedDescription
+            result.moonrakerError = APIError.from(error, host: settings.host)
         }
 
         do {
@@ -750,7 +750,7 @@ final class PrinterStore: ObservableObject {
             backendHealth = health
         } catch {
             result.backendReachable = false
-            result.backendError = APIError.from(error, host: settings.host).localizedDescription
+            result.backendError = APIError.from(error, host: settings.host)
         }
 
         return result

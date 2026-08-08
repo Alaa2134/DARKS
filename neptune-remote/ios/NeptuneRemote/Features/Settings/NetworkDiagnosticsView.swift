@@ -37,10 +37,10 @@ struct NetworkDiagnosticsView: View {
                     InfoRow(titleKey: "settings.backend_version", value: version)
                 }
                 if let error = diagnostics?.moonrakerError {
-                    Text(error).font(.caption).foregroundStyle(Theme.danger)
+                    FailureNote(labelKey: "diagnostics.moonraker", error: error, tint: Theme.danger)
                 }
                 if let error = diagnostics?.backendError {
-                    Text(error).font(.caption).foregroundStyle(Theme.danger)
+                    FailureNote(labelKey: "diagnostics.backend", error: error, tint: Theme.danger)
                 }
 
                 Button {

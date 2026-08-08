@@ -460,6 +460,12 @@
 "error.klipper_not_ready" = "كليبر غير جاهز";
 "error.cancelled" = "تم الإلغاء";
 "error.unknown" = "حدث خطأ ما";
+
+"error.hint.timeout" = "لم يصل أي رد على الإطلاق. تأكد أن Tailscale (أو الـ VPN) متصل على هذا الأيفون، وأن الراسبيري باي يعمل، وأن العنوان صحيح.";
+"error.hint.cannot_connect" = "الراسبيري باي رد لكنه رفض هذا المنفذ — غالبًا الخدمة غير مشغّلة. تحقق بالأمر: systemctl status neptune-remote";
+"error.hint.offline" = "هذا الأيفون غير متصل بأي شبكة.";
+"error.hint.unauthorized" = "العنوان صحيح لكن بيانات الدخول مرفوضة. راجع مفتاح الـ API أو التوكن.";
+"error.hint.not_configured" = "ارجع للخلف وأدخل عنوان الراسبيري باي أولًا.";
 "error.upload_failed" = "فشل رفع الملف";
 "error.slice_failed" = "فشل التقطيع";
 "error.power_failed" = "تعذر تشغيل الكهرباء";
