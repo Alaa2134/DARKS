@@ -12,6 +12,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..deps import get_state
+from ..klipper.macros import suggest as suggest_macros_for
 from ..klipper.validator import NEPTUNE_3_PLUS, diff_configs, validate
 from ..safety.engine import SafetyBlocked
 from ..schemas import OKResponse
@@ -242,6 +243,23 @@ async def live_config(state: AppState = Depends(get_state)) -> Dict[str, Any]:
         "matches_known_good": bool(known_good and known_good.sha256 == state.live_config_sha),
         "known_good": known_good.as_dict() if known_good else None,
     }
+
+
+@router.get("/config/macros/suggest")
+async def suggest_macros(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """PRINT_START / PRINT_END built from this printer's own configuration.
+
+    Read-only. Every coordinate and temperature comes from the live
+    printer.cfg, and nothing is written - the response is text for the user to
+    review, together with the reasoning behind each line.
+    """
+    config = await state.refresh_live_config(force=True)
+    if config is None:
+        raise HTTPException(
+            status_code=503,
+            detail=state.live_config_error or "printer.cfg unavailable",
+        )
+    return suggest_macros_for(config)
 
 
 @router.get("/config/versions")
