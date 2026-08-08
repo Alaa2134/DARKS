@@ -49,13 +49,27 @@ struct LibraryView: View {
         .navigationTitle(L.t("library.title"))
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            // Import gets its own button, deliberately NOT inside the menu.
+            //
+            // A .fileImporter presented from a Menu button races the menu's own
+            // dismissal: the picker appears, but its completion handler never
+            // fires, so choosing a file and tapping Open does nothing at all.
+            // That is the "I select the file and nothing happens" this screen
+            // had - FilesView and SliceView present from plain buttons and have
+            // always worked.
+            //
+            // Do not move this back into the Menu.
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    showingImporter = true
+                } label: {
+                    Image(systemName: "plus")
+                }
+                .accessibilityLabel(L.t("library.import"))
+            }
+
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button {
-                        showingImporter = true
-                    } label: {
-                        Label(L.t("library.import"), systemImage: "plus")
-                    }
                     Button {
                         showingIdeas = true
                     } label: {
