@@ -12,10 +12,15 @@ from ..deps import get_state
 from ..recording.service import RecordingError
 from ..recording.store import VideoRecord
 from ..schemas import OKResponse
-from ..security import require_token
+from ..security import require_token, require_token_or_loopback
 from ..state import AppState
 
 router = APIRouter(dependencies=[Depends(require_token)])
+
+# Klipper's layer macro calls one endpoint from the Pi itself. It lives on its
+# own router so the loopback exemption cannot widen to anything else: every
+# route on `router` above keeps the plain token requirement.
+local_router = APIRouter(dependencies=[Depends(require_token_or_loopback)])
 
 
 # --------------------------------------------------------------------------- #
@@ -169,7 +174,7 @@ async def timelapse_start(state: AppState = Depends(get_state)) -> OKResponse:
     return OKResponse(ok=True, message="Timelapse started")
 
 
-@router.post("/timelapse/frame", response_model=OKResponse)
+@local_router.post("/timelapse/frame", response_model=OKResponse)
 async def timelapse_frame(state: AppState = Depends(get_state)) -> OKResponse:
     """Called by the Klipper layer macro (see /api/timelapse/macro)."""
     captured = await state.timelapse.capture_frame()
@@ -202,9 +207,7 @@ async def timelapse_macro(state: AppState = Depends(get_state)) -> Dict[str, Any
     return {
         "requires_approval": True,
         "warning": "Neptune Remote does not edit printer.cfg. Copy this yourself and restart Klipper.",
-        "macro": state.timelapse.suggested_macro(
-            port=state.config.server.port, token=state.config.server.api_token
-        ),
+        "macro": state.timelapse.suggested_macro(port=state.config.server.port),
     }
 
 

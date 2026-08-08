@@ -40,10 +40,20 @@ final class SliceRequestTests: XCTestCase {
         XCTAssertEqual(json["start_print_after_upload"] as? Bool, false)
     }
 
-    func testOmittedOptionalsAreNull() throws {
+    func testOmittedOptionalsAreLeftOutEntirely() throws {
+        // JSONEncoder drops nil optionals rather than writing null, and the
+        // backend's Pydantic model defaults them to None either way - so an
+        // absent key and an explicit null mean the same thing to the slicer.
+        // Asserting absence is what actually matches the wire format.
         let json = try encode(SliceRequestPayload(modelID: "x"))
-        XCTAssertTrue(json["layer_height"] is NSNull)
-        XCTAssertTrue(json["nozzle_temperature"] is NSNull)
+        XCTAssertNil(json["layer_height"])
+        XCTAssertNil(json["nozzle_temperature"])
+        XCTAssertNil(json["infill_percent"])
+
+        // The keys that carry a real default must still be present.
+        XCTAssertNotNil(json["printer_profile"])
+        XCTAssertNotNil(json["supports"])
+        XCTAssertNotNil(json["start_print_after_upload"])
     }
 
     func testDefaultsMatchTheNeptune3Plus() {

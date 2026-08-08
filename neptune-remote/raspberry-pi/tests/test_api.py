@@ -379,6 +379,57 @@ def test_api_token_is_enforced_when_configured(tmp_path: Path):
         )
 
 
+def _auth_config(tmp_path: Path) -> AppConfig:
+    cfg = AppConfig()
+    cfg.paths.data_dir = str(tmp_path / "d")
+    cfg.paths.models_dir = str(tmp_path / "d" / "models")
+    cfg.paths.gcode_dir = str(tmp_path / "d" / "gcode")
+    cfg.paths.database = str(tmp_path / "d" / "n.db")
+    cfg.paths.profiles_dir = str(Path(__file__).resolve().parent.parent / "profiles")
+    cfg.power.provider = "demo"
+    cfg.server.api_token = "s3cret"
+    return cfg
+
+
+def test_timelapse_frame_accepts_the_pi_itself_without_a_token(tmp_path: Path):
+    """Klipper calls this from localhost, so the macro can stay secret-free."""
+    app = create_app(_auth_config(tmp_path))
+    with TestClient(app, client=("127.0.0.1", 45678)) as test_client:
+        response = test_client.post("/api/timelapse/frame")
+        # 409 = authorised, but no timelapse session is running. Not 401.
+        assert response.status_code == 409
+
+
+def test_timelapse_frame_still_needs_a_token_from_anywhere_else(tmp_path: Path):
+    app = create_app(_auth_config(tmp_path))
+    with TestClient(app, client=("100.78.2.90", 45678)) as test_client:
+        assert test_client.post("/api/timelapse/frame").status_code == 401
+        assert (
+            test_client.post("/api/timelapse/frame", headers={"X-API-Key": "s3cret"}).status_code
+            == 409
+        )
+
+
+def test_the_loopback_exemption_does_not_leak_to_other_endpoints(tmp_path: Path):
+    """Only the frame endpoint is exempt - everything else still needs the token."""
+    app = create_app(_auth_config(tmp_path))
+    with TestClient(app, client=("127.0.0.1", 45678)) as test_client:
+        assert test_client.get("/api/system").status_code == 401
+        assert test_client.get("/api/summary").status_code == 401
+        assert test_client.post("/api/timelapse/start").status_code == 401
+        assert test_client.get("/api/vision/status").status_code == 401
+
+
+def test_the_suggested_macro_carries_no_credential(tmp_path: Path):
+    app = create_app(_auth_config(tmp_path))
+    with TestClient(app) as test_client:
+        response = test_client.get("/api/timelapse/macro", headers={"X-API-Key": "s3cret"})
+        assert response.status_code == 200
+        macro = response.json()["macro"]
+        assert "s3cret" not in macro
+        assert "token=" not in macro.lower()
+
+
 # --------------------------------------------------------------------------- #
 # WebSocket
 # --------------------------------------------------------------------------- #

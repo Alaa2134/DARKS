@@ -404,8 +404,23 @@ async def test_timelapse_frame_without_a_session(database: Database, layout: Sto
 def test_timelapse_macro_is_advisory_only(database: Database, layout: StorageLayout):
     camera = CameraService(CameraConfig(), layout)
     service = TimelapseService(TimelapseConfig(), camera, VideoStore(database, layout), layout)
-    macro = service.suggested_macro(port=8710, token="abc")
+    macro = service.suggested_macro(port=8710)
     assert "TIMELAPSE_TAKE_FRAME" in macro
     assert "8710" in macro
-    assert "token=abc" in macro
     assert "never edits printer.cfg" in macro.lower()
+
+
+def test_timelapse_macro_contains_no_secret(database: Database, layout: StorageLayout):
+    """printer.cfg gets pasted into forum posts - it must not carry the token."""
+    camera = CameraService(CameraConfig(), layout)
+    service = TimelapseService(TimelapseConfig(), camera, VideoStore(database, layout), layout)
+    macro = service.suggested_macro(port=8710)
+    lowered = macro.lower()
+    # The leak shapes, not the word: a query parameter or an auth header.
+    assert "token=" not in lowered
+    assert "api_key=" not in lowered
+    assert "x-api-key" not in lowered
+    assert "authorization" not in lowered
+    # The signature no longer accepts a token at all, so none can be injected.
+    with pytest.raises(TypeError):
+        service.suggested_macro(port=8710, token="abc")  # type: ignore[call-arg]

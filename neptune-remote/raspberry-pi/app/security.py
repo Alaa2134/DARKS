@@ -10,7 +10,7 @@ from __future__ import annotations
 import hmac
 from typing import Optional
 
-from fastapi import Header, HTTPException, Query, WebSocket, status
+from fastapi import Header, HTTPException, Query, Request, WebSocket, status
 
 from .config import AppConfig, get_config
 
@@ -48,6 +48,35 @@ async def require_token(
             detail="Invalid or missing API token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+
+# Loopback addresses. A caller on one of these is already executing code on the
+# Pi, so requiring a token from them buys nothing - and it would force the
+# timelapse macro to carry the token inside printer.cfg, which users routinely
+# paste into forums when asking for help.
+_LOOPBACK_HOSTS = {"127.0.0.1", "::1", "localhost"}
+
+
+def is_loopback(request: Request) -> bool:
+    client = request.client
+    return client is not None and client.host in _LOOPBACK_HOSTS
+
+
+async def require_token_or_loopback(
+    request: Request,
+    x_api_key: Optional[str] = Header(default=None, alias=API_KEY_HEADER),
+    authorization: Optional[str] = Header(default=None),
+    token: Optional[str] = Query(default=None),
+) -> None:
+    """Guard for the one endpoint Klipper itself calls, from the same machine.
+
+    Deliberately narrow: it is used only by POST /api/timelapse/frame, which
+    captures a frame and returns nothing sensitive. Every other endpoint keeps
+    the plain token requirement.
+    """
+    if is_loopback(request):
+        return
+    await require_token(x_api_key=x_api_key, authorization=authorization, token=token)
 
 
 async def websocket_authorized(websocket: WebSocket) -> bool:

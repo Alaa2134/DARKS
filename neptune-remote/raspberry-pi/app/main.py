@@ -95,6 +95,8 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
     app.include_router(history.router, prefix="/api", tags=["history"])
     app.include_router(library.router, prefix="/api", tags=["library"])
     app.include_router(media.router, prefix="/api", tags=["camera"])
+    # Loopback-tolerant: the Klipper timelapse macro, and nothing else.
+    app.include_router(media.local_router, prefix="/api", tags=["camera"])
     app.include_router(vision.router, prefix="/api", tags=["vision"])
     app.include_router(inventory.router, prefix="/api", tags=["inventory"])
     app.include_router(support.router, prefix="/api", tags=["support"])

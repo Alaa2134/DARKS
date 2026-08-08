@@ -42,10 +42,13 @@ SUGGESTED_MACRO = """\
 #
 # Then set the slicer's "after layer change G-code" to:
 #     TIMELAPSE_TAKE_FRAME
+#
+# This snippet contains no API token: the frame endpoint accepts calls from
+# the Pi itself without one, so it is safe to share when asking for help.
 # ---------------------------------------------------------------------------
 
 [gcode_shell_command neptune_timelapse_frame]
-command: curl -s -m 5 -X POST http://127.0.0.1:{port}/api/timelapse/frame{token_query}
+command: curl -s -m 5 -X POST http://127.0.0.1:{port}/api/timelapse/frame
 timeout: 6
 verbose: False
 
@@ -287,6 +290,11 @@ class TimelapseService:
             await self.finish(result="cancelled")
 
     # --------------------------------------------------------------- macros
-    def suggested_macro(self, *, port: int, token: str = "") -> str:
-        token_query = f"?token={token}" if token else ""
-        return SUGGESTED_MACRO.format(port=port, token_query=token_query)
+    def suggested_macro(self, *, port: int) -> str:
+        """The printer.cfg snippet, deliberately free of any secret.
+
+        The frame endpoint accepts loopback callers without a token precisely so
+        this text can be pasted into printer.cfg - and shared on a forum - with
+        nothing sensitive in it.
+        """
+        return SUGGESTED_MACRO.format(port=port)
