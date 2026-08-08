@@ -333,6 +333,7 @@
 "diagnostics.network" = "Raspberry Pi reachable";
 "diagnostics.moonraker_websocket" = "Moonraker WebSocket";
 "diagnostics.backend_websocket" = "Backend WebSocket";
+"diagnostics.backend_ws_needs_token" = "Needs the backend API token - enter it in the next step, then run the test again";
 "diagnostics.technical" = "Technical details";
 "diagnostics.klippy_state" = "Klipper state";
 "diagnostics.ats" = "App Transport Security";

@@ -36,7 +36,16 @@ final class BackendSocket {
     }
 
     private(set) var isConnected = false
+    /// Why the last attempt failed, kept so the connection test can name the
+    /// reason instead of showing a bare cross.
+    private(set) var lastError: APIError?
     var onEvent: ((Event) -> Void)?
+
+    /// The backend closes with this code when the API token is missing or
+    /// wrong. WebSocket close codes above 4000 are application-defined, so
+    /// URLSession reports the closure without an error - the code is the only
+    /// way to tell a rejected token from a dropped connection.
+    private static let authRejectedCloseCode = 4401
 
     private var config: ConnectionConfig
     private var token: String
@@ -64,7 +73,11 @@ final class BackendSocket {
         let changed = config != self.config || token != self.token
         self.config = config
         self.token = token
-        if changed, shouldReconnect { restart() }
+        guard changed else { return }
+        // New credentials clear a previous rejection, which is what lets a
+        // socket that stopped retrying after a 4401 come back on its own.
+        lastError = nil
+        if shouldReconnect { restart() }
     }
 
     func connect() {
@@ -142,6 +155,7 @@ final class BackendSocket {
                 if !isConnected {
                     isConnected = true
                     reconnectAttempt = 0
+                    lastError = nil
                     onEvent?(.connected)
                 }
                 switch message {
@@ -155,10 +169,23 @@ final class BackendSocket {
             } catch {
                 if Task.isCancelled { return }
                 isConnected = false
-                let message = APIError.from(error, host: config.host).localizedDescription
-                onEvent?(.disconnected(message))
+
+                // A rejected token closes the socket cleanly with code 4401, so
+                // there is no URLError describing it. Read the close code off
+                // the task before falling back to the transport error.
+                let apiError: APIError
+                if socket.closeCode.rawValue == Self.authRejectedCloseCode {
+                    apiError = .unauthorized
+                } else {
+                    apiError = APIError.from(error, host: config.host)
+                }
+                lastError = apiError
+
+                onEvent?(.disconnected(apiError.localizedDescription))
                 task = nil
-                scheduleReconnect()
+                // Reconnecting with the same rejected token would just be
+                // refused again; wait for the token to change instead.
+                if apiError != .unauthorized { scheduleReconnect() }
                 return
             }
         }

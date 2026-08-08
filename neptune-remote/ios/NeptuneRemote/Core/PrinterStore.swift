@@ -776,6 +776,9 @@ final class PrinterStore: ObservableObject {
         var moonrakerWebSocketError: APIError?
         var backendWebSocketConnected: Bool?
         var backendWebSocketError: APIError?
+        /// The socket is only failing because no backend token has been entered
+        /// yet - expected during first-run setup, not a fault.
+        var backendWebSocketNeedsToken = false
 
         /// Endpoints actually used, so the diagnostics panel shows the URL that
         /// was tried rather than the one the user assumes was tried.
@@ -877,7 +880,20 @@ final class PrinterStore: ObservableObject {
         if !moonrakerConnected, case .failed(let message) = moonrakerSocket.state {
             result.moonrakerWebSocketError = .unknown(message)
         }
+
         result.backendWebSocketConnected = backendSocket.isConnected
+        if !backendSocket.isConnected {
+            // The backend leaves /api/health unauthenticated but guards /ws, so
+            // a healthy backend with a failing socket is almost always a token
+            // that has not been entered yet - which is its own message, not a
+            // network failure.
+            if backendHealth?.authRequired == true, settings.backendToken.isEmpty {
+                result.backendWebSocketError = .unauthorized
+                result.backendWebSocketNeedsToken = true
+            } else {
+                result.backendWebSocketError = backendSocket.lastError
+            }
+        }
 
         return result
     }

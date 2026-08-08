@@ -333,6 +333,7 @@
 "diagnostics.network" = "الوصول للراسبيري باي";
 "diagnostics.moonraker_websocket" = "مونريكر (WebSocket)";
 "diagnostics.backend_websocket" = "الخادم (WebSocket)";
+"diagnostics.backend_ws_needs_token" = "يحتاج توكن الخادم - أدخله في الخطوة التالية ثم أعد الاختبار";
 "diagnostics.technical" = "تفاصيل تقنية";
 "diagnostics.klippy_state" = "حالة كليبر";
 "diagnostics.ats" = "سياسة App Transport Security";

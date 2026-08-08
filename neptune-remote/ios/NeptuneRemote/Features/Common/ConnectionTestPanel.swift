@@ -33,9 +33,17 @@ struct ConnectionTestPanel: View {
             Divider()
             row("diagnostics.backend", diagnostics?.backendReachable, detail: backendDetail)
             Divider()
-            row("diagnostics.moonraker_websocket", diagnostics?.moonrakerWebSocketConnected)
+            row(
+                "diagnostics.moonraker_websocket",
+                diagnostics?.moonrakerWebSocketConnected,
+                detail: socketDetail(diagnostics?.moonrakerWebSocketError)
+            )
             Divider()
-            row("diagnostics.backend_websocket", diagnostics?.backendWebSocketConnected)
+            row(
+                "diagnostics.backend_websocket",
+                diagnostics?.backendWebSocketConnected,
+                detail: backendSocketDetail
+            )
         }
         .card()
     }
@@ -72,6 +80,26 @@ struct ConnectionTestPanel: View {
             return L.t("diagnostics.backend_connected")
         }
         return diagnostics.backendError?.localizedDescription
+    }
+
+    /// A failed socket must say why. "Failed" on its own sends the user looking
+    /// at the network when the answer is usually a credential.
+    private func socketDetail(_ error: APIError?) -> String? {
+        guard let error else { return nil }
+        return error.localizedDescription
+    }
+
+    /// The backend leaves its health endpoint open but guards the socket, so
+    /// during first-run setup this row fails for a completely benign reason:
+    /// the token step has not been reached yet. Say that, rather than
+    /// reporting a failure the user cannot act on where they are standing.
+    private var backendSocketDetail: String? {
+        guard let diagnostics else { return nil }
+        if diagnostics.backendWebSocketConnected == true { return nil }
+        if diagnostics.backendWebSocketNeedsToken {
+            return L.t("diagnostics.backend_ws_needs_token")
+        }
+        return socketDetail(diagnostics.backendWebSocketError)
     }
 
     private func row(_ key: String, _ value: Bool?, detail: String? = nil) -> some View {

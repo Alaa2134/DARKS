@@ -66,6 +66,24 @@ final class ConnectionDiagnosticsTests: XCTestCase {
         XCTAssertEqual(value.moonrakerVerdictKey, "diagnostics.direct_port")
     }
 
+    /// The backend leaves /api/health unauthenticated but guards /ws, so a
+    /// healthy backend with a dead socket during setup means the token has not
+    /// been entered yet. That must not read as a network fault.
+    func testBackendSocketNeedingATokenIsNotANetworkFailure() {
+        var value = PrinterStore.Diagnostics(websocketConnected: false)
+        value.backendReachable = true
+        value.backendWebSocketConnected = false
+        value.backendWebSocketNeedsToken = true
+        value.backendWebSocketError = .unauthorized
+
+        XCTAssertEqual(value.backendReachable, true, "the backend itself is fine")
+        XCTAssertTrue(value.backendWebSocketNeedsToken)
+        XCTAssertFalse(
+            value.backendWebSocketError?.isRetryable ?? true,
+            "retrying without a token cannot succeed"
+        )
+    }
+
     /// Every verdict key has to exist in both bundles.
     func testVerdictKeysAreLocalized() throws {
         let keys = [
@@ -78,7 +96,8 @@ final class ConnectionDiagnosticsTests: XCTestCase {
             "diagnostics.network",
             "diagnostics.moonraker_websocket",
             "diagnostics.backend_websocket",
-            "diagnostics.technical"
+            "diagnostics.technical",
+            "diagnostics.backend_ws_needs_token"
         ]
         for language in ["en", "ar"] {
             guard let path = Bundle(for: ConnectionDiagnosticsTests.self)
