@@ -158,13 +158,15 @@ rather than producing a fake `.ipa`.
 | [NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Notifications, widget, Live Activity |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → cause tables |
 | [BUILD_IPA.md](docs/BUILD_IPA.md) | Unsigned IPA, signing it yourself, CI |
+| [UX_REVIEW.md](docs/UX_REVIEW.md) | Twelve scenarios walked end to end, and what changed |
+| [FINAL_REPORT.md](docs/FINAL_REPORT.md) | Every requirement, its status, and the remaining limits |
 
 ---
 
 ## Tests
 
 ```bash
-cd raspberry-pi && python3 -m pytest -q          # 357 passing
+cd raspberry-pi && python3 -m pytest -q          # 362 passing
 python3 scripts/verify_project.py                # 51 project-wide checks
 ```
 

@@ -9,7 +9,9 @@ on:
 concurrency:
   # head_ref on pull_request, ref on push: a branch with an open PR then
   # shares one group instead of burning two macOS runners per commit.
-  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  # Both keys resolve to the bare branch name, so the push and pull_request
+  # events for one commit share a group instead of running the macOS job twice.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
