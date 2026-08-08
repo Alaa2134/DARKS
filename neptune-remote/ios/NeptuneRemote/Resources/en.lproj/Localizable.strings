@@ -874,3 +874,210 @@
 "share.open_app" = "Open Neptune Remote";
 "import.pending" = "%d shared model(s) waiting";
 "import.pending.add" = "Add them now";
+
+/* ---------------------------------------------------------------------------
+   Fix My Printer, calibration, config versions, G-code safety
+   --------------------------------------------------------------------------- */
+
+/* Doctor */
+"doctor.title" = "Fix My Printer";
+"doctor.short_title" = "Fix";
+"doctor.not_checked" = "Not checked yet";
+"doctor.run_check" = "Run the check";
+"doctor.checked" = "Checked %@";
+"doctor.read_only" = "This check only reads. It never moves the printer - every fix below is a separate, deliberate tap.";
+"doctor.not_safe_to_print" = "Not safe to print until this is resolved";
+"doctor.all_clear" = "Nothing to fix";
+"doctor.all_clear.detail" = "Every check passed.";
+"doctor.likely_cause" = "Likely cause";
+"doctor.recommendation" = "What to do";
+"doctor.manual_steps" = "Steps you need to do by hand";
+"doctor.next_steps" = "More";
+"doctor.tap_to_fix" = "Tap to see what to do";
+"doctor.fix.restart_firmware" = "Restart firmware";
+
+/* Subsystems */
+"subsystem.connection" = "Connection";
+"subsystem.moonraker" = "Moonraker";
+"subsystem.klipper" = "Klipper";
+"subsystem.mcu" = "Mainboard";
+"subsystem.config" = "printer.cfg";
+"subsystem.x_axis" = "X axis";
+"subsystem.y_axis" = "Y axis";
+"subsystem.z_axis" = "Z axis";
+"subsystem.probe" = "Probe";
+"subsystem.bed" = "Bed";
+"subsystem.hotend" = "Hotend";
+"subsystem.part_cooling" = "Part cooling";
+"subsystem.filament_sensor" = "Filament sensor";
+"subsystem.bed_mesh" = "Bed mesh";
+"subsystem.z_offset" = "Z offset";
+"subsystem.motion_limits" = "Motion limits";
+"subsystem.accelerometer" = "Accelerometer";
+"subsystem.camera" = "Camera";
+"subsystem.host" = "Raspberry Pi";
+"subsystem.storage" = "Storage";
+
+/* Health */
+"health.title" = "Printer health";
+
+/* Calibration */
+"calibration.title" = "Calibration";
+"calibration.in_progress" = "In progress";
+"workflow.safe_home" = "Home safely";
+"workflow.safe_home.description" = "Checks the probe before anything moves, then homes X, Y and Z.";
+"workflow.z_offset" = "Z Offset wizard";
+"workflow.z_offset.description" = "The paper test, with guarded step sizes and an explained result.";
+"workflow.screws_tilt" = "Bed screw adjustment";
+"workflow.screws_tilt.description" = "Shows which knob to turn, which way, and by how much of a turn.";
+"workflow.bed_mesh" = "Bed mesh";
+"workflow.bed_mesh.description" = "Probes the whole plate and saves the result.";
+"workflow.full_bed_calibration" = "Full bed calibration";
+"workflow.full_bed_calibration.description" = "Screws, then Z offset, then mesh - in the order that actually works.";
+"workflow.axis_health" = "Axis health test";
+"workflow.axis_health.description" = "Moves X and Y across their travel and re-homes to look for lost steps.";
+"workflow.input_shaper" = "Input shaper";
+"workflow.input_shaper.description" = "Needs an ADXL345. Measures resonance and recommends a shaper.";
+
+/* Workflow runner */
+"workflow.steps" = "Steps";
+"workflow.run_step" = "Run this step";
+"workflow.done_continue" = "Done - continue";
+"workflow.measure_again" = "Measure again";
+"workflow.continue_anyway" = "I have checked - continue";
+"workflow.recheck" = "Check again";
+"workflow.retry" = "Try this step again";
+"workflow.complete" = "Finished";
+"workflow.failed" = "Stopped for safety";
+"workflow.stopped" = "The next step was not run.";
+"workflow.cancel" = "Cancel";
+"workflow.cancel.confirm" = "Cancel this procedure?";
+"workflow.state.idle" = "Ready";
+"workflow.state.running" = "Running";
+"workflow.state.waiting_for_user" = "Waiting for you";
+"workflow.state.done" = "Finished";
+"workflow.state.failed" = "Stopped";
+"workflow.state.cancelled" = "Cancelled";
+
+/* Z offset */
+"zoffset.paper_instruction" = "Step the nozzle down until a sheet of paper just drags under it, then confirm.";
+"zoffset.sign_note" = "These steps are temporary nudges. The probe z_offset Klipper saves at the end is a separate, normally positive number - the app shows it before anything is written.";
+"zoffset.applied" = "Nudged so far";
+"zoffset.current_z" = "Current Z coordinate";
+
+/* Bed screws */
+"screws.diagram" = "Bed, seen from above";
+"screws.adjustments" = "What to turn";
+"screws.rear" = "REAR";
+"screws.front" = "FRONT";
+"screws.base" = "reference";
+"screws.verdict.level" = "Level";
+"screws.verdict.adjust" = "Needs adjusting";
+"screws.verdict.poor" = "Well out";
+"screws.verdict.unknown" = "Unknown";
+"screw.left_front" = "Left front";
+"screw.left_middle" = "Left middle";
+"screw.left_rear" = "Left rear";
+"screw.right_front" = "Right front";
+"screw.right_middle" = "Right middle";
+"screw.right_rear" = "Right rear";
+
+/* printer.cfg versions */
+"config.versions.title" = "Config versions";
+"config.versions.empty" = "No versions saved yet";
+"config.versions.empty.detail" = "A backup is taken automatically before anything changes printer.cfg.";
+"config.live" = "Live config";
+"config.sections" = "Sections";
+"config.validation" = "Validation";
+"config.verdict.ok" = "Valid";
+"config.verdict.warning" = "Warnings";
+"config.verdict.blocked" = "Errors";
+"config.matches_known_good" = "This matches your known-good configuration.";
+"config.differs_from_known_good" = "This differs from your known-good configuration.";
+"config.snapshot" = "Save a version";
+"config.snapshot.saved" = "Version saved";
+"config.restore_known_good" = "Restore known-good";
+"config.rename" = "Name";
+"config.compare" = "Compare";
+"config.mark_golden" = "Mark Golden";
+"config.golden.marked" = "Marked as the Golden Config";
+"config.restore" = "Restore";
+"config.restored" = "Configuration restored";
+"config.proven" = "%d prints";
+"config.name_version" = "Name this version";
+"config.name_placeholder" = "Golden Config, Before ADXL, …";
+"config.reason.manual" = "saved by you";
+"config.reason.pre_save_config" = "before SAVE_CONFIG";
+"config.reason.pre_edit" = "before an edit";
+"config.reason.pre_restore" = "before a restore";
+"config.reason.imported" = "first seen";
+"config.reason.auto" = "automatic";
+"config.diff.added" = "Added sections";
+"config.diff.removed" = "Removed sections";
+"config.diff.changed" = "Changed";
+"config.diff.autosave" = "Written by SAVE_CONFIG";
+"config.diff.autosave_note" = "These values are Klipper's own, written by SAVE_CONFIG - a mesh or Z offset update, not an edit you made.";
+"config.diff.identical" = "No differences";
+"config.diff.identical.detail" = "These two configurations are the same.";
+"config.diff.count" = "%d section(s) differ";
+"config.restore.explain" = "This writes the stored printer.cfg back to the printer and restarts Klipper.";
+"config.restore.backup_note" = "The current configuration is saved as a new version first, so this can be undone.";
+"config.restore.confirm" = "Restore and restart Klipper";
+
+/* G-code inspector */
+"gcode.inspector.title" = "G-code Inspector";
+"gcode.inspector.empty" = "Select a G-code file to inspect.";
+"gcode.verdict.safe" = "SAFE TO PRINT";
+"gcode.verdict.warning" = "WARNING";
+"gcode.verdict.blocked" = "BLOCKED";
+"gcode.issue_counts" = "%d error(s), %d warning(s)";
+"gcode.provenance" = "Where this came from";
+"gcode.slicer" = "Slicer";
+"gcode.version" = "Version";
+"gcode.profile" = "Profile";
+"gcode.profile_status" = "Profile status";
+"gcode.profile.golden" = "GOLDEN";
+"gcode.profile.known" = "KNOWN";
+"gcode.profile.unverified" = "UNVERIFIED";
+"gcode.unverified_warning" = "UNVERIFIED G-CODE - this was not produced by the approved PrusaSlicer profile. Incorrect print positioning has been traced to that before.";
+"gcode.geometry" = "Geometry";
+"gcode.bounds" = "Extents";
+"gcode.layer_height" = "Layer height";
+"gcode.nozzle" = "Nozzle";
+"gcode.estimated_time" = "Estimated time";
+"gcode.lines" = "Lines scanned";
+"gcode.motion" = "Motion";
+"gcode.max_speed" = "Fastest move";
+"gcode.max_accel" = "Highest acceleration";
+"gcode.positioning" = "Positioning";
+"gcode.extrusion" = "Extrusion";
+"gcode.homes" = "Homes first";
+"gcode.absolute" = "Absolute";
+"gcode.relative" = "Relative";
+"gcode.unsupported" = "Commands Klipper does not support";
+"gcode.issues" = "Findings";
+"gcode.line" = "line %d";
+"gcode.never_modified" = "This app never rewrites a toolpath. The inspector reads the file and reports what it found - nothing here modifies your G-code.";
+
+/* Preflight */
+"preflight.title" = "Pre-print check";
+"preflight.summary" = "Before you print";
+"preflight.checks" = "Checks";
+"preflight.verdict.ready" = "READY TO PRINT";
+"preflight.verdict.warning" = "WARNINGS - review first";
+"preflight.verdict.blocked" = "BLOCKED - action required";
+"preflight.start_print" = "Start the print";
+"preflight.blocked_explain" = "Fix the errors above before printing. Nothing was sent to the printer.";
+"preflight.strict" = "Strict Safety Mode";
+"preflight.strict.detail" = "Treat warnings as blocks.";
+"preflight.strict_on" = "Strict Safety Mode is on.";
+"preflight.row.slicer" = "Slicer";
+"preflight.row.profile" = "Printer profile";
+"preflight.row.profile_status" = "Profile status";
+"preflight.row.validation" = "G-code validation";
+"preflight.row.build_volume" = "Build volume";
+"preflight.row.unsupported" = "Unsupported commands";
+"preflight.row.motion" = "Motion limits";
+
+/* Slicer profiles */
+"slicer.golden.marked" = "Marked as the Golden profile";

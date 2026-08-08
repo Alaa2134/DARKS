@@ -47,6 +47,9 @@ final class AppSettings: ObservableObject {
     @Published var safeNozzleTemp: Double { didSet { persist(safeNozzleTemp, .safeNozzle) } }
     @Published var safeBedTemp: Double { didSet { persist(safeBedTemp, .safeBed) } }
     @Published var requirePrintChecklist: Bool { didSet { persist(requirePrintChecklist, .checklist) } }
+    /// Turns pre-print warnings into blocks. For people who would rather the
+    /// app be pedantic than sorry.
+    @Published var strictSafetyMode: Bool { didSet { persist(strictSafetyMode, .strictSafety) } }
     @Published var allowColdExtrusion: Bool { didSet { persist(allowColdExtrusion, .coldExtrusion) } }
     @Published var minExtrusionTemp: Double { didSet { persist(minExtrusionTemp, .minExtrusionTemp) } }
 
@@ -148,6 +151,7 @@ final class AppSettings: ObservableObject {
         safeNozzleTemp = double(.safeNozzle, 50)
         safeBedTemp = double(.safeBed, 45)
         requirePrintChecklist = bool(.checklist, true)
+        strictSafetyMode = bool(.strictSafety, false)
         allowColdExtrusion = bool(.coldExtrusion, false)
         minExtrusionTemp = double(.minExtrusionTemp, 170)
 
@@ -277,6 +281,7 @@ final class AppSettings: ObservableObject {
         case host, moonrakerPort, backendPort, useHTTPS, printerName
         case appearance, language, haptics
         case safeNozzle, safeBed, checklist, coldExtrusion, minExtrusionTemp
+        case strictSafety
         case autoPowerOff, autoPowerOffNozzle, autoPowerOffBed, autoPowerOffDelay
         case powerProvider, moonrakerPowerDevice, webhookOn, webhookOff, webhookStatus
         case cameraURL, cameraKind, cameraRotation, cameraMirrored

@@ -12,14 +12,17 @@
 		3C97419E84D5F5326256F09A /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppEnvironment.swift"; sourceTree = "<group>"; };
 		BAF3C57686396C4C6A77853F /* NeptuneRemoteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NeptuneRemoteApp.swift"; sourceTree = "<group>"; };
 		07E17A55F8A083F2F7B0AFA4 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RootView.swift"; sourceTree = "<group>"; };
+		6787B4EB58713EDEC5DB1854 /* BackendClient+Doctor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackendClient+Doctor.swift"; sourceTree = "<group>"; };
 		D791450018F45DF2EAE09CE4 /* BackendClient+Library.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackendClient+Library.swift"; sourceTree = "<group>"; };
 		6CEA0AD651D7C313796AC9DE /* BackendClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackendClient.swift"; sourceTree = "<group>"; };
 		BE4C55DD07C4576E8140411E /* BackendModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackendModels.swift"; sourceTree = "<group>"; };
 		581A7D12DF25723234730553 /* BackendSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackendSocket.swift"; sourceTree = "<group>"; };
+		BC19D9D720C5C3F35615BF13 /* DoctorModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorModels.swift"; sourceTree = "<group>"; };
 		2CA97FA8493069881829D8C0 /* InventoryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryModels.swift"; sourceTree = "<group>"; };
 		E7CABC317661C4D8BD371CC6 /* LibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryModels.swift"; sourceTree = "<group>"; };
 		885AA9377D85C2DB0D56C617 /* MediaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaModels.swift"; sourceTree = "<group>"; };
 		2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoSimulator.swift"; sourceTree = "<group>"; };
+		3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorStore.swift"; sourceTree = "<group>"; };
 		F67931E07DCE8C21A0F43132 /* FilesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FilesStore.swift"; sourceTree = "<group>"; };
 		D01F291E6D8602E08E8B256A /* HistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HistoryStore.swift"; sourceTree = "<group>"; };
 		57D1D8CAD359B977FAA1E96A /* InventoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryStore.swift"; sourceTree = "<group>"; };
@@ -56,6 +59,10 @@
 		31E1916008A5AB3CD8292B22 /* SpeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SpeedView.swift"; sourceTree = "<group>"; };
 		A029323C43B5B009E85C0BDD /* TemperatureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemperatureView.swift"; sourceTree = "<group>"; };
 		734E56CB6785876E464569E4 /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TerminalView.swift"; sourceTree = "<group>"; };
+		AFE9E8ED89B7588E7B61B071 /* CalibrationHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CalibrationHubView.swift"; sourceTree = "<group>"; };
+		EA228AAAD34C613804980625 /* FixMyPrinterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FixMyPrinterView.swift"; sourceTree = "<group>"; };
+		15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GCodeInspectorView.swift"; sourceTree = "<group>"; };
+		A542E2A4CD878A6C9B34661E /* WorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkflowView.swift"; sourceTree = "<group>"; };
 		706AC3C3C3FDDDD172CC63B1 /* FilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FilesView.swift"; sourceTree = "<group>"; };
 		28A66B8EC5BB6C14F4353868 /* GCodeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GCodeDetailView.swift"; sourceTree = "<group>"; };
 		9F9651B521F5A5AE601D1612 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HistoryView.swift"; sourceTree = "<group>"; };
@@ -91,6 +98,7 @@
 		1C4587696D254E8A487AAC55 /* NeptuneWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NeptuneWidget.swift"; sourceTree = "<group>"; };
 		170879B0FB629239D2038861 /* PrintLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintLiveActivity.swift"; sourceTree = "<group>"; };
 		8234B47C61D9A610835098AE /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShareViewController.swift"; sourceTree = "<group>"; };
+		6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorTests.swift"; sourceTree = "<group>"; };
 		A464B815DD4754605B807349 /* EcosystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EcosystemTests.swift"; sourceTree = "<group>"; };
 		D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeshLoaderTests.swift"; sourceTree = "<group>"; };
 		B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoonrakerParsingTests.swift"; sourceTree = "<group>"; };
@@ -140,10 +148,12 @@
 		7FC4E313741DE1146F443C2C /* Backend */ = {
 			isa = PBXGroup;
 			children = (
+				6787B4EB58713EDEC5DB1854 /* BackendClient+Doctor.swift */,
 				D791450018F45DF2EAE09CE4 /* BackendClient+Library.swift */,
 				6CEA0AD651D7C313796AC9DE /* BackendClient.swift */,
 				BE4C55DD07C4576E8140411E /* BackendModels.swift */,
 				581A7D12DF25723234730553 /* BackendSocket.swift */,
+				BC19D9D720C5C3F35615BF13 /* DoctorModels.swift */,
 				2CA97FA8493069881829D8C0 /* InventoryModels.swift */,
 				E7CABC317661C4D8BD371CC6 /* LibraryModels.swift */,
 				885AA9377D85C2DB0D56C617 /* MediaModels.swift */,
@@ -229,6 +239,7 @@
 				86ECDFBA53F666F8C6F09F64 /* Power */,
 				4AED555BF454DA10905CE8EB /* Storage */,
 				89A01642DB718592E5A6A80C /* Utils */,
+				3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */,
 				F67931E07DCE8C21A0F43132 /* FilesStore.swift */,
 				D01F291E6D8602E08E8B256A /* HistoryStore.swift */,
 				57D1D8CAD359B977FAA1E96A /* InventoryStore.swift */,
@@ -271,6 +282,17 @@
 				734E56CB6785876E464569E4 /* TerminalView.swift */,
 			);
 			path = "Control";
+			sourceTree = "<group>";
+		};
+		58B40DE215BEF29F1EA58A8B /* Doctor */ = {
+			isa = PBXGroup;
+			children = (
+				AFE9E8ED89B7588E7B61B071 /* CalibrationHubView.swift */,
+				EA228AAAD34C613804980625 /* FixMyPrinterView.swift */,
+				15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */,
+				A542E2A4CD878A6C9B34661E /* WorkflowView.swift */,
+			);
+			path = "Doctor";
 			sourceTree = "<group>";
 		};
 		16C8DA2927E3AB50CA75FCA3 /* Files */ = {
@@ -383,6 +405,7 @@
 				39CCBD73028397931B1B1B79 /* Camera */,
 				9F032709C2D99AB1D75B9938 /* Common */,
 				405C5E0F7974926BF71D046C /* Control */,
+				58B40DE215BEF29F1EA58A8B /* Doctor */,
 				16C8DA2927E3AB50CA75FCA3 /* Files */,
 				D2565785EC9596BCFF3A5063 /* History */,
 				64BF1DC9CE27FA5394DDD1CD /* Home */,
@@ -454,6 +477,7 @@
 		153AA60FCD5ECE48FC87D090 /* NeptuneRemoteTests */ = {
 			isa = PBXGroup;
 			children = (
+				6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */,
 				A464B815DD4754605B807349 /* EcosystemTests.swift */,
 				D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */,
 				B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */,
@@ -491,14 +515,17 @@
 		2D153AFFF9EB705D68040075 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C97419E84D5F5326256F09A /* AppEnvironment.swift */; };
 		DA11EFB5BC0590263ADC038E /* NeptuneRemoteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF3C57686396C4C6A77853F /* NeptuneRemoteApp.swift */; };
 		C6E287565EB79F97BA9DC87E /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E17A55F8A083F2F7B0AFA4 /* RootView.swift */; };
+		D82FAFF8B8F46F823AD68294 /* BackendClient+Doctor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6787B4EB58713EDEC5DB1854 /* BackendClient+Doctor.swift */; };
 		C8780EE809F4F4B54D052BC8 /* BackendClient+Library.swift in Sources */ = {isa = PBXBuildFile; fileRef = D791450018F45DF2EAE09CE4 /* BackendClient+Library.swift */; };
 		69AB17CFB6CF6BABBD1CB01B /* BackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CEA0AD651D7C313796AC9DE /* BackendClient.swift */; };
 		1FB3EF5D24D28B85A2117460 /* BackendModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4C55DD07C4576E8140411E /* BackendModels.swift */; };
 		D90BF58441B1121F07D8AF1F /* BackendSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581A7D12DF25723234730553 /* BackendSocket.swift */; };
+		81926036A9AC4B1B2B812813 /* DoctorModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC19D9D720C5C3F35615BF13 /* DoctorModels.swift */; };
 		0C9A11D6E927CF65B0EBDDA6 /* InventoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA97FA8493069881829D8C0 /* InventoryModels.swift */; };
 		A39CA503ADED69919B88189B /* LibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7CABC317661C4D8BD371CC6 /* LibraryModels.swift */; };
 		78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885AA9377D85C2DB0D56C617 /* MediaModels.swift */; };
 		61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */; };
+		B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */; };
 		877FDD9A61EF5407809A3A04 /* FilesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67931E07DCE8C21A0F43132 /* FilesStore.swift */; };
 		27313C49EC553BE41F89372D /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D01F291E6D8602E08E8B256A /* HistoryStore.swift */; };
 		2C6D4858ABE03D850CA5EB2A /* InventoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57D1D8CAD359B977FAA1E96A /* InventoryStore.swift */; };
@@ -535,6 +562,10 @@
 		AB39CC34093D1148D92F0664 /* SpeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E1916008A5AB3CD8292B22 /* SpeedView.swift */; };
 		0CABF05B700BE4A1557D4F0F /* TemperatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029323C43B5B009E85C0BDD /* TemperatureView.swift */; };
 		1AF02B0B705AB3D11668494A /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734E56CB6785876E464569E4 /* TerminalView.swift */; };
+		B6F404418C024967BE71110D /* CalibrationHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE9E8ED89B7588E7B61B071 /* CalibrationHubView.swift */; };
+		EC00700C1125CBE6BD723BC2 /* FixMyPrinterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA228AAAD34C613804980625 /* FixMyPrinterView.swift */; };
+		ED89E2B28A2D8E37991C4768 /* GCodeInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */; };
+		EF51A7E201473034CD98AF8D /* WorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A542E2A4CD878A6C9B34661E /* WorkflowView.swift */; };
 		CD0FE67E15D87BA7B8F4AFF8 /* FilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706AC3C3C3FDDDD172CC63B1 /* FilesView.swift */; };
 		D0F532A925A85B001A24B619 /* GCodeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28A66B8EC5BB6C14F4353868 /* GCodeDetailView.swift */; };
 		D657F73BC66F870934CADCFD /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9651B521F5A5AE601D1612 /* HistoryView.swift */; };
@@ -575,6 +606,7 @@
 		34505ED0477ED62F39604A4A /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7E362D1959C75BC20E3B3F /* Formatters.swift */; };
 		88592F09CA5185976B237762 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8234B47C61D9A610835098AE /* ShareViewController.swift */; };
 		C236EF25AB44127C3771BEA5 /* SharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524458702E198572FC5CE3B8 /* SharedModels.swift */; };
+		7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */; };
 		E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A464B815DD4754605B807349 /* EcosystemTests.swift */; };
 		9EA6CE005C650DFE211FF700 /* MeshLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */; };
 		C4B8BB0FF0543E42EBE4B4A9 /* MoonrakerParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */; };
@@ -595,14 +627,17 @@
 				2D153AFFF9EB705D68040075 /* AppEnvironment.swift in Sources */,
 				DA11EFB5BC0590263ADC038E /* NeptuneRemoteApp.swift in Sources */,
 				C6E287565EB79F97BA9DC87E /* RootView.swift in Sources */,
+				D82FAFF8B8F46F823AD68294 /* BackendClient+Doctor.swift in Sources */,
 				C8780EE809F4F4B54D052BC8 /* BackendClient+Library.swift in Sources */,
 				69AB17CFB6CF6BABBD1CB01B /* BackendClient.swift in Sources */,
 				1FB3EF5D24D28B85A2117460 /* BackendModels.swift in Sources */,
 				D90BF58441B1121F07D8AF1F /* BackendSocket.swift in Sources */,
+				81926036A9AC4B1B2B812813 /* DoctorModels.swift in Sources */,
 				0C9A11D6E927CF65B0EBDDA6 /* InventoryModels.swift in Sources */,
 				A39CA503ADED69919B88189B /* LibraryModels.swift in Sources */,
 				78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */,
 				61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */,
+				B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */,
 				877FDD9A61EF5407809A3A04 /* FilesStore.swift in Sources */,
 				27313C49EC553BE41F89372D /* HistoryStore.swift in Sources */,
 				2C6D4858ABE03D850CA5EB2A /* InventoryStore.swift in Sources */,
@@ -639,6 +674,10 @@
 				AB39CC34093D1148D92F0664 /* SpeedView.swift in Sources */,
 				0CABF05B700BE4A1557D4F0F /* TemperatureView.swift in Sources */,
 				1AF02B0B705AB3D11668494A /* TerminalView.swift in Sources */,
+				B6F404418C024967BE71110D /* CalibrationHubView.swift in Sources */,
+				EC00700C1125CBE6BD723BC2 /* FixMyPrinterView.swift in Sources */,
+				ED89E2B28A2D8E37991C4768 /* GCodeInspectorView.swift in Sources */,
+				EF51A7E201473034CD98AF8D /* WorkflowView.swift in Sources */,
 				CD0FE67E15D87BA7B8F4AFF8 /* FilesView.swift in Sources */,
 				D0F532A925A85B001A24B619 /* GCodeDetailView.swift in Sources */,
 				D657F73BC66F870934CADCFD /* HistoryView.swift in Sources */,
@@ -750,6 +789,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */,
 				E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */,
 				9EA6CE005C650DFE211FF700 /* MeshLoaderTests.swift in Sources */,
 				C4B8BB0FF0543E42EBE4B4A9 /* MoonrakerParsingTests.swift in Sources */,

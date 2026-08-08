@@ -169,6 +169,21 @@ struct MoreView: View {
             }
 
             Section {
+                NavigationLink { FixMyPrinterView() } label: {
+                    Label(L.t("doctor.title"), systemImage: "stethoscope")
+                }
+                NavigationLink { PrinterHealthView() } label: {
+                    Label(L.t("health.title"), systemImage: "heart.text.square")
+                }
+                NavigationLink { CalibrationHubView() } label: {
+                    Label(L.t("calibration.title"), systemImage: "wand.and.stars")
+                }
+                NavigationLink { ConfigVersionsView() } label: {
+                    Label(L.t("config.versions.title"), systemImage: "doc.on.doc")
+                }
+            }
+
+            Section {
                 NavigationLink { SupportView() } label: {
                     Label(L.t("support.title"), systemImage: "questionmark.circle")
                 }

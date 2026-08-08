@@ -56,6 +56,7 @@ struct SimpleHomeView: View {
     @EnvironmentObject private var library: LibraryStore
     @EnvironmentObject private var inventory: InventoryStore
     @EnvironmentObject private var media: MediaStore
+    @EnvironmentObject private var doctor: DoctorStore
 
     @State private var showingPowerOffWarning = false
     @State private var showingIdeas = false
@@ -102,6 +103,12 @@ struct SimpleHomeView: View {
                     NavigationLink(destination: HistoryView()) {
                         Label(L.t("history.title"), systemImage: "clock.arrow.circlepath")
                     }
+                    NavigationLink(destination: FixMyPrinterView()) {
+                        Label(L.t("doctor.title"), systemImage: "stethoscope")
+                    }
+                    NavigationLink(destination: CalibrationHubView()) {
+                        Label(L.t("calibration.title"), systemImage: "wand.and.stars")
+                    }
                     NavigationLink(destination: SupportView()) {
                         Label(L.t("support.title"), systemImage: "questionmark.circle")
                     }
@@ -127,6 +134,8 @@ struct SimpleHomeView: View {
         .task {
             await printer.refreshBackendHealth()
             await printer.refreshSummary()
+            // Read-only, and cheap: it never moves the printer.
+            if doctor.diagnosis == nil { await doctor.diagnose(deep: false) }
         }
         .confirmationDialog(
             L.t("power.off.unsafe.title"),
@@ -339,6 +348,22 @@ struct SimpleHomeView: View {
 
     @ViewBuilder
     private var attentionCards: some View {
+        // Anything the doctor found critical is the most important thing on
+        // screen, ahead of a monitor alert or a maintenance reminder.
+        if let finding = doctor.criticalFindings.first {
+            NavigationLink {
+                FixMyPrinterView()
+            } label: {
+                attentionRow(
+                    icon: "stethoscope",
+                    tint: Theme.danger,
+                    title: finding.title,
+                    subtitle: L.t("doctor.tap_to_fix")
+                )
+            }
+            .buttonStyle(.plain)
+        }
+
         if let event = media.unacknowledgedVisionEvents.first {
             NavigationLink {
                 VisionView()
@@ -431,9 +456,13 @@ struct SimpleHomeView: View {
             .buttonStyle(.plain)
 
             NavigationLink {
-                VideosView()
+                FixMyPrinterView()
             } label: {
-                shortcut(titleKey: "video.title", icon: "film")
+                shortcut(
+                    titleKey: "doctor.short_title",
+                    icon: "stethoscope",
+                    badge: doctor.criticalFindings.count
+                )
             }
             .buttonStyle(.plain)
 

@@ -284,6 +284,35 @@ def check_localization() -> None:
         "filament.check.": ["enough", "tight", "not_enough", "no_spool"],
         "home.state.": ["off", "starting", "ready", "printing", "complete", "error"],
         "search.reason.": ["exact", "alias", "synonym", "tag", "fuzzy", "category"],
+        "subsystem.": [
+            "connection", "moonraker", "klipper", "mcu", "config", "x_axis",
+            "y_axis", "z_axis", "probe", "bed", "hotend", "part_cooling",
+            "filament_sensor", "bed_mesh", "z_offset", "motion_limits",
+            "accelerometer", "camera", "host", "storage",
+        ],
+        "workflow.": [
+            "safe_home", "z_offset", "screws_tilt", "bed_mesh",
+            "full_bed_calibration", "axis_health", "input_shaper",
+            "safe_home.description", "z_offset.description",
+            "screws_tilt.description", "bed_mesh.description",
+            "full_bed_calibration.description", "axis_health.description",
+            "input_shaper.description",
+        ],
+        "workflow.state.": [
+            "idle", "running", "waiting_for_user", "done", "failed", "cancelled",
+        ],
+        "screws.verdict.": ["level", "adjust", "poor", "unknown"],
+        "screw.": [
+            "left_front", "left_middle", "left_rear",
+            "right_front", "right_middle", "right_rear",
+        ],
+        "config.verdict.": ["ok", "warning", "blocked"],
+        "config.reason.": [
+            "manual", "pre_save_config", "pre_edit", "pre_restore", "imported", "auto",
+        ],
+        "gcode.verdict.": ["safe", "warning", "blocked"],
+        "gcode.profile.": ["golden", "known", "unverified"],
+        "preflight.verdict.": ["ready", "warning", "blocked"],
     }
     incomplete = [
         prefix + suffix

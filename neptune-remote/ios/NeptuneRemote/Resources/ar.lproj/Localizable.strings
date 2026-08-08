@@ -874,3 +874,210 @@
 "share.open_app" = "افتح Neptune Remote";
 "import.pending" = "في %d موديل متشارك مستني";
 "import.pending.add" = "ضيفهم دلوقتي";
+
+/* ---------------------------------------------------------------------------
+   صلّح طابعتي، المعايرة، نسخ الإعدادات، أمان الـ G-code
+   --------------------------------------------------------------------------- */
+
+/* التشخيص */
+"doctor.title" = "صلّح طابعتي";
+"doctor.short_title" = "تصليح";
+"doctor.not_checked" = "لسه متفحصتش";
+"doctor.run_check" = "شغّل الفحص";
+"doctor.checked" = "اتفحصت %@";
+"doctor.read_only" = "الفحص ده بيقرأ بس. عمره ما بيحرك الطابعة - كل إصلاح تحت محتاج ضغطة منك.";
+"doctor.not_safe_to_print" = "مش آمن تطبع لحد ما ده يتحل";
+"doctor.all_clear" = "مفيش حاجة محتاجة تصليح";
+"doctor.all_clear.detail" = "كل الفحوصات عدت.";
+"doctor.likely_cause" = "السبب المحتمل";
+"doctor.recommendation" = "اعمل إيه";
+"doctor.manual_steps" = "خطوات لازم تعملها بإيدك";
+"doctor.next_steps" = "المزيد";
+"doctor.tap_to_fix" = "اضغط علشان تشوف الحل";
+"doctor.fix.restart_firmware" = "أعد تشغيل الفيرموير";
+
+/* الأنظمة الفرعية */
+"subsystem.connection" = "الاتصال";
+"subsystem.moonraker" = "مونريكر";
+"subsystem.klipper" = "كليبر";
+"subsystem.mcu" = "اللوحة الأم";
+"subsystem.config" = "printer.cfg";
+"subsystem.x_axis" = "محور X";
+"subsystem.y_axis" = "محور Y";
+"subsystem.z_axis" = "محور Z";
+"subsystem.probe" = "الحساس";
+"subsystem.bed" = "السطح";
+"subsystem.hotend" = "الفوهة";
+"subsystem.part_cooling" = "تبريد القطعة";
+"subsystem.filament_sensor" = "حساس الفلامنت";
+"subsystem.bed_mesh" = "شبكة السطح";
+"subsystem.z_offset" = "إزاحة Z";
+"subsystem.motion_limits" = "حدود الحركة";
+"subsystem.accelerometer" = "حساس الاهتزاز";
+"subsystem.camera" = "الكاميرا";
+"subsystem.host" = "الراسبيري باي";
+"subsystem.storage" = "المساحة";
+
+/* الحالة */
+"health.title" = "حالة الطابعة";
+
+/* المعايرة */
+"calibration.title" = "المعايرة";
+"calibration.in_progress" = "شغالة دلوقتي";
+"workflow.safe_home" = "تصفير آمن";
+"workflow.safe_home.description" = "بيفحص الحساس قبل أي حركة، وبعدين بيصفر X وY وZ.";
+"workflow.z_offset" = "معايرة إزاحة Z";
+"workflow.z_offset.description" = "اختبار الورقة، بخطوات محدودة ونتيجة مشروحة.";
+"workflow.screws_tilt" = "ضبط مسامير السطح";
+"workflow.screws_tilt.description" = "بيقولك تلف أنهي مسمار، في أنهي اتجاه، وكام لفة.";
+"workflow.bed_mesh" = "شبكة السطح";
+"workflow.bed_mesh.description" = "بيمسح السطح كله ويحفظ النتيجة.";
+"workflow.full_bed_calibration" = "معايرة كاملة للسطح";
+"workflow.full_bed_calibration.description" = "المسامير، وبعدين إزاحة Z، وبعدين الشبكة - بالترتيب اللي بينفع فعلاً.";
+"workflow.axis_health" = "فحص صحة المحاور";
+"workflow.axis_health.description" = "بيحرك X وY على طول مداهم ويرجع يصفر علشان يكشف خطوات ضايعة.";
+"workflow.input_shaper" = "مُشكّل الاهتزاز";
+"workflow.input_shaper.description" = "محتاج ADXL345. بيقيس الرنين ويقترح الإعداد المناسب.";
+
+/* تشغيل الإجراءات */
+"workflow.steps" = "الخطوات";
+"workflow.run_step" = "شغّل الخطوة دي";
+"workflow.done_continue" = "خلصت - كمّل";
+"workflow.measure_again" = "قيس تاني";
+"workflow.continue_anyway" = "اتأكدت - كمّل";
+"workflow.recheck" = "افحص تاني";
+"workflow.retry" = "جرب الخطوة دي تاني";
+"workflow.complete" = "خلص";
+"workflow.failed" = "وقف للأمان";
+"workflow.stopped" = "الخطوة اللي بعدها متشغلتش.";
+"workflow.cancel" = "إلغاء";
+"workflow.cancel.confirm" = "تلغي الإجراء ده؟";
+"workflow.state.idle" = "جاهز";
+"workflow.state.running" = "شغال";
+"workflow.state.waiting_for_user" = "مستني منك";
+"workflow.state.done" = "خلص";
+"workflow.state.failed" = "وقف";
+"workflow.state.cancelled" = "اتلغى";
+
+/* إزاحة Z */
+"zoffset.paper_instruction" = "نزّل الفوهة خطوة خطوة لحد ما ورقة تعدي تحتها بالعافية، وبعدين أكّد.";
+"zoffset.sign_note" = "الخطوات دي تحريك مؤقت. إزاحة الحساس اللي كليبر بيحفظها في الآخر رقم تاني خالص وغالباً موجب - التطبيق بيوريهولك قبل ما يتكتب أي حاجة.";
+"zoffset.applied" = "اتحرك لحد دلوقتي";
+"zoffset.current_z" = "إحداثي Z الحالي";
+
+/* مسامير السطح */
+"screws.diagram" = "السطح من فوق";
+"screws.adjustments" = "تلف إيه";
+"screws.rear" = "الخلف";
+"screws.front" = "الأمام";
+"screws.base" = "مرجع";
+"screws.verdict.level" = "مستوي";
+"screws.verdict.adjust" = "محتاج ضبط";
+"screws.verdict.poor" = "بعيد أوي";
+"screws.verdict.unknown" = "غير معروف";
+"screw.left_front" = "شمال أمام";
+"screw.left_middle" = "شمال نص";
+"screw.left_rear" = "شمال خلف";
+"screw.right_front" = "يمين أمام";
+"screw.right_middle" = "يمين نص";
+"screw.right_rear" = "يمين خلف";
+
+/* نسخ printer.cfg */
+"config.versions.title" = "نسخ الإعدادات";
+"config.versions.empty" = "لسه مفيش نسخ محفوظة";
+"config.versions.empty.detail" = "بيتاخد نسخة احتياطية تلقائياً قبل أي تعديل على printer.cfg.";
+"config.live" = "الإعدادات الحالية";
+"config.sections" = "الأقسام";
+"config.validation" = "الفحص";
+"config.verdict.ok" = "سليمة";
+"config.verdict.warning" = "تحذيرات";
+"config.verdict.blocked" = "أخطاء";
+"config.matches_known_good" = "دي مطابقة للنسخة المعروف إنها شغالة.";
+"config.differs_from_known_good" = "دي مختلفة عن النسخة المعروف إنها شغالة.";
+"config.snapshot" = "احفظ نسخة";
+"config.snapshot.saved" = "النسخة اتحفظت";
+"config.restore_known_good" = "رجّع النسخة الشغالة";
+"config.rename" = "سمّها";
+"config.compare" = "قارن";
+"config.mark_golden" = "علّمها ذهبية";
+"config.golden.marked" = "اتعلمت كنسخة ذهبية";
+"config.restore" = "استرجاع";
+"config.restored" = "الإعدادات اترجعت";
+"config.proven" = "%d طبعة";
+"config.name_version" = "سمّي النسخة دي";
+"config.name_placeholder" = "النسخة الذهبية، قبل ADXL، …";
+"config.reason.manual" = "حفظتها بنفسك";
+"config.reason.pre_save_config" = "قبل SAVE_CONFIG";
+"config.reason.pre_edit" = "قبل تعديل";
+"config.reason.pre_restore" = "قبل استرجاع";
+"config.reason.imported" = "أول مرة اتشافت";
+"config.reason.auto" = "تلقائي";
+"config.diff.added" = "أقسام اتضافت";
+"config.diff.removed" = "أقسام اتشالت";
+"config.diff.changed" = "اتغير";
+"config.diff.autosave" = "كتبها SAVE_CONFIG";
+"config.diff.autosave_note" = "القيم دي بتاعة كليبر نفسه، كتبها SAVE_CONFIG - تحديث شبكة أو إزاحة Z، مش تعديل عملته انت.";
+"config.diff.identical" = "مفيش اختلافات";
+"config.diff.identical.detail" = "النسختين زي بعض.";
+"config.diff.count" = "%d قسم مختلف";
+"config.restore.explain" = "ده بيكتب printer.cfg المحفوظة على الطابعة ويعيد تشغيل كليبر.";
+"config.restore.backup_note" = "الإعدادات الحالية بتتحفظ كنسخة جديدة الأول، علشان تقدر ترجع.";
+"config.restore.confirm" = "استرجع وأعد تشغيل كليبر";
+
+/* فاحص الـ G-code */
+"gcode.inspector.title" = "فاحص الـ G-code";
+"gcode.inspector.empty" = "اختار ملف G-code علشان تفحصه.";
+"gcode.verdict.safe" = "آمن للطباعة";
+"gcode.verdict.warning" = "تحذير";
+"gcode.verdict.blocked" = "ممنوع";
+"gcode.issue_counts" = "%d خطأ، %d تحذير";
+"gcode.provenance" = "الملف ده جه منين";
+"gcode.slicer" = "برنامج التقطيع";
+"gcode.version" = "الإصدار";
+"gcode.profile" = "البروفايل";
+"gcode.profile_status" = "حالة البروفايل";
+"gcode.profile.golden" = "ذهبي";
+"gcode.profile.known" = "معروف";
+"gcode.profile.unverified" = "غير موثق";
+"gcode.unverified_warning" = "G-CODE غير موثق - الملف ده مش من بروفايل PrusaSlicer المعتمد. الطباعة في مكان غلط اتربطت بده قبل كده.";
+"gcode.geometry" = "الأبعاد";
+"gcode.bounds" = "المدى";
+"gcode.layer_height" = "ارتفاع الطبقة";
+"gcode.nozzle" = "الفوهة";
+"gcode.estimated_time" = "الوقت المتوقع";
+"gcode.lines" = "سطور اتفحصت";
+"gcode.motion" = "الحركة";
+"gcode.max_speed" = "أسرع حركة";
+"gcode.max_accel" = "أعلى تسارع";
+"gcode.positioning" = "نظام الإحداثيات";
+"gcode.extrusion" = "نظام البثق";
+"gcode.homes" = "بيصفر الأول";
+"gcode.absolute" = "مطلق";
+"gcode.relative" = "نسبي";
+"gcode.unsupported" = "أوامر كليبر مش بيدعمها";
+"gcode.issues" = "الملاحظات";
+"gcode.line" = "سطر %d";
+"gcode.never_modified" = "التطبيق ده عمره ما بيعيد كتابة مسار الطباعة. الفاحص بيقرأ الملف ويقول لقى إيه - مفيش حاجة هنا بتعدل الـ G-code بتاعك.";
+
+/* الفحص قبل الطباعة */
+"preflight.title" = "فحص قبل الطباعة";
+"preflight.summary" = "قبل ما تطبع";
+"preflight.checks" = "الفحوصات";
+"preflight.verdict.ready" = "جاهز للطباعة";
+"preflight.verdict.warning" = "تحذيرات - راجعها الأول";
+"preflight.verdict.blocked" = "ممنوع - محتاج تصرف";
+"preflight.start_print" = "ابدأ الطباعة";
+"preflight.blocked_explain" = "صلّح الأخطاء اللي فوق قبل الطباعة. مفيش حاجة اتبعتت للطابعة.";
+"preflight.strict" = "وضع الأمان المشدد";
+"preflight.strict.detail" = "اعتبر التحذيرات موانع.";
+"preflight.strict_on" = "وضع الأمان المشدد شغال.";
+"preflight.row.slicer" = "برنامج التقطيع";
+"preflight.row.profile" = "بروفايل الطابعة";
+"preflight.row.profile_status" = "حالة البروفايل";
+"preflight.row.validation" = "فحص الـ G-code";
+"preflight.row.build_volume" = "حجم الطباعة";
+"preflight.row.unsupported" = "أوامر غير مدعومة";
+"preflight.row.motion" = "حدود الحركة";
+
+/* بروفايلات التقطيع */
+"slicer.golden.marked" = "اتعلم كبروفايل ذهبي";
