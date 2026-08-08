@@ -190,7 +190,10 @@ actor MoonrakerClient {
                 profiles = try container.decodeIfPresent([String: ConfigValue].self, forKey: .profiles)
             }
         }
-        struct Status: Decodable { let bed_mesh: Mesh? }
+        struct Status: Decodable {
+            let bedMesh: Mesh?
+            enum CodingKeys: String, CodingKey { case bedMesh = "bed_mesh" }
+        }
         struct Payload: Decodable { let status: Status }
         let result = try await http.decode(
             MoonrakerEnvelope<Payload>.self,
@@ -199,7 +202,8 @@ actor MoonrakerClient {
                 query: [URLQueryItem(name: "bed_mesh", value: nil)]
             )
         ).result
-        return Array(result.status.bed_mesh?.profiles?.keys ?? [:].keys)
+        guard let profiles = result.status.bedMesh?.profiles else { return [] }
+        return Array(profiles.keys)
     }
 
     /// Reads everything needed to describe this printer and assembles it.

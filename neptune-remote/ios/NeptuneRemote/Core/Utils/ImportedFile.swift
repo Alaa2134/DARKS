@@ -98,15 +98,11 @@ enum ImportedFile {
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
             if Task.isCancelled { throw CancellationError() }
-            switch downloadStatus(of: url) {
-            case .current:
-                return
-            case .none:
-                // Not an iCloud item after all - nothing to wait for.
-                return
-            default:
-                try? await Task.sleep(nanoseconds: 300_000_000)
-            }
+            let status = downloadStatus(of: url)
+            // nil means it is not an iCloud item after all, so there is nothing
+            // to wait for; .current means the local copy is up to date.
+            if status == nil || status == .current { return }
+            try? await Task.sleep(nanoseconds: 300_000_000)
         }
         throw ReadError.notDownloaded
     }

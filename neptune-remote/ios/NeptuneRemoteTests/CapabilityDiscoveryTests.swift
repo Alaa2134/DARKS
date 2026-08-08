@@ -69,7 +69,7 @@ final class CapabilityDiscoveryTests: XCTestCase {
 
     // MARK: - Axes
 
-    func testAxisLimitsComeFromTheConfigNotFromAnAssumedPrinter() {
+    func testAxisLimitsComeFromTheConfigNotFromAnAssumedPrinter() throws {
         let capabilities = build()
         XCTAssertEqual(capabilities.xLimit?.min, 0)
         XCTAssertEqual(capabilities.xLimit?.max, 250)
@@ -79,10 +79,10 @@ final class CapabilityDiscoveryTests: XCTestCase {
         XCTAssertEqual(capabilities.zLimit?.min, 0)
         XCTAssertEqual(capabilities.zLimit?.max, 240)
 
-        let volume = try? XCTUnwrap(capabilities.buildVolume)
-        XCTAssertEqual(volume?.x ?? 0, 250, accuracy: 0.01)
-        XCTAssertEqual(volume?.z ?? 0, 240, accuracy: 0.01)
-        XCTAssertNotEqual(volume?.x ?? 0, 320, "must not fall back to the old hardcoded volume")
+        let volume = try XCTUnwrap(capabilities.buildVolume)
+        XCTAssertEqual(volume.x, 250, accuracy: 0.01)
+        XCTAssertEqual(volume.z, 240, accuracy: 0.01)
+        XCTAssertNotEqual(volume.x, 320, "must not fall back to the old hardcoded volume")
     }
 
     func testJogIsClampedToConfiguredTravel() {
@@ -102,11 +102,11 @@ final class CapabilityDiscoveryTests: XCTestCase {
         XCTAssertNil(capabilities.clampTarget(axis: "w", to: 10))
     }
 
-    func testSafeZHomeIsRead() {
-        let home = try? XCTUnwrap(build().safeZHome)
-        XCTAssertEqual(home??.x, 125)
-        XCTAssertEqual(home??.y, 125)
-        XCTAssertEqual(home??.zHop, 10)
+    func testSafeZHomeIsRead() throws {
+        let home = try XCTUnwrap(build().safeZHome)
+        XCTAssertEqual(home.x, 125)
+        XCTAssertEqual(home.y, 125)
+        XCTAssertEqual(home.zHop, 10)
     }
 
     // MARK: - Heaters
@@ -123,11 +123,11 @@ final class CapabilityDiscoveryTests: XCTestCase {
         XCTAssertTrue(capabilities.hasHeatedBed)
     }
 
-    func testTargetsAreCappedAtMaxTemp() {
-        let extruder = try? XCTUnwrap(build().primaryExtruder)
-        XCTAssertEqual(extruder??.clampTarget(400), 320)
-        XCTAssertEqual(extruder??.clampTarget(-20), 0)
-        XCTAssertEqual(extruder??.clampTarget(210), 210)
+    func testTargetsAreCappedAtMaxTemp() throws {
+        let extruder = try XCTUnwrap(build().primaryExtruder)
+        XCTAssertEqual(extruder.clampTarget(400), 320)
+        XCTAssertEqual(extruder.clampTarget(-20), 0)
+        XCTAssertEqual(extruder.clampTarget(210), 210)
     }
 
     /// A printer with no bed section must report no heated bed, so the UI can
@@ -188,10 +188,10 @@ final class CapabilityDiscoveryTests: XCTestCase {
 
     /// The probe is whichever section exists. Assuming BLTouch is exactly the
     /// bug this is guarding.
-    func testProbeKindIsTheConfiguredOne() {
-        let probe = try? XCTUnwrap(build().probe)
-        XCTAssertEqual(probe??.kind, "bltouch")
-        XCTAssertEqual(probe??.zOffset, 1.94)
+    func testProbeKindIsTheConfiguredOne() throws {
+        let probe = try XCTUnwrap(build().probe)
+        XCTAssertEqual(probe.kind, "bltouch")
+        XCTAssertEqual(probe.zOffset, 1.94)
 
         let inductive = CapabilityDiscovery.build(
             settings: decode(#"{"probe": {"z_offset": 2.2, "speed": 5}}"#),
@@ -204,13 +204,13 @@ final class CapabilityDiscoveryTests: XCTestCase {
         XCTAssertFalse(none.hasProbe)
     }
 
-    func testBedMeshGeometryIsRead() {
-        let mesh = try? XCTUnwrap(build().bedMesh)
-        XCTAssertEqual(mesh??.meshMin ?? [], [15, 15])
-        XCTAssertEqual(mesh??.meshMax ?? [], [235, 235])
-        XCTAssertEqual(mesh??.probeCount ?? [], [7, 7])
-        XCTAssertEqual(mesh??.algorithm, "bicubic")
-        XCTAssertEqual(mesh??.fadeEnd, 10)
+    func testBedMeshGeometryIsRead() throws {
+        let mesh = try XCTUnwrap(build().bedMesh)
+        XCTAssertEqual(mesh.meshMin ?? [], [15, 15])
+        XCTAssertEqual(mesh.meshMax ?? [], [235, 235])
+        XCTAssertEqual(mesh.probeCount ?? [], [7, 7])
+        XCTAssertEqual(mesh.algorithm, "bicubic")
+        XCTAssertEqual(mesh.fadeEnd, 10)
     }
 
     func testInputShaperAndAccelerometer() {

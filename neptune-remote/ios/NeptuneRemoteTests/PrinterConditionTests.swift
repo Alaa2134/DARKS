@@ -27,20 +27,20 @@ final class PrinterConditionTests: XCTestCase {
 
     /// "Z is not homed" is a normal state, not a hardware failure. It must be
     /// action-required, never an error, and it must carry a Home button.
-    func testUnhomedAxisIsActionRequiredNotAnError() {
+    func testUnhomedAxisIsActionRequiredNotAnError() throws {
         let conditions = PrinterConditionEvaluator.conditions(
             for: input(message: "Z is not homed", homed: "xy")
         )
 
         XCTAssertEqual(conditions.count, 1, "one card, not three")
-        let condition = try? XCTUnwrap(conditions.first)
-        XCTAssertEqual(condition??.cause, .notHomed)
-        XCTAssertEqual(condition??.severity, .actionRequired)
-        XCTAssertFalse(condition??.isError ?? true, "must not be presented as a fault")
-        XCTAssertEqual(condition??.remedy, .homeAxes("z"))
-        XCTAssertEqual(condition??.axes, "z")
+        let condition = try XCTUnwrap(conditions.first)
+        XCTAssertEqual(condition.cause, .notHomed)
+        XCTAssertEqual(condition.severity, .actionRequired)
+        XCTAssertFalse(condition.isError, "must not be presented as a fault")
+        XCTAssertEqual(condition.remedy, .homeAxes("z"))
+        XCTAssertEqual(condition.axes, "z")
         // Klipper's own words survive for the technical details section.
-        XCTAssertEqual(condition??.rawMessage, "Z is not homed")
+        XCTAssertEqual(condition.rawMessage, "Z is not homed")
     }
 
     /// The exact deduplication the report asks for: one underlying condition
@@ -107,17 +107,17 @@ final class PrinterConditionTests: XCTestCase {
         XCTAssertFalse(conditions.contains(where: \.isError))
     }
 
-    func testGenuineShutdownIsAnError() {
+    func testGenuineShutdownIsAnError() throws {
         let conditions = PrinterConditionEvaluator.conditions(
             for: input(
                 klippy: .shutdown,
                 message: "Lost communication with MCU 'mcu'"
             )
         )
-        let condition = try? XCTUnwrap(conditions.first)
-        XCTAssertTrue(condition??.isError ?? false)
-        XCTAssertEqual(condition??.cause, .klippyShutdown)
-        XCTAssertEqual(condition??.rawMessage, "Lost communication with MCU 'mcu'")
+        let condition = try XCTUnwrap(conditions.first)
+        XCTAssertTrue(condition.isError)
+        XCTAssertEqual(condition.cause, .klippyShutdown)
+        XCTAssertEqual(condition.rawMessage, "Lost communication with MCU 'mcu'")
     }
 
     /// An MCU or config problem is not cleared by restarting, so it is graded
@@ -157,14 +157,14 @@ final class PrinterConditionTests: XCTestCase {
 
     /// A message the classifier does not recognise is shown as needing review,
     /// with Klipper's exact words - not as an invented diagnosis.
-    func testUnrecognisedMessageIsNotDiagnosed() {
+    func testUnrecognisedMessageIsNotDiagnosed() throws {
         let message = "Something entirely unfamiliar happened"
         let conditions = PrinterConditionEvaluator.conditions(for: input(message: message))
-        let condition = try? XCTUnwrap(conditions.first)
-        XCTAssertEqual(condition??.cause, .unknownMessage)
-        XCTAssertEqual(condition??.titleKey, "condition.unknown.title")
-        XCTAssertEqual(condition??.rawMessage, message)
-        XCTAssertEqual(condition??.severity, .warning, "unknown is not the same as broken")
+        let condition = try XCTUnwrap(conditions.first)
+        XCTAssertEqual(condition.cause, .unknownMessage)
+        XCTAssertEqual(condition.titleKey, "condition.unknown.title")
+        XCTAssertEqual(condition.rawMessage, message)
+        XCTAssertEqual(condition.severity, .warning, "unknown is not the same as broken")
     }
 
     // MARK: - Homing state comes from objects, not strings
