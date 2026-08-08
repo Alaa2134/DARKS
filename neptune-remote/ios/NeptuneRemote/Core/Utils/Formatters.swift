@@ -69,12 +69,18 @@ enum Format {
         return String(format: "%.2f m", value)
     }
 
-    static func fileSize(_ bytes: Int?) -> String {
+    /// Takes Int64 because that is what the file-size APIs hand back, and a
+    /// mesh can exceed what Int guarantees on a 32-bit target.
+    static func fileSize(_ bytes: Int64?) -> String {
         guard let bytes, bytes > 0 else { return "--" }
         let formatter = ByteCountFormatter()
         formatter.allowedUnits = [.useKB, .useMB, .useGB]
         formatter.countStyle = .file
-        return formatter.string(fromByteCount: Int64(bytes))
+        return formatter.string(fromByteCount: bytes)
+    }
+
+    static func fileSize(_ bytes: Int?) -> String {
+        fileSize(bytes.map(Int64.init))
     }
 
     static func date(_ timestamp: TimeInterval?) -> String {
