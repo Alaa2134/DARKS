@@ -16,6 +16,41 @@ Two halves, both real:
 
 ## What it does
 
+### Fix My Printer
+* One guided diagnostic that inspects the Pi, Moonraker, Klipper, the MCU, the
+  live `printer.cfg`, heaters, thermistors, fans, endstops, the probe, the
+  filament sensor, homed axes, travel limits, bed mesh, Z offset and the recent
+  Klipper log — and explains what it found in plain language.
+* Each finding carries a severity, the likely cause, the affected subsystem, and
+  either a one-tap fix or the manual steps written out.
+* Diagnosis is read-only. It never moves the printer.
+
+### You never have to remember a command
+Guided wizards for homing, Z offset, bed screws, bed mesh, full bed calibration,
+axis health and input shaping. No `G28`, `PROBE_CALIBRATE`, `TESTZ`,
+`SCREWS_TILT_CALCULATE`, `BED_MESH_CALIBRATE` or `SAVE_CONFIG` to memorise.
+
+* **Every command goes through a Safety Command Engine.** `G28 Z` is blocked when
+  the probe is already triggered; moves are clamped to the *live* config; `TESTZ`
+  steps and total travel are capped; `SAVE_CONFIG` always backs up first.
+* Bed screws are shown on a diagram of the bed, with an arrow per knob and the
+  fraction of a turn — Klipper's `00:21` reads as "about 0.35 of a turn".
+* A later calibration stage never runs after an earlier safety check failed.
+
+### The known-good configuration is protected
+Versioned `printer.cfg` history with naming ("Golden Config", "Before ADXL"), a
+section-aware diff that separates `SAVE_CONFIG`'s own writes from your edits,
+one-tap rollback, and which config was active for successful prints. Golden
+versions cannot be deleted or overwritten.
+
+### G-code is validated, never rewritten
+**This app never invents, regenerates, reorders or optimises a toolpath.** The
+inspector reads a sliced file and reports: extents against the live config,
+`G90`/`G91`, `M82`/`M83`, missing `G28`, `M204`/`M205`/`SET_VELOCITY_LIMIT`
+against the printer's limits, unsupported Marlin commands like `M413`, and which
+slicer and profile produced it. Files not from the approved PrusaSlicer profile
+are marked **UNVERIFIED G-CODE**.
+
 ### Printing
 * Live printer state over Moonraker REST + WebSocket.
 * Jog, home, extrude, temperatures with presets, speed/flow/fan factors,
@@ -157,6 +192,8 @@ rather than producing a fake `.ipa`.
 | [AI.md](docs/AI.md) | The local failure monitor, in detail |
 | [NOTIFICATIONS.md](docs/NOTIFICATIONS.md) | Notifications, widget, Live Activity |
 | [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) | Symptom → cause tables |
+| [SAFETY.md](docs/SAFETY.md) | The Safety Command Engine, the wizards, and the three Z numbers |
+| [GCODE_SAFETY.md](docs/GCODE_SAFETY.md) | Why toolpaths are never rewritten, and what is validated |
 | [BUILD_IPA.md](docs/BUILD_IPA.md) | Unsigned IPA, signing it yourself, CI |
 | [UX_REVIEW.md](docs/UX_REVIEW.md) | Twelve scenarios walked end to end, and what changed |
 | [FINAL_REPORT.md](docs/FINAL_REPORT.md) | Every requirement, its status, and the remaining limits |
@@ -166,7 +203,7 @@ rather than producing a fake `.ipa`.
 ## Tests
 
 ```bash
-cd raspberry-pi && python3 -m pytest -q          # 362 passing
+cd raspberry-pi && python3 -m pytest -q          # 548 passing
 python3 scripts/verify_project.py                # 51 project-wide checks
 ```
 
