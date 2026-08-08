@@ -107,12 +107,22 @@ struct LibraryView: View {
         .sheet(isPresented: $showingIdeas) {
             NavigationStack { IdeaFinderView().withLibraryDestinations() }
         }
-        .fileImporter(
-            isPresented: $showingImporter,
-            allowedContentTypes: LibraryView.modelTypes,
-            allowsMultipleSelection: true
-        ) { result in
-            handleImport(result)
+        // A UIKit picker in a sheet, not .fileImporter. The importer's
+        // completion is bound to this view, and this view is rebuilt every few
+        // seconds by the printer status refresh - when that happened while the
+        // picker was open, the callback was lost and tapping Open did nothing
+        // at all, with no error anywhere. DocumentPicker keeps the delegate on
+        // a coordinator that UIKit retains, so a redraw cannot detach it.
+        .sheet(isPresented: $showingImporter) {
+            DocumentPicker(
+                contentTypes: LibraryView.modelTypes,
+                onPick: { urls in
+                    showingImporter = false
+                    handleImport(.success(urls))
+                },
+                onCancel: { showingImporter = false }
+            )
+            .ignoresSafeArea()
         }
         .refreshable { await library.load(force: true) }
         .task { await library.load() }
