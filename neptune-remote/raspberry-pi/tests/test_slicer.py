@@ -347,3 +347,70 @@ async def test_orca_engine_explains_missing_json_profiles(tmp_path: Path):
             tmp_path / "m.stl", tmp_path / "o.gcode", SliceRequest(model_id="x"), tmp_path
         )
     assert "profiles/orca" in str(excinfo.value)
+
+
+class TestSlicerVerification:
+    """A slicer that exists but cannot run must not report itself available.
+
+    PrusaSlicer aborts at startup when the inherited locale has not been
+    generated on the host - the default state of a fresh Raspberry Pi OS image,
+    and also what happens when an SSH client forwards a locale the Pi lacks.
+    Checking only that the binary exists reported slicing as working and let the
+    failure surface later, deep inside a job.
+    """
+
+    def test_environment_pins_a_locale_that_always_exists(self, tmp_path):
+        from app.slicer.engine import PrusaSlicerEngine
+        from app.slicer.profiles import ProfileStore
+
+        engine = PrusaSlicerEngine("prusa-slicer", ProfileStore(tmp_path))
+        env = engine.subprocess_env()
+        assert env["LC_ALL"] == "C"
+        assert env["LANG"] == "C"
+        # Still headless, and still able to find its own libraries.
+        assert env["QT_QPA_PLATFORM"] == "offscreen"
+        assert "PATH" in env
+
+    async def test_missing_binary_verifies_false_with_a_reason(self, tmp_path):
+        from app.slicer.engine import PrusaSlicerEngine
+        from app.slicer.profiles import ProfileStore
+
+        engine = PrusaSlicerEngine("definitely-not-a-real-slicer", ProfileStore(tmp_path))
+        assert await engine.verify() is False
+        assert "not found" in engine.verify_error.lower()
+
+    async def test_binary_that_exits_nonzero_verifies_false(self, tmp_path):
+        """Stands in for the locale crash: present, executable, dies at once."""
+        from app.slicer.engine import PrusaSlicerEngine
+        from app.slicer.profiles import ProfileStore
+
+        broken = tmp_path / "broken-slicer"
+        broken.write_text(
+            "#!/bin/sh\n"
+            "echo 'An error occured while setting up locale.' >&2\n"
+            "echo 'locale::facet::_S_create_c_locale name not valid' >&2\n"
+            "exit 2\n"
+        )
+        broken.chmod(0o755)
+
+        engine = PrusaSlicerEngine(str(broken), ProfileStore(tmp_path))
+        assert engine.available is True, "the file is there"
+        assert await engine.verify() is False, "but it cannot run"
+        assert "locale" in engine.verify_error.lower()
+
+    async def test_verification_is_cached(self, tmp_path):
+        from app.slicer.engine import PrusaSlicerEngine
+        from app.slicer.profiles import ProfileStore
+
+        counter = tmp_path / "counter"
+        script = tmp_path / "counting-slicer"
+        script.write_text(f"#!/bin/sh\necho x >> {counter}\nexit 0\n")
+        script.chmod(0o755)
+
+        engine = PrusaSlicerEngine(str(script), ProfileStore(tmp_path))
+        assert await engine.verify() is True
+        assert await engine.verify() is True
+        assert counter.read_text().count("x") == 1, "cached after the first run"
+
+        await engine.verify(force=True)
+        assert counter.read_text().count("x") == 2

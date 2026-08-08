@@ -30,7 +30,12 @@ async def health(state: AppState = Depends(get_state)) -> dict:
         "moonraker_url": state.config.moonraker.base_url,
         "power_provider": state.power.name,
         "slicer_engine": state.engine.name,
-        "slicer_available": state.engine.available,
+        # Verified rather than merely present: a binary that exists but crashes
+        # on startup used to report as available, so the app offered slicing and
+        # the job failed later with a confusing error. The result is cached, so
+        # this costs one subprocess for the life of the process.
+        "slicer_available": await state.engine.verify(),
+        "slicer_error": state.engine.verify_error,
         "auth_required": state.config.server.auth_required,
         "server_time": time.time(),
         "camera_available": camera.available,

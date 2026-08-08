@@ -256,6 +256,8 @@ class BaseEngine:
         self.binary = binary
         self.store = store
         self.timeout = timeout
+        self._verified: Optional[bool] = None
+        self._verify_error: str = ""
 
     def resolve_binary(self) -> Optional[str]:
         direct = Path(self.binary)
@@ -263,9 +265,83 @@ class BaseEngine:
             return str(direct)
         return shutil.which(self.binary)
 
+    def subprocess_env(self) -> Dict[str, str]:
+        """Environment for every slicer invocation.
+
+        ``LC_ALL``/``LANG`` are pinned to ``C`` on purpose. PrusaSlicer calls
+        ``setlocale`` at startup and aborts with
+
+            locale::facet::_S_create_c_locale name not valid
+
+        when the inherited locale has not been generated on the host - which is
+        the default state of a fresh Raspberry Pi OS image, and also what
+        happens when an SSH client forwards a locale the Pi does not have. The
+        C locale always exists, so pinning it makes slicing independent of how
+        the host and the calling shell happen to be configured.
+        """
+        return {
+            "QT_QPA_PLATFORM": "offscreen",
+            "PATH": _path_env(),
+            "HOME": str(Path.home()),
+            "LC_ALL": "C",
+            "LANG": "C",
+        }
+
     @property
     def available(self) -> bool:
+        """Whether a slicer binary exists on disk.
+
+        Existing is not the same as working - see :meth:`verify`.
+        """
         return self.resolve_binary() is not None
+
+    async def verify(self, force: bool = False) -> bool:
+        """Whether the slicer actually runs.
+
+        A binary that is present but crashes on startup used to be reported as
+        available, so the app offered slicing and the job failed later with a
+        confusing error. This runs it once and caches the answer.
+        """
+        if self._verified is not None and not force:
+            return self._verified
+
+        binary = self.resolve_binary()
+        if binary is None:
+            self._verified = False
+            self._verify_error = f"{self.binary} was not found on PATH"
+            return False
+
+        try:
+            process = await asyncio.create_subprocess_exec(
+                binary,
+                "--help",
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.STDOUT,
+                env=self.subprocess_env(),
+            )
+            data, _ = await asyncio.wait_for(process.communicate(), timeout=30)
+        except (OSError, asyncio.TimeoutError) as exc:
+            self._verified = False
+            self._verify_error = f"{binary} could not be started: {exc}"
+            return False
+
+        output = data.decode("utf-8", errors="replace")
+        if process.returncode not in (0, 1):
+            # Report the slicer's own words - they name the actual problem, a
+            # missing locale being the usual one.
+            self._verified = False
+            self._verify_error = output.strip().splitlines()[-1] if output.strip() else (
+                f"{binary} exited with status {process.returncode}"
+            )
+            return False
+
+        self._verified = True
+        self._verify_error = ""
+        return True
+
+    @property
+    def verify_error(self) -> str:
+        return self._verify_error
 
     async def version(self) -> str:
         binary = self.resolve_binary()
@@ -277,6 +353,7 @@ class BaseEngine:
                 "--help",
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
+                env=self.subprocess_env(),
             )
             data, _ = await asyncio.wait_for(process.communicate(), timeout=30)
         except (OSError, asyncio.TimeoutError):
@@ -307,7 +384,7 @@ class BaseEngine:
                 cwd=str(workdir),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.STDOUT,
-                env={"QT_QPA_PLATFORM": "offscreen", "PATH": _path_env(), "HOME": str(Path.home())},
+                env=self.subprocess_env(),
             )
         except OSError as exc:
             raise SlicerError(f"Failed to launch slicer: {exc}") from exc

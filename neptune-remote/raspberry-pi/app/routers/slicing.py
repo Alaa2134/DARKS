@@ -17,12 +17,18 @@ router = APIRouter(dependencies=[Depends(require_token)])
 
 @router.post("/slice", response_model=SliceJob, status_code=202)
 async def start_slice(request: SliceRequest, state: AppState = Depends(get_state)) -> SliceJob:
-    if not state.engine.available:
+    # Verify rather than just look for the file. An installed slicer that
+    # cannot start - a missing system locale is the usual cause on a fresh
+    # Raspberry Pi OS image - would otherwise be accepted here and fail deep
+    # inside the job, where the reason is much harder to see.
+    if not await state.engine.verify():
+        reason = state.engine.verify_error
         raise HTTPException(
             status_code=503,
             detail=(
-                f"Slicer '{state.engine.binary}' is not installed on the Raspberry Pi. "
-                "Run raspberry-pi/install.sh or install prusa-slicer manually."
+                f"Slicer '{state.engine.binary}' cannot run on the Raspberry Pi."
+                + (f" {reason}" if reason else "")
+                + " Run raspberry-pi/install.sh or install prusa-slicer manually."
             ),
         )
     for kind, profile_id in (
