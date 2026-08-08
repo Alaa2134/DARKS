@@ -20,6 +20,17 @@ struct SliceView: View {
             VStack(spacing: Theme.spacing) {
                 if !slicing.isSlicerAvailable && !settings.demoMode { slicerMissingCard }
                 if let error = slicing.lastError { errorBanner(error) }
+                // Picking a model uploads through FilesStore, so a failure lands
+                // in *its* error slot. Showing only the slicing store's error
+                // made a failed import completely silent: the picker closed and
+                // nothing whatsoever appeared on screen.
+                if let error = files.lastError {
+                    ErrorBanner(
+                        message: error.localizedDescription,
+                        onRetry: nil,
+                        onDismiss: { files.lastError = nil }
+                    )
+                }
 
                 modelCard
                 if slicing.selectedModel != nil {

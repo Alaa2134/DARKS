@@ -18,6 +18,14 @@ struct GCodeDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: Theme.spacing) {
+                // Printing and deleting go through FilesStore, so its error has
+                // to be visible here or the action fails with no sign of it.
+                if let error = files.lastError {
+                    ErrorBanner(
+                        message: error.localizedDescription,
+                        onDismiss: { files.lastError = nil }
+                    )
+                }
                 thumbnailCard
                 detailsCard
                 actionsCard

@@ -22,6 +22,14 @@ struct ModelDetailView: View {
         ScrollView {
             if let item {
                 VStack(alignment: .leading, spacing: Theme.spacing) {
+                    // Every action on this screen is a LibraryStore call that
+                    // can fail; without this the failure is invisible.
+                    if let error = library.lastError {
+                        ErrorBanner(
+                            message: error.localizedDescription,
+                            onDismiss: { library.lastError = nil }
+                        )
+                    }
                     hero(item)
                     header(item)
                     printButton(item)
