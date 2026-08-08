@@ -898,16 +898,15 @@
 "share.working" = "بيحفظ الموديل…";
 "share.staged" = "اتحفظ %d موديل. افتح Neptune Remote علشان يتضافوا للمكتبة.";
 "share.unsupported" = "بس ملفات STL و3MF وOBJ اللي ينفع تتضاف";
-"share.no_app_group" = "الحاوية المشتركة مش متاحة في النسخة دي";
+"share.no_app_group" = "المشاركة محتاجة صلاحية App Group، وإعادة التوقيع بحساب Apple مجاني بتشيلها. افتح تطبيق نبتون ريموت واستخدم المكتبة ثم + لإضافة الملف - ده شغال من غيرها.";
+
+
+افتح تطبيق نبتون ريموت واستخدم: المكتبة ← + لإضافة الملف. المسار ده شغال من غيرها.";
 "share.open_app" = "افتح Neptune Remote";
 "import.pending" = "في %d موديل متشارك مستني";
 "import.pending.add" = "ضيفهم دلوقتي";
 
-/* ---------------------------------------------------------------------------
-   صلّح طابعتي، المعايرة، نسخ الإعدادات، أمان الـ G-code
-   --------------------------------------------------------------------------- */
 
-/* التشخيص */
 "doctor.title" = "صلّح طابعتي";
 "doctor.short_title" = "تصليح";
 "doctor.not_checked" = "لسه متفحصتش";
@@ -924,7 +923,6 @@
 "doctor.tap_to_fix" = "اضغط علشان تشوف الحل";
 "doctor.fix.restart_firmware" = "أعد تشغيل الفيرموير";
 
-/* الأنظمة الفرعية */
 "subsystem.connection" = "الاتصال";
 "subsystem.moonraker" = "مونريكر";
 "subsystem.klipper" = "كليبر";
@@ -946,10 +944,8 @@
 "subsystem.host" = "الراسبيري باي";
 "subsystem.storage" = "المساحة";
 
-/* الحالة */
 "health.title" = "حالة الطابعة";
 
-/* المعايرة */
 "calibration.title" = "المعايرة";
 "calibration.in_progress" = "شغالة دلوقتي";
 "workflow.safe_home" = "تصفير آمن";
@@ -967,7 +963,6 @@
 "workflow.input_shaper" = "مُشكّل الاهتزاز";
 "workflow.input_shaper.description" = "محتاج ADXL345. بيقيس الرنين ويقترح الإعداد المناسب.";
 
-/* تشغيل الإجراءات */
 "workflow.steps" = "الخطوات";
 "workflow.run_step" = "شغّل الخطوة دي";
 "workflow.done_continue" = "خلصت - كمّل";
@@ -987,13 +982,11 @@
 "workflow.state.failed" = "وقف";
 "workflow.state.cancelled" = "اتلغى";
 
-/* إزاحة Z */
 "zoffset.paper_instruction" = "نزّل الفوهة خطوة خطوة لحد ما ورقة تعدي تحتها بالعافية، وبعدين أكّد.";
 "zoffset.sign_note" = "الخطوات دي تحريك مؤقت. إزاحة الحساس اللي كليبر بيحفظها في الآخر رقم تاني خالص وغالباً موجب - التطبيق بيوريهولك قبل ما يتكتب أي حاجة.";
 "zoffset.applied" = "اتحرك لحد دلوقتي";
 "zoffset.current_z" = "إحداثي Z الحالي";
 
-/* مسامير السطح */
 "screws.diagram" = "السطح من فوق";
 "screws.adjustments" = "تلف إيه";
 "screws.rear" = "الخلف";
@@ -1010,7 +1003,6 @@
 "screw.right_middle" = "يمين نص";
 "screw.right_rear" = "يمين خلف";
 
-/* نسخ printer.cfg */
 "config.versions.title" = "نسخ الإعدادات";
 "config.versions.empty" = "لسه مفيش نسخ محفوظة";
 "config.versions.empty.detail" = "بيتاخد نسخة احتياطية تلقائياً قبل أي تعديل على printer.cfg.";
@@ -1052,7 +1044,6 @@
 "config.restore.backup_note" = "الإعدادات الحالية بتتحفظ كنسخة جديدة الأول، علشان تقدر ترجع.";
 "config.restore.confirm" = "استرجع وأعد تشغيل كليبر";
 
-/* فاحص الـ G-code */
 "gcode.inspector.title" = "فاحص الـ G-code";
 "gcode.inspector.empty" = "اختار ملف G-code علشان تفحصه.";
 "gcode.verdict.safe" = "آمن للطباعة";
@@ -1087,7 +1078,6 @@
 "gcode.line" = "سطر %d";
 "gcode.never_modified" = "التطبيق ده عمره ما بيعيد كتابة مسار الطباعة. الفاحص بيقرأ الملف ويقول لقى إيه - مفيش حاجة هنا بتعدل الـ G-code بتاعك.";
 
-/* الفحص قبل الطباعة */
 "preflight.title" = "فحص قبل الطباعة";
 "preflight.summary" = "قبل ما تطبع";
 "preflight.checks" = "الفحوصات";
@@ -1107,7 +1097,6 @@
 "preflight.row.unsupported" = "أوامر غير مدعومة";
 "preflight.row.motion" = "حدود الحركة";
 
-/* بروفايلات التقطيع */
 "slicer.golden.marked" = "اتعلم كبروفايل ذهبي";
 
 "fan.part_cooling" = "مروحة تبريد القطعة";
