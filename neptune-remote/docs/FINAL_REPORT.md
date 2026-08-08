@@ -213,3 +213,119 @@ and prints the SHA-256 of what it produced. No placeholder file is ever written.
   works out of the box and says how rough it is.
 * **A Watch app was listed as optional and is not built.** The complications
   surface through the accessory widget families instead.
+
+---
+
+# Phase 3 — control, safety, diagnosis and recovery
+
+Status of the second specification, added after phase 2.
+
+## Done
+
+**1. Fix My Printer.** `app/doctor/engine.py` inspects the Pi, Moonraker,
+Klipper, the MCU, the live `printer.cfg`, heaters, thermistors, fans, endstops,
+the probe, the filament sensor, homed axes, travel limits, bed mesh, Z offset,
+saved config values and the recent Klipper log. Every finding carries severity,
+likely cause, subsystem, recommendation, and either a one-tap fix or written-out
+manual steps. Diagnosis is read-only — it never moves the printer. A check that
+could not run reports *unknown*, never a pass.
+
+**2. Safe Command Engine.** `app/safety/engine.py`. Nothing in the project sends
+a movement command to Klipper directly. See `docs/SAFETY.md` for the full rule
+table. `G28 Z` is blocked on a triggered probe and warns on an unread one;
+moves clamp to the live config; `TESTZ` is session-gated and capped per step and
+per session; `SAVE_CONFIG` always backs up first; `force` never overrides a
+block; a sequence stops at the first refusal. Emergency Stop is pinned to the
+bottom of every calibration screen and is never gated on anything.
+
+**3. Known-good config / versioning.** Automatic backup before every change,
+timestamped versions, naming ("Golden Config", "Before ADXL"), a section-aware
+diff that separates `SAVE_CONFIG`'s own writes from your edits, one-tap
+rollback, "restore last working configuration", and per-version proven-print
+counts. Golden versions cannot be deleted or pruned. Suspicious values are
+detected against a Neptune 3 Plus profile that advises but never overrides.
+
+**4. Z Offset wizard.** The documented procedure end to end, with ±1.0 … ±0.01
+controls, guarded step sizes, and the three numbers kept explicitly separate:
+the live Z coordinate, the temporary `TESTZ` nudges, and the probe `z_offset`
+Klipper saves — which is normally positive even though the nudges are negative.
+
+**5. Screws tilt / bed level wizard.** All six Neptune 3 Plus positions on a
+diagram of the bed, an arrow and severity per screw, and the fraction of a turn.
+Klipper's clock is one full turn per hour, so `00:21` reads as "about 0.35 of a
+turn". Measure-and-turn loops back rather than advancing.
+
+**6. Bed mesh.** `BED_MESH_CALIBRATE` through the workflow, plus the existing
+heat-map view. Full Bed Calibration levels the screws **before** meshing and
+stops at the first failed safety check.
+
+**7. Axis health test.** Conservative sweeps across the configured travel,
+re-home, compare. It reports "possible skipped Y steps" and never claims
+certainty — see the limits below.
+
+**12. Pre-print safety check.** Printer health plus G-code analysis produce
+READY / WARNING / BLOCKED, with Strict Safety Mode turning warnings into blocks.
+The pre-print banner shows slicer, profile, profile status, validation, build
+volume, unsupported commands and motion limits.
+
+**14. Printer health page.** One card per subsystem: green, yellow, red or
+unknown, with status, detail and recommended action.
+
+**15. Maintenance.** The checklist now covers V wheels, eccentric nuts, belts, Z
+lead screws, nozzle, hotend, fans, bed screws, wiring and the filament sensor,
+each with English and Arabic guidance. **The lubrication task names the Z lead
+screws specifically and says not to lubricate the POM V wheels or the aluminium
+V-slot** — a test enforces that lubrication and a wheel never appear together
+without a prohibition.
+
+**16. Printer profile.** Neptune 3 Plus geometry is used to *validate* the live
+config, not to replace it. Clamping and bounds checks always use `printer.cfg`.
+
+**19-20. Error translation and config validation.** The existing translator
+keeps the original Klipper text; the config validator detects duplicate
+sections, inverted limits, endstops outside travel, missing required fields and
+suspicious probe offsets, and runs before any save.
+
+**G-code safety (the critical requirement).** `app/gcode/validator.py` reads and
+reports; there is no function in this project that writes G-code. It resolves
+`G91` and `G92` so neither can hide a move off the bed, checks bounds against
+the live config, flags missing `G28`/`G90`, catches `M413` and other Marlin
+commands, and marks anything not from the approved PrusaSlicer profile as
+UNVERIFIED. Golden profiles are pinned: editing creates a new version and never
+overwrites, and Golden status requires both the approved slicer and an approved
+profile name.
+
+## Verified
+
+- **548 backend tests**, including the safety engine's refusals, the workflow
+  stop-on-refusal invariant, and every G-code failure shape.
+- **51 project checks** — no committed credentials, complete AR/EN key sets.
+- **The iOS app compiles.** The macOS CI job built a real unsigned IPA
+  (3.3 MB) with the app, widget and Share Extension embedded.
+
+## Not done yet
+
+* **AI assistant (§10).** The context it would read is all in place — health
+  report, config, logs, print history, G-code analysis — and the Safety Command
+  Engine is exactly the gate it would have to request actions through. The
+  assistant itself is not built.
+* **Hardware mods registry (§9, §22).** Dual 5015 wiring guidance, the ADXL345
+  setup flow and the fan test steps are specified but not implemented. The
+  accelerometer is already detected and resonance tests already refuse without
+  one.
+* **Smart print recovery (§13).** Reconnect and pause handling exist from
+  phase 1; the explicit "do not resume after suspected lost position" logic is
+  not built.
+* **Axis health interpretation.** The workflow runs and collects endstop and
+  position output; turning that into a per-axis pass/fail verdict is not
+  finished.
+
+## Honest limits
+
+* **Standard steppers are open loop.** Nothing in the machine reports actual
+  position. The app gathers indirect evidence and says "possible skipped steps";
+  it will not pretend otherwise. Detecting it for certain needs hardware that is
+  not installed.
+* **The heuristic print monitor is rough**, and says so on every detection.
+* **No accelerometer is installed**, so input shaping is offered but reports
+  "Not installed" rather than faking a result.
