@@ -21,6 +21,7 @@
 		2CA97FA8493069881829D8C0 /* InventoryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryModels.swift"; sourceTree = "<group>"; };
 		E7CABC317661C4D8BD371CC6 /* LibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryModels.swift"; sourceTree = "<group>"; };
 		885AA9377D85C2DB0D56C617 /* MediaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaModels.swift"; sourceTree = "<group>"; };
+		80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoCapabilities.swift"; sourceTree = "<group>"; };
 		2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoSimulator.swift"; sourceTree = "<group>"; };
 		3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorStore.swift"; sourceTree = "<group>"; };
 		F67931E07DCE8C21A0F43132 /* FilesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FilesStore.swift"; sourceTree = "<group>"; };
@@ -28,9 +29,12 @@
 		57D1D8CAD359B977FAA1E96A /* InventoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryStore.swift"; sourceTree = "<group>"; };
 		DCCF4FC2CE1700C6286A3A3D /* LibraryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryStore.swift"; sourceTree = "<group>"; };
 		758173BFB1439B7193B6E897 /* MediaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaStore.swift"; sourceTree = "<group>"; };
+		C85310FFB7D23C2BF5F3466E /* CapabilityDiscovery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CapabilityDiscovery.swift"; sourceTree = "<group>"; };
+		1F82ACF98F1401F9482320A9 /* ConfigValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConfigValue.swift"; sourceTree = "<group>"; };
 		F7C56AF9D64855224C65DEF7 /* MoonrakerClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoonrakerClient.swift"; sourceTree = "<group>"; };
 		F27DFEC948449D25F905F484 /* MoonrakerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoonrakerModels.swift"; sourceTree = "<group>"; };
 		CF10A219B053BB1826C8DA02 /* MoonrakerSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoonrakerSocket.swift"; sourceTree = "<group>"; };
+		A5817A222D55BAAA0322B3DA /* PrinterCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterCapabilities.swift"; sourceTree = "<group>"; };
 		FA53BFF0AB27B314C5B6B477 /* PrinterSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterSnapshot.swift"; sourceTree = "<group>"; };
 		BE67A1A928EADAEB4B8A0205 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError.swift"; sourceTree = "<group>"; };
 		3587CC1D5CE36BD374E4D8A2 /* ATSPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ATSPolicy.swift"; sourceTree = "<group>"; };
@@ -83,6 +87,7 @@
 		215A765269BB221AFDEFC939 /* VideosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VideosView.swift"; sourceTree = "<group>"; };
 		A818C1710FC12F603AB8340A /* VisionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VisionView.swift"; sourceTree = "<group>"; };
 		08647BC4645383B362BBB2B3 /* NetworkDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetworkDiagnosticsView.swift"; sourceTree = "<group>"; };
+		21A13A6383385B3ABAC37431 /* PrinterCapabilitiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterCapabilitiesView.swift"; sourceTree = "<group>"; };
 		B46BA26DA4AEBAB629D4CF8C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
 		6ED649326E044B4DEB8848C9 /* SetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetupWizardView.swift"; sourceTree = "<group>"; };
 		1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeshLoader.swift"; sourceTree = "<group>"; };
@@ -101,6 +106,7 @@
 		170879B0FB629239D2038861 /* PrintLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintLiveActivity.swift"; sourceTree = "<group>"; };
 		8234B47C61D9A610835098AE /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShareViewController.swift"; sourceTree = "<group>"; };
 		04E68A5C73D0307082FD0DCF /* ATSPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ATSPolicyTests.swift"; sourceTree = "<group>"; };
+		D2E2ED1D8E7F57805C6A87AE /* CapabilityDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CapabilityDiscoveryTests.swift"; sourceTree = "<group>"; };
 		BFB71C9A1559EAEA74E365F2 /* ConnectionDiagnosticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConnectionDiagnosticsTests.swift"; sourceTree = "<group>"; };
 		6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorTests.swift"; sourceTree = "<group>"; };
 		A464B815DD4754605B807349 /* EcosystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EcosystemTests.swift"; sourceTree = "<group>"; };
@@ -168,6 +174,7 @@
 		453D552C803F957023919D6F /* Demo */ = {
 			isa = PBXGroup;
 			children = (
+				80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */,
 				2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */,
 			);
 			path = "Demo";
@@ -176,9 +183,12 @@
 		C5BB5FF243F4AEEC78C00AEF /* Moonraker */ = {
 			isa = PBXGroup;
 			children = (
+				C85310FFB7D23C2BF5F3466E /* CapabilityDiscovery.swift */,
+				1F82ACF98F1401F9482320A9 /* ConfigValue.swift */,
 				F7C56AF9D64855224C65DEF7 /* MoonrakerClient.swift */,
 				F27DFEC948449D25F905F484 /* MoonrakerModels.swift */,
 				CF10A219B053BB1826C8DA02 /* MoonrakerSocket.swift */,
+				A5817A222D55BAAA0322B3DA /* PrinterCapabilities.swift */,
 				FA53BFF0AB27B314C5B6B477 /* PrinterSnapshot.swift */,
 			);
 			path = "Moonraker";
@@ -364,6 +374,7 @@
 			isa = PBXGroup;
 			children = (
 				08647BC4645383B362BBB2B3 /* NetworkDiagnosticsView.swift */,
+				21A13A6383385B3ABAC37431 /* PrinterCapabilitiesView.swift */,
 				B46BA26DA4AEBAB629D4CF8C /* SettingsView.swift */,
 			);
 			path = "Settings";
@@ -484,6 +495,7 @@
 			isa = PBXGroup;
 			children = (
 				04E68A5C73D0307082FD0DCF /* ATSPolicyTests.swift */,
+				D2E2ED1D8E7F57805C6A87AE /* CapabilityDiscoveryTests.swift */,
 				BFB71C9A1559EAEA74E365F2 /* ConnectionDiagnosticsTests.swift */,
 				6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */,
 				A464B815DD4754605B807349 /* EcosystemTests.swift */,
@@ -532,6 +544,7 @@
 		0C9A11D6E927CF65B0EBDDA6 /* InventoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA97FA8493069881829D8C0 /* InventoryModels.swift */; };
 		A39CA503ADED69919B88189B /* LibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7CABC317661C4D8BD371CC6 /* LibraryModels.swift */; };
 		78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885AA9377D85C2DB0D56C617 /* MediaModels.swift */; };
+		E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */; };
 		61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */; };
 		B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */; };
 		877FDD9A61EF5407809A3A04 /* FilesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67931E07DCE8C21A0F43132 /* FilesStore.swift */; };
@@ -539,9 +552,12 @@
 		2C6D4858ABE03D850CA5EB2A /* InventoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57D1D8CAD359B977FAA1E96A /* InventoryStore.swift */; };
 		C4AA7C22C90DAB89683EA06A /* LibraryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCCF4FC2CE1700C6286A3A3D /* LibraryStore.swift */; };
 		22639278F34583048746E05E /* MediaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 758173BFB1439B7193B6E897 /* MediaStore.swift */; };
+		12FDEAAC64B0EE5AFA971905 /* CapabilityDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = C85310FFB7D23C2BF5F3466E /* CapabilityDiscovery.swift */; };
+		545662DF6818CD14C1EC7A53 /* ConfigValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F82ACF98F1401F9482320A9 /* ConfigValue.swift */; };
 		BFC339BDCAB025A6D9873D53 /* MoonrakerClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7C56AF9D64855224C65DEF7 /* MoonrakerClient.swift */; };
 		0D6A378A9D0FEE71D7FAB652 /* MoonrakerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F27DFEC948449D25F905F484 /* MoonrakerModels.swift */; };
 		C23473ED49F89CC7E0954025 /* MoonrakerSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A219B053BB1826C8DA02 /* MoonrakerSocket.swift */; };
+		A3602C35D40E0CDD3A9CDDD4 /* PrinterCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5817A222D55BAAA0322B3DA /* PrinterCapabilities.swift */; };
 		95E4C447A113DE606FF9957F /* PrinterSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA53BFF0AB27B314C5B6B477 /* PrinterSnapshot.swift */; };
 		905BFE8F33E629C6B2A76F48 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE67A1A928EADAEB4B8A0205 /* APIError.swift */; };
 		5B3C6DD64013BD18A0451C28 /* ATSPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3587CC1D5CE36BD374E4D8A2 /* ATSPolicy.swift */; };
@@ -594,6 +610,7 @@
 		B5BE820AF4032434A01484E7 /* VideosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 215A765269BB221AFDEFC939 /* VideosView.swift */; };
 		DFB0D7B56B08B00E8AEEC8F2 /* VisionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A818C1710FC12F603AB8340A /* VisionView.swift */; };
 		004A00A81D6D859A15FF7EC8 /* NetworkDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08647BC4645383B362BBB2B3 /* NetworkDiagnosticsView.swift */; };
+		45C9E15F6842848097BB5D5B /* PrinterCapabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A13A6383385B3ABAC37431 /* PrinterCapabilitiesView.swift */; };
 		9C3A199BBE38759E9005E6B9 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B46BA26DA4AEBAB629D4CF8C /* SettingsView.swift */; };
 		B583D61EBFDFCCB1FAD72E68 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED649326E044B4DEB8848C9 /* SetupWizardView.swift */; };
 		BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */; };
@@ -617,6 +634,7 @@
 		88592F09CA5185976B237762 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8234B47C61D9A610835098AE /* ShareViewController.swift */; };
 		C236EF25AB44127C3771BEA5 /* SharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524458702E198572FC5CE3B8 /* SharedModels.swift */; };
 		1174704FE94003608A696600 /* ATSPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E68A5C73D0307082FD0DCF /* ATSPolicyTests.swift */; };
+		7B71FBEE0B649C6F86FE1F3F /* CapabilityDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E2ED1D8E7F57805C6A87AE /* CapabilityDiscoveryTests.swift */; };
 		568C40FDA88DB16EEAB8D6C8 /* ConnectionDiagnosticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB71C9A1559EAEA74E365F2 /* ConnectionDiagnosticsTests.swift */; };
 		7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */; };
 		E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A464B815DD4754605B807349 /* EcosystemTests.swift */; };
@@ -648,6 +666,7 @@
 				0C9A11D6E927CF65B0EBDDA6 /* InventoryModels.swift in Sources */,
 				A39CA503ADED69919B88189B /* LibraryModels.swift in Sources */,
 				78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */,
+				E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */,
 				61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */,
 				B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */,
 				877FDD9A61EF5407809A3A04 /* FilesStore.swift in Sources */,
@@ -655,9 +674,12 @@
 				2C6D4858ABE03D850CA5EB2A /* InventoryStore.swift in Sources */,
 				C4AA7C22C90DAB89683EA06A /* LibraryStore.swift in Sources */,
 				22639278F34583048746E05E /* MediaStore.swift in Sources */,
+				12FDEAAC64B0EE5AFA971905 /* CapabilityDiscovery.swift in Sources */,
+				545662DF6818CD14C1EC7A53 /* ConfigValue.swift in Sources */,
 				BFC339BDCAB025A6D9873D53 /* MoonrakerClient.swift in Sources */,
 				0D6A378A9D0FEE71D7FAB652 /* MoonrakerModels.swift in Sources */,
 				C23473ED49F89CC7E0954025 /* MoonrakerSocket.swift in Sources */,
+				A3602C35D40E0CDD3A9CDDD4 /* PrinterCapabilities.swift in Sources */,
 				95E4C447A113DE606FF9957F /* PrinterSnapshot.swift in Sources */,
 				905BFE8F33E629C6B2A76F48 /* APIError.swift in Sources */,
 				5B3C6DD64013BD18A0451C28 /* ATSPolicy.swift in Sources */,
@@ -710,6 +732,7 @@
 				B5BE820AF4032434A01484E7 /* VideosView.swift in Sources */,
 				DFB0D7B56B08B00E8AEEC8F2 /* VisionView.swift in Sources */,
 				004A00A81D6D859A15FF7EC8 /* NetworkDiagnosticsView.swift in Sources */,
+				45C9E15F6842848097BB5D5B /* PrinterCapabilitiesView.swift in Sources */,
 				9C3A199BBE38759E9005E6B9 /* SettingsView.swift in Sources */,
 				B583D61EBFDFCCB1FAD72E68 /* SetupWizardView.swift in Sources */,
 				BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */,
@@ -804,6 +827,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1174704FE94003608A696600 /* ATSPolicyTests.swift in Sources */,
+				7B71FBEE0B649C6F86FE1F3F /* CapabilityDiscoveryTests.swift in Sources */,
 				568C40FDA88DB16EEAB8D6C8 /* ConnectionDiagnosticsTests.swift in Sources */,
 				7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */,
 				E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */,
