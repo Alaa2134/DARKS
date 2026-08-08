@@ -368,9 +368,31 @@ def check_backend() -> None:
     )
     check("python sources compile", result.returncode == 0, result.stdout + result.stderr)
 
-    for script in sorted(ROOT.rglob("*.sh")):
+    scripts = sorted(ROOT.rglob("*.sh"))
+    for script in scripts:
         result = subprocess.run(["bash", "-n", str(script)], capture_output=True, text=True)
         check(f"{script.relative_to(ROOT)} syntax", result.returncode == 0, result.stderr.strip())
+
+    # A script committed without its executable bit extracts from a GitHub
+    # archive as non-executable, so `./install.sh` fails with "Permission
+    # denied" for anyone who downloads the repository as a tarball rather than
+    # cloning it. The local filesystem mode is not enough to catch this - the
+    # mode recorded in the index is what ends up in the archive.
+    tracked = subprocess.run(
+        ["git", "ls-files", "-s", "--", "*.sh"],
+        capture_output=True, text=True, cwd=str(ROOT.parent),
+    )
+    if tracked.returncode == 0:
+        not_executable = [
+            line.split("\t", 1)[1]
+            for line in tracked.stdout.splitlines()
+            if line and not line.startswith("100755")
+        ]
+        check(
+            "shell scripts are executable in git",
+            not not_executable,
+            "run: git update-index --chmod=+x " + " ".join(not_executable),
+        )
 
     service = BACKEND / "neptune-remote.service"
     if service.is_file():
