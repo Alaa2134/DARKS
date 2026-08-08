@@ -259,8 +259,53 @@ def test_builtin_maintenance_tasks_exist(database: Database):
     store = MaintenanceStore(database)
     status = store.status(total_prints=0, total_print_hours=0)
     ids = {task.id for task in status.tasks}
-    assert {"clean_bed", "clean_nozzle", "lubricate_axes", "check_belts"} <= ids
+    assert {"clean_bed", "clean_nozzle", "lubricate_z_screws", "check_belts"} <= ids
     assert all(task.name_ar for task in status.tasks)
+
+
+def test_lubrication_guidance_names_the_z_screws_and_warns_off_the_wheels(database: Database):
+    """POM V wheels and the aluminium V-slot must run dry; only Z screws get grease.
+
+    Getting this wrong wears the wheels out, so the guidance has to be explicit
+    rather than a generic "lubricate the axes".
+    """
+    store = MaintenanceStore(database)
+    status = store.status(total_prints=0, total_print_hours=0)
+    task = next(t for t in status.tasks if t.id == "lubricate_z_screws")
+
+    assert "lead screw" in task.name_en.lower()
+    guidance = task.guidance_en.lower()
+    assert "ptfe" in guidance or "lithium" in guidance
+    assert "do not lubricate" in guidance
+    assert "pom" in guidance
+    assert "v-slot" in guidance or "v slot" in guidance
+
+    # And nowhere in the app does lubrication and a wheel or rail appear together
+    # without a prohibition attached.
+    for candidate in status.tasks:
+        text = f"{candidate.name_en} {candidate.guidance_en}".lower()
+        mentions_lubrication = "lubricat" in text
+        mentions_dry_parts = "wheel" in text or "v-slot" in text or "rail" in text
+        if mentions_lubrication and mentions_dry_parts:
+            assert any(word in text for word in ("do not", "never", "must stay dry")), candidate.id
+
+
+def test_the_maintenance_checklist_covers_what_the_frame_needs(database: Database):
+    store = MaintenanceStore(database)
+    ids = {task.id for task in store.status(total_prints=0, total_print_hours=0).tasks}
+    for required in (
+        "check_wheels", "check_eccentric_nuts", "check_belts", "lubricate_z_screws",
+        "clean_nozzle", "check_hotend", "clean_fans", "check_bed_screws",
+        "inspect_wiring", "check_filament_sensor",
+    ):
+        assert required in ids, required
+
+
+def test_every_task_explains_what_to_do(database: Database):
+    store = MaintenanceStore(database)
+    for task in store.status(total_prints=0, total_print_hours=0).tasks:
+        assert task.guidance_en, task.id
+        assert task.guidance_ar, task.id
 
 
 def test_task_becomes_due_from_print_hours(database: Database):

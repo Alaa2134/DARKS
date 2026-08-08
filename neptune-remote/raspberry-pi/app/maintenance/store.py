@@ -19,40 +19,124 @@ BUILTIN_TASKS: List[Dict[str, Any]] = [
     {
         "id": "clean_bed", "name_ar": "تنظيف سطح الطباعة", "name_en": "Clean the print bed",
         "icon": "sparkles", "interval_prints": 10, "interval_days": 14,
+        "guidance_en": "Wipe the sheet with 99% isopropyl alcohol. Skip dish soap - "
+                       "the residue is what stops prints sticking.",
+        "guidance_ar": "امسح السطح بكحول ٩٩٪. بلاش صابون - الطبقة اللي بيسيبها هي اللي "
+                       "بتخلي الطبعات متلزقش.",
     },
     {
-        "id": "clean_nozzle", "name_ar": "تنظيف النوزل", "name_en": "Clean the nozzle",
+        "id": "clean_nozzle", "name_ar": "تنظيف الفوهة", "name_en": "Clean the nozzle",
         "icon": "flame", "interval_hours": 60,
+        "guidance_en": "Heat to printing temperature first, then wipe with brass wool. "
+                       "Never scrape a cold nozzle.",
+        "guidance_ar": "سخّن لدرجة الطباعة الأول، وبعدين امسح بسلك نحاس. "
+                       "عمرك ما تكشط فوهة باردة.",
     },
     {
-        "id": "lubricate_axes", "name_ar": "تشحيم المحاور", "name_en": "Lubricate the axes",
+        "id": "lubricate_z_screws",
+        "name_ar": "تشحيم عمودي Z", "name_en": "Lubricate the Z lead screws",
         "icon": "drop", "interval_hours": 150, "interval_days": 90,
+        # The distinction that matters on this frame: the Z lead screws want
+        # grease; the POM wheels and the aluminium V-slot must stay dry.
+        "guidance_en": "Z lead screws only. Use PTFE or white lithium grease, a thin film, "
+                       "then move Z through its full travel to spread it.\n"
+                       "Do NOT lubricate the POM V wheels or the aluminium V-slot rails - "
+                       "grease there collects dust and grit, and the wheels are designed to "
+                       "run dry. Clean those with a dry cloth instead.",
+        "guidance_ar": "عمودي Z بس. استخدم شحم PTFE أو ليثيوم أبيض، طبقة رفيعة، "
+                       "وبعدين حرّك Z على طول مداه علشان يتوزع.\n"
+                       "متشحّمش عجل الـ POM ولا سكك الألومنيوم - الشحم هناك بيلم تراب "
+                       "ورمل، والعجل مصمم يشتغل ناشف. نضفهم بفوطة ناشفة بس.",
     },
     {
         "id": "check_belts", "name_ar": "فحص السيور", "name_en": "Check the belts",
         "icon": "arrow.left.and.right", "interval_hours": 120,
+        "guidance_en": "A correctly tensioned belt plucks like a low guitar string. "
+                       "Too tight wears the bearings; too loose shows as ringing.",
+        "guidance_ar": "السير المظبوط بيرن زي وتر جيتار واطي. الشد الزيادة بيأكل الرمان "
+                       "بلي، والرخاوة بتبان كأشباح في الطبعة.",
     },
     {
-        "id": "check_wheels", "name_ar": "فحص العجلات", "name_en": "Check the wheels",
+        "id": "check_wheels",
+        "name_ar": "فحص عجل الـ V", "name_en": "Check the V wheels",
         "icon": "circle.dashed", "interval_hours": 200,
+        "guidance_en": "Each wheel should turn with light finger pressure but not slip. "
+                       "Wipe them dry - never lubricate POM wheels.",
+        "guidance_ar": "كل عجلة تلف بضغط خفيف من صباعك من غير ما تتزحلق. "
+                       "نضفها ناشفة - عمرك ما تشحّم عجل POM.",
+    },
+    {
+        "id": "check_eccentric_nuts",
+        "name_ar": "ضبط الصواميل اللامركزية", "name_en": "Adjust the eccentric nuts",
+        "icon": "circle.circle", "interval_hours": 200, "interval_days": 120,
+        "guidance_en": "Turn the eccentric nut until the wheel just grips the rail with no "
+                       "rocking. Over-tightening flat-spots the POM.",
+        "guidance_ar": "لف الصامولة لحد ما العجلة تمسك السكة من غير خضة. "
+                       "الشد الزيادة بيعمل تفلطح في الـ POM.",
+    },
+    {
+        "id": "check_bed_screws", "name_ar": "فحص مسامير السطح", "name_en": "Check the bed screws",
+        "icon": "dial.medium", "interval_prints": 25, "interval_days": 45,
+        "guidance_en": "Run the Bed screw adjustment wizard rather than guessing - it tells "
+                       "you which knob, which way, and by how much of a turn.",
+        "guidance_ar": "شغّل معالج ضبط المسامير بدل التخمين - بيقولك أنهي مسمار، "
+                       "في أنهي اتجاه، وكام لفة.",
     },
     {
         "id": "clean_fans", "name_ar": "تنظيف المراوح", "name_en": "Clean the fans",
         "icon": "fanblades", "interval_hours": 250, "interval_days": 120,
+        "guidance_en": "Blow out the hotend heatsink fan especially - a clogged one causes "
+                       "heat creep and jams that look like extruder problems.",
+        "guidance_ar": "نضّف مروحة مشتت الحرارة بالذات - لما تتسد بتسبب ارتفاع حرارة "
+                       "لفوق وانسداد شكله زي مشكلة في الإكسترودر.",
+    },
+    {
+        "id": "check_hotend", "name_ar": "فحص الفوهة والمجموعة", "name_en": "Check the hotend",
+        "icon": "thermometer.high", "interval_hours": 300, "interval_days": 180,
+        "guidance_en": "Check for leaks around the nozzle while hot, and that the silicone "
+                       "sock is intact. Re-tighten the nozzle only at temperature.",
+        "guidance_ar": "شوف في تسريب حوالين الفوهة وهي سخنة، والعازل السيليكون سليم. "
+                       "ربط الفوهة يتم وهي سخنة بس.",
     },
     {
         "id": "inspect_wiring", "name_ar": "فحص الأسلاك", "name_en": "Inspect the wiring",
         "icon": "cable.connector", "interval_hours": 300, "interval_days": 180,
+        "guidance_en": "Follow the moving loom to the hotend and the bed. Look for chafing "
+                       "where it flexes - that is where a thermistor fails mid-print.",
+        "guidance_ar": "تابع الضفيرة المتحركة لحد الفوهة والسطح. دوّر على أي كشط في "
+                       "مكان الثني - ده مكان ما الثرمستور بيفصل في نص الطبعة.",
     },
     {
-        "id": "check_bed_mesh", "name_ar": "إعادة عمل خريطة السرير", "name_en": "Re-run the bed mesh",
+        "id": "check_filament_sensor",
+        "name_ar": "فحص حساس الفلامنت", "name_en": "Check the filament sensor",
+        "icon": "circle.hexagongrid", "interval_hours": 250, "interval_days": 150,
+        "guidance_en": "Trigger it by hand and confirm the app sees the change. A sensor "
+                       "that never triggers is worse than none, because you trust it.",
+        "guidance_ar": "شغّله بإيدك وشوف التطبيق حس بالتغيير. الحساس اللي مبيشتغلش "
+                       "أوحش من عدمه، لأنك بتعتمد عليه.",
+    },
+    {
+        "id": "check_bed_mesh", "name_ar": "إعادة عمل شبكة السطح", "name_en": "Re-run the bed mesh",
         "icon": "grid", "interval_prints": 25, "interval_days": 60,
+        "guidance_en": "Level the screws first. A mesh cannot compensate for a badly tilted bed.",
+        "guidance_ar": "ظبّط المسامير الأول. الشبكة مش بتعوض سطح مايل بشكل كبير.",
     },
     {
-        "id": "tighten_screws", "name_ar": "ربط المسامير", "name_en": "Tighten the screws",
+        "id": "tighten_screws", "name_ar": "ربط مسامير الهيكل", "name_en": "Tighten the frame screws",
         "icon": "wrench.and.screwdriver", "interval_hours": 200,
+        "guidance_en": "Check the gantry and the Z rail mounts. A loose frame shows up as "
+                       "layer shifts that look exactly like skipped steps.",
+        "guidance_ar": "افحص الجسر ومسامير سكة Z. الهيكل المفكوك بيبان كإزاحة طبقات "
+                       "شكلها بالظبط زي الخطوات الضايعة.",
     },
 ]
+
+
+#: task id -> (english, arabic) guidance.
+BUILTIN_GUIDANCE: Dict[str, tuple[str, str]] = {
+    task["id"]: (task.get("guidance_en", ""), task.get("guidance_ar", ""))
+    for task in BUILTIN_TASKS
+}
 
 
 class MaintenanceTask(BaseModel):
@@ -68,6 +152,9 @@ class MaintenanceTask(BaseModel):
     last_done_prints: int = 0
     enabled: bool = True
     notes: str = ""
+    #: What to do, and - just as importantly - what not to do.
+    guidance_en: str = ""
+    guidance_ar: str = ""
     builtin: bool = False
 
     # Computed for the UI.
@@ -223,4 +310,11 @@ class MaintenanceStore:
         data = dict(row)
         data["enabled"] = bool(data["enabled"])
         data["builtin"] = bool(data["builtin"])
+        # Guidance is static advice that ships with the app, not user data, so
+        # it lives in code and is attached here rather than stored per row.
+        # Updating the wording then reaches printers that were set up long ago.
+        guidance = BUILTIN_GUIDANCE.get(data["id"])
+        if guidance is not None:
+            data["guidance_en"] = guidance[0]
+            data["guidance_ar"] = guidance[1]
         return MaintenanceTask(**data)
