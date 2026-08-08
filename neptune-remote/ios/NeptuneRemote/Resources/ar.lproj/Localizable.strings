@@ -824,3 +824,43 @@
 "notification.maintenance_due.body" = "في %d مهمة مستحقة";
 "notification.filament_low.title" = "الفلامنت قرب يخلص";
 "notification.filament_low.body" = "باقي حوالي %d جم";
+
+/* أماكن الأفكار */
+"ideas.room.desk" = "المكتب";
+"ideas.room.car" = "العربية";
+"ideas.room.kitchen" = "المطبخ";
+"ideas.room.room" = "حاجات البيت";
+"ideas.room.phone" = "الموبايل";
+"ideas.room.computer" = "الكمبيوتر";
+"ideas.room.robotics" = "روبوتات";
+"ideas.room.organization" = "تنظيم";
+"ideas.room.gifts" = "هدايا";
+"ideas.room.projects" = "مشاريع";
+"ideas.room.spare_parts" = "قطع غيار";
+
+/* تصنيفات المكتبة */
+"library.category.office" = "المكتب";
+"library.category.home" = "البيت";
+"library.category.kitchen" = "المطبخ";
+"library.category.toys" = "لعب";
+"library.category.robotics" = "روبوتات";
+"library.category.electronics" = "إلكترونيات";
+"library.category.keychains" = "ميداليات";
+"library.category.stands" = "حوامل";
+"library.category.organizers" = "منظمات";
+"library.category.decor" = "ديكور";
+"library.category.spare_parts" = "قطع غيار";
+"library.category.projects" = "مشاريع";
+"library.category.other" = "أخرى";
+
+/* خيارات وقت الأفكار + إضافات */
+"ideas.time.30m" = "أقل من ٣٠ دقيقة";
+"ideas.time.2h" = "أقل من ساعتين";
+"ideas.time.6h" = "أقل من ٦ ساعات";
+"slicer.preview.unavailable" = "مش قادر أقرأ ملف الموديل ده";
+
+/* تنقل + عام (المرحلة الثانية) */
+"more.title" = "المزيد";
+"common.on" = "شغال";
+"common.off" = "مقفول";
+"home.state.error.hint" = "اقرأ الرسالة، وبعدين افتح المساعدة.";

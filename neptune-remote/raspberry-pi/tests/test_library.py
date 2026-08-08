@@ -421,3 +421,46 @@ def test_stats(store: LibraryStore, stl_file: Path):
     stats = store.stats()
     assert stats["total"] == 1
     assert stats["favourites"] == 1
+
+
+# --------------------------------------------------------------------------- #
+# Library models are sliceable by their own id
+# --------------------------------------------------------------------------- #
+
+
+def test_model_store_resolves_library_items(
+    store: LibraryStore, layout: StorageLayout, stl_file: Path, tmp_path: Path
+):
+    """One-tap print slices a library item directly - no second upload."""
+    from app.storage import ModelStore
+
+    item = store.create_item(payload=LibraryItemCreate(name_ar="حامل"), model_file=stl_file)
+    models = ModelStore(tmp_path / "uploads", extra_directories=[layout.models])
+
+    resolved = models.get(item.id)
+    assert resolved is not None
+    assert resolved.id == item.id
+    assert models.path_for(item.id).is_file()
+
+
+def test_model_store_does_not_list_library_items(
+    store: LibraryStore, layout: StorageLayout, stl_file: Path, tmp_path: Path
+):
+    from app.storage import ModelStore
+
+    store.create_item(payload=LibraryItemCreate(name_ar="حامل"), model_file=stl_file)
+    models = ModelStore(tmp_path / "uploads", extra_directories=[layout.models])
+    assert models.list() == []
+
+
+def test_model_store_refuses_to_delete_library_items(
+    store: LibraryStore, layout: StorageLayout, stl_file: Path, tmp_path: Path
+):
+    """Library files are owned by the library; the upload store must not eat them."""
+    from app.storage import ModelStore
+
+    item = store.create_item(payload=LibraryItemCreate(name_ar="حامل"), model_file=stl_file)
+    models = ModelStore(tmp_path / "uploads", extra_directories=[layout.models])
+
+    assert models.delete(item.id) is False
+    assert models.path_for(item.id).is_file()

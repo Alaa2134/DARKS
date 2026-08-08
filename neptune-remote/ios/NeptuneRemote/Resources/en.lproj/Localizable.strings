@@ -824,3 +824,43 @@
 "notification.maintenance_due.body" = "%d task(s) are due";
 "notification.filament_low.title" = "Filament running low";
 "notification.filament_low.body" = "About %d g left";
+
+/* Idea rooms */
+"ideas.room.desk" = "Desk";
+"ideas.room.car" = "Car";
+"ideas.room.kitchen" = "Kitchen";
+"ideas.room.room" = "Around the house";
+"ideas.room.phone" = "Phone";
+"ideas.room.computer" = "Computer";
+"ideas.room.robotics" = "Robotics";
+"ideas.room.organization" = "Organising";
+"ideas.room.gifts" = "Gifts";
+"ideas.room.projects" = "Projects";
+"ideas.room.spare_parts" = "Spare parts";
+
+/* Library categories */
+"library.category.office" = "Office";
+"library.category.home" = "Home";
+"library.category.kitchen" = "Kitchen";
+"library.category.toys" = "Toys";
+"library.category.robotics" = "Robotics";
+"library.category.electronics" = "Electronics";
+"library.category.keychains" = "Keychains";
+"library.category.stands" = "Stands";
+"library.category.organizers" = "Organisers";
+"library.category.decor" = "Decor";
+"library.category.spare_parts" = "Spare parts";
+"library.category.projects" = "Projects";
+"library.category.other" = "Other";
+
+/* Idea finder time options + misc phase-2 additions */
+"ideas.time.30m" = "Under 30 min";
+"ideas.time.2h" = "Under 2 h";
+"ideas.time.6h" = "Under 6 h";
+"slicer.preview.unavailable" = "Could not read this model file";
+
+/* Navigation + common (phase 2) */
+"more.title" = "More";
+"common.on" = "On";
+"common.off" = "Off";
+"home.state.error.hint" = "Read the message, then open Help.";

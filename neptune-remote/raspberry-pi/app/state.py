@@ -73,7 +73,9 @@ class AppState:
         self.moonraker = MoonrakerClient(config.moonraker)
         self.power: PowerProvider = build_power_provider(config, self.moonraker)
         self.profiles = ProfileStore(paths["profiles_dir"])
-        self.models = ModelStore(paths["models_dir"])
+        # The library's own model folder is registered as a read-only extra
+        # source so a library item can be sliced by its id directly.
+        self.models = ModelStore(paths["models_dir"], extra_directories=[self.layout.models])
         self.gcodes = GCodeStore(paths["gcode_dir"])
         self.history = HistoryDB(paths["database"]) if config.history.enabled else None
         self.hub = EventHub()

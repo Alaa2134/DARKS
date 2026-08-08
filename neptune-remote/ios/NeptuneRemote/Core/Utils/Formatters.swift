@@ -92,6 +92,15 @@ enum Format {
         return formatter.localizedString(for: Date(timeIntervalSince1970: timestamp), relativeTo: Date())
     }
 
+    /// Money with the backend-supplied currency code appended (EGP, USD, ...).
+    /// The code is shown as text rather than a symbol so unusual currencies
+    /// never render as a wrong symbol.
+    static func money(_ value: Double?, currency: String) -> String {
+        guard let value, value.isFinite else { return "--" }
+        let amount = String(format: value < 100 ? "%.2f" : "%.0f", value)
+        return currency.isEmpty ? amount : "\(amount) \(currency)"
+    }
+
     static func speed(_ mmPerMinute: Double?) -> String {
         guard let mmPerMinute, mmPerMinute.isFinite else { return "--" }
         return String(format: "%.0f mm/s", mmPerMinute / 60.0)

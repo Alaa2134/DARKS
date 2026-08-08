@@ -30,11 +30,18 @@ def safe_filename(name: str, fallback: str = "model") -> str:
 
 
 class ModelStore:
-    """Uploaded 3D models. Files are stored as ``<id>__<original name>``."""
+    """Uploaded 3D models. Files are stored as ``<id>__<original name>``.
 
-    def __init__(self, directory: Path) -> None:
+    ``extra_directories`` are searched by :meth:`path_for` / :meth:`get` but
+    never listed or written to. The library keeps its models in its own folder
+    using the same ``<id>__<name>`` convention, so registering it here makes a
+    library item directly sliceable by its own id - no copy, no second upload.
+    """
+
+    def __init__(self, directory: Path, extra_directories: Optional[List[Path]] = None) -> None:
         self.directory = Path(directory)
         self.directory.mkdir(parents=True, exist_ok=True)
+        self.extra_directories: List[Path] = [Path(p) for p in (extra_directories or [])]
 
     def save(self, filename: str, content: bytes) -> ModelFile:
         clean = safe_filename(filename)
@@ -55,11 +62,14 @@ class ModelStore:
         )
 
     def path_for(self, model_id: str) -> Optional[Path]:
-        for path in self.directory.iterdir():
-            if not path.is_file():
+        for directory in [self.directory, *self.extra_directories]:
+            if not directory.is_dir():
                 continue
-            if path.name.split(ID_SEPARATOR, 1)[0] == model_id:
-                return path
+            for path in directory.iterdir():
+                if not path.is_file():
+                    continue
+                if path.name.split(ID_SEPARATOR, 1)[0] == model_id:
+                    return path
         return None
 
     def get(self, model_id: str) -> Optional[ModelFile]:
@@ -74,8 +84,10 @@ class ModelStore:
         return models
 
     def delete(self, model_id: str) -> bool:
+        """Only deletes from the store's own directory - library models are
+        owned by the library and are removed through it."""
         path = self.path_for(model_id)
-        if path is None:
+        if path is None or path.parent != self.directory:
             return False
         path.unlink(missing_ok=True)
         return True

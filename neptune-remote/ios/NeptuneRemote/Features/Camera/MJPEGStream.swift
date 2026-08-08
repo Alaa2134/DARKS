@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import UIKit
 
 /// Minimal multipart/x-mixed-replace (MJPEG) reader.
@@ -102,5 +103,44 @@ extension MJPEGStream: URLSessionDataDelegate {
         Task { @MainActor [weak self] in
             self?.fail(error)
         }
+    }
+}
+
+// MARK: - Reusable live view
+
+/// Self-contained MJPEG live view, for screens that just want a picture and do
+/// not need to own the stream object (the printing screen, the ROI picker).
+struct MJPEGView: View {
+    let url: URL
+    var contentMode: ContentMode = .fit
+
+    @StateObject private var stream = MJPEGStream()
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(0.06)
+            if let image = stream.image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: contentMode)
+            } else if let message = stream.errorMessage {
+                VStack(spacing: 8) {
+                    Image(systemName: "video.slash")
+                        .font(.title)
+                        .foregroundStyle(.secondary)
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 12)
+                }
+            } else {
+                ProgressView()
+            }
+        }
+        .task(id: url) {
+            stream.start(url: url)
+        }
+        .onDisappear { stream.stop() }
     }
 }

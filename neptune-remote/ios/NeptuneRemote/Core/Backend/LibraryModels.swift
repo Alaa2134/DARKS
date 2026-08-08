@@ -16,6 +16,16 @@ struct LibraryGCode: Decodable, Identifiable, Equatable, Hashable {
     let layerCount: Int?
     let createdAt: Double
 
+    /// "PLA · 0.20 mm · 1 h 30 m · 24 g" - only the parts that are known.
+    var profileSummary: String {
+        var parts: [String] = []
+        if !material.isEmpty { parts.append(material) }
+        if let layerHeight { parts.append(String(format: "%.2f mm", layerHeight)) }
+        if let estimatedSeconds { parts.append(Format.duration(estimatedSeconds)) }
+        if let filamentGrams { parts.append(Format.grams(filamentGrams)) }
+        return parts.joined(separator: " · ")
+    }
+
     enum CodingKeys: String, CodingKey {
         case id, filename, path, material, quality
         case itemID = "item_id"
@@ -256,6 +266,24 @@ struct SearchResultEntry: Decodable, Identifiable, Equatable {
     let reasons: [String]
 
     var id: String { item.id }
+
+    /// The backend emits detailed reasons ("fuzzy:0.83", "coverage:2/3",
+    /// "alias-partial"). Collapse them to the one localized label worth showing.
+    var primaryReasonKey: String? {
+        for reason in reasons {
+            let head = reason.split(separator: ":").first.map(String.init) ?? reason
+            switch head {
+            case "exact", "prefix", "contains": return "search.reason.exact"
+            case "alias", "alias-partial": return "search.reason.alias"
+            case "synonym", "stem", "translit": return "search.reason.synonym"
+            case "tag": return "search.reason.tag"
+            case "category", "room": return "search.reason.category"
+            case "fuzzy", "coverage": return "search.reason.fuzzy"
+            default: continue
+            }
+        }
+        return nil
+    }
 }
 
 struct SearchResponse: Decodable, Equatable {
