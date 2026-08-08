@@ -14,20 +14,73 @@ actor MoonrakerClient {
         self.http = http
     }
 
+    /// Whichever candidate answered last. Sticky, so the whole session does not
+    /// pay the cost of probing the nginx vhost before every single request.
+    private var resolvedBase: URL?
+
     func update(config: ConnectionConfig, apiKey: String) {
         self.config = config
         self.apiKey = apiKey
+        resolvedBase = nil
     }
 
-    var baseURL: URL? { config.moonrakerBaseURL }
+    /// The endpoint currently in use: the resolved one once something has
+    /// answered, the configured one before that.
+    var baseURL: URL? { resolvedBase ?? config.moonrakerBaseURL }
+
+    /// `true` when requests are going to Moonraker's own port rather than
+    /// through the nginx vhost. Surfaced in diagnostics so a broken proxy is
+    /// visible rather than merely worked around.
+    var isUsingDirectPort: Bool {
+        guard let resolvedBase else { return false }
+        return resolvedBase.port == ConnectionConfig.directMoonrakerPort
+    }
 
     private var headers: [String: String] {
         apiKey.isEmpty ? [:] : ["X-Api-Key": apiKey]
     }
 
     private func url(_ path: String) throws -> URL {
-        guard let base = config.moonrakerBaseURL else { throw APIError.notConfigured }
+        guard let base = baseURL else { throw APIError.notConfigured }
         return base.appendingPathComponent(path)
+    }
+
+    // MARK: - Endpoint resolution
+
+    /// Probes the configured Moonraker endpoint and then the direct daemon port,
+    /// returning the server info from whichever answers first.
+    ///
+    /// Only transport-level failures move on to the next candidate. An HTTP
+    /// answer - including 401 - means we found Moonraker, and retrying on
+    /// another port would just turn a precise error into a vague one.
+    @discardableResult
+    func resolveBase() async throws -> MoonrakerServerInfo {
+        var firstError: Error?
+
+        for candidate in config.moonrakerBaseURLCandidates {
+            do {
+                let info = try await http.decode(
+                    MoonrakerEnvelope<MoonrakerServerInfo>.self,
+                    from: HTTPClient.Request(
+                        url: candidate.appendingPathComponent("server/info"),
+                        headers: headers,
+                        timeout: 8
+                    )
+                ).result
+                resolvedBase = candidate
+                return info
+            } catch let error as APIError where error.isTransportFailure {
+                firstError = firstError ?? error
+                continue
+            } catch {
+                // Moonraker answered; this candidate is the right one.
+                resolvedBase = candidate
+                throw error
+            }
+        }
+
+        resolvedBase = nil
+        throw firstError ?? APIError.cannotConnect(config.host)
     }
 
     private func request(
@@ -52,10 +105,20 @@ actor MoonrakerClient {
     // MARK: - Server / printer info
 
     func serverInfo() async throws -> MoonrakerServerInfo {
-        try await http.decode(
-            MoonrakerEnvelope<MoonrakerServerInfo>.self,
-            from: try request("server/info")
-        ).result
+        // Before anything has answered, and again after a transport failure
+        // cleared the cache, this also picks the endpoint for every later call.
+        guard resolvedBase != nil else { return try await resolveBase() }
+        do {
+            return try await http.decode(
+                MoonrakerEnvelope<MoonrakerServerInfo>.self,
+                from: try request("server/info")
+            ).result
+        } catch let error as APIError where error.isTransportFailure {
+            // The endpoint that used to work has gone away - nginx restarted,
+            // the Pi rebooted. Re-probe rather than failing for the session.
+            resolvedBase = nil
+            return try await resolveBase()
+        }
     }
 
     func printerInfo() async throws -> MoonrakerPrinterInfo {

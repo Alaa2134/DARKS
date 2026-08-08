@@ -9,11 +9,10 @@ struct SetupWizardView: View {
 
     @State private var step: Int = 0
     @State private var isTesting = false
-    @State private var moonrakerOK: Bool?
-    @State private var backendOK: Bool?
-    @State private var klipperOK: Bool?
-    @State private var backendError: APIError?
-    @State private var moonrakerError: APIError?
+    @State private var diagnostics: PrinterStore.Diagnostics?
+
+    private var moonrakerOK: Bool? { diagnostics?.moonrakerReachable }
+    private var backendOK: Bool? { diagnostics?.backendReachable }
 
     private let lastStep = 7
 
@@ -130,36 +129,7 @@ struct SetupWizardView: View {
         VStack(alignment: .leading, spacing: 16) {
             stepTitle("setup.test.title", "setup.test.message")
 
-            VStack(spacing: 12) {
-                resultRow("diagnostics.moonraker", moonrakerOK)
-                Divider()
-                resultRow("diagnostics.klipper_ready", klipperOK)
-                Divider()
-                resultRow("diagnostics.backend", backendOK)
-            }
-            .card()
-
-            if moonrakerError != nil || backendError != nil {
-                VStack(alignment: .leading, spacing: 12) {
-                    if let moonrakerError {
-                        FailureNote(
-                            labelKey: "diagnostics.moonraker",
-                            error: moonrakerError,
-                            url: settings.connection.moonrakerBaseURL?.absoluteString,
-                            tint: Theme.danger
-                        )
-                    }
-                    if let backendError {
-                        FailureNote(
-                            labelKey: "diagnostics.backend",
-                            error: backendError,
-                            url: settings.connection.backendBaseURL?.absoluteString,
-                            tint: Theme.paused
-                        )
-                    }
-                }
-                .card()
-            }
+            ConnectionTestPanel(diagnostics: diagnostics, isTesting: isTesting)
 
             Button {
                 Task { await runTest() }
@@ -296,7 +266,7 @@ struct SetupWizardView: View {
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
                 Button(L.t("setup.camera.use_default")) {
-                    settings.cameraURL = "http://\(settings.host)/webcam/?action=stream"
+                    settings.cameraURL = settings.connection.defaultCameraStreamURL
                 }
                 .font(.caption)
             }
@@ -358,21 +328,6 @@ struct SetupWizardView: View {
         }
     }
 
-    private func resultRow(_ key: String, _ value: Bool?) -> some View {
-        HStack {
-            Text(localized: key)
-            Spacer()
-            if isTesting && value == nil {
-                ProgressView().controlSize(.small)
-            } else if let value {
-                Image(systemName: value ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .foregroundStyle(value ? Theme.printing : Theme.danger)
-            } else {
-                Text("—").foregroundStyle(.secondary)
-            }
-        }
-    }
-
     // MARK: - Navigation
 
     private var navigationBar: some View {
@@ -406,16 +361,8 @@ struct SetupWizardView: View {
 
     private func runTest() async {
         isTesting = true
-        moonrakerOK = nil
-        backendOK = nil
-        klipperOK = nil
+        diagnostics = nil
         defer { isTesting = false }
-
-        let diagnostics = await printer.runDiagnostics()
-        moonrakerOK = diagnostics.moonrakerReachable
-        klipperOK = diagnostics.klipperReady
-        backendOK = diagnostics.backendReachable
-        moonrakerError = diagnostics.moonrakerError
-        backendError = diagnostics.backendError
+        diagnostics = await printer.runDiagnostics()
     }
 }

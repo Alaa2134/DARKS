@@ -24,24 +24,11 @@ struct NetworkDiagnosticsView: View {
             }
 
             Section {
-                resultRow("diagnostics.moonraker", diagnostics?.moonrakerReachable)
-                resultRow("diagnostics.klipper_ready", diagnostics?.klipperReady)
-                resultRow("diagnostics.websocket", diagnostics?.websocketConnected)
-                resultRow("diagnostics.backend", diagnostics?.backendReachable)
-                resultRow("diagnostics.slicer_available", diagnostics?.slicerAvailable)
+                ConnectionTestPanel(diagnostics: diagnostics, isTesting: isRunning)
+                    .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
+                    .listRowBackground(Color.clear)
 
-                if let provider = diagnostics?.powerProvider {
-                    InfoRow(titleKey: "diagnostics.power_provider", value: provider)
-                }
-                if let version = diagnostics?.backendVersion {
-                    InfoRow(titleKey: "settings.backend_version", value: version)
-                }
-                if let error = diagnostics?.moonrakerError {
-                    FailureNote(labelKey: "diagnostics.moonraker", error: error, tint: Theme.danger)
-                }
-                if let error = diagnostics?.backendError {
-                    FailureNote(labelKey: "diagnostics.backend", error: error, tint: Theme.danger)
-                }
+                resultRow("diagnostics.slicer_available", diagnostics?.slicerAvailable)
 
                 Button {
                     Task { await run() }

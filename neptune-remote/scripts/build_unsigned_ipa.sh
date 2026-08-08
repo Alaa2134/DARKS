@@ -111,6 +111,38 @@ BINARY="${APP_PATH}/$(basename "${APP_PATH}" .app)"
 [[ -f "${BINARY}" ]] || die "The .app bundle contains no executable - refusing to package a broken IPA"
 ok "App bundle: ${APP_PATH}"
 
+# --------------------------------------------------------------------------- #
+# Verify App Transport Security in the BUILT bundle
+#
+# Moonraker and the backend are plain HTTP over Tailscale, so the shipped app
+# has to permit arbitrary loads. Checking the source Info.plist is not enough -
+# build settings and the packaging step both get a say - so this reads the
+# binary plist that actually ends up inside the IPA.
+#
+# The subtle half is the override rule: Apple ignores NSAllowsArbitraryLoads,
+# and uses its default of NO, if NSAllowsLocalNetworking,
+# NSAllowsArbitraryLoadsInWebContent or NSAllowsArbitraryLoadsForMedia is also
+# present. A plist can read "true" and still block every http:// request, which
+# is exactly the bug this check exists to prevent shipping again.
+# --------------------------------------------------------------------------- #
+step "Verifying App Transport Security in the built app"
+BUILT_PLIST="${APP_PATH}/Info.plist"
+[[ -f "${BUILT_PLIST}" ]] || die "No Info.plist inside ${APP_PATH}"
+
+ats_value() {
+    /usr/libexec/PlistBuddy -c "Print :NSAppTransportSecurity:$1" "${BUILT_PLIST}" 2>/dev/null || true
+}
+
+[[ "$(ats_value NSAllowsArbitraryLoads)" == "true" ]] \
+    || die "NSAppTransportSecurity:NSAllowsArbitraryLoads is not true in the built Info.plist - HTTP to the Pi would be blocked"
+
+for key in NSAllowsLocalNetworking NSAllowsArbitraryLoadsInWebContent NSAllowsArbitraryLoadsForMedia; do
+    if [[ -n "$(ats_value "${key}")" ]]; then
+        die "NSAppTransportSecurity:${key} is present; it makes iOS ignore NSAllowsArbitraryLoads and blocks plain HTTP over Tailscale. Remove it from ios/NeptuneRemote/Resources/Info.plist"
+    fi
+done
+ok "ATS: NSAllowsArbitraryLoads = true, with no key that would override it"
+
 step "Packaging Payload/$(basename "${APP_PATH}") into an IPA"
 mkdir -p "${PAYLOAD}"
 cp -R "${APP_PATH}" "${PAYLOAD}/"

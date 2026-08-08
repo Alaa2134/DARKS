@@ -47,11 +47,64 @@ public struct ConnectionConfig: Codable, Equatable, Sendable {
         url(port: backendPort, scheme: webSocketScheme)?.appendingPathComponent("ws")
     }
 
+    // MARK: - Direct Moonraker fallback
+
+    /// Moonraker's own listener. The usual setup reaches it through the nginx
+    /// vhost that also serves Mainsail on port 80, but that proxy is the part
+    /// most likely to be missing or misconfigured, so every Moonraker lookup
+    /// falls back to talking to the daemon directly.
+    public static let directMoonrakerPort = 7125
+
+    public var directMoonrakerBaseURL: URL? {
+        url(port: Self.directMoonrakerPort, scheme: scheme)
+    }
+
+    public var directMoonrakerWebSocketURL: URL? {
+        url(port: Self.directMoonrakerPort, scheme: webSocketScheme)?
+            .appendingPathComponent("websocket")
+    }
+
+    /// The configured endpoint first, then the direct daemon - deduplicated so a
+    /// user who already points at 7125 is not probed twice.
+    public var moonrakerBaseURLCandidates: [URL] {
+        [moonrakerBaseURL, directMoonrakerBaseURL].compactMap { $0 }.uniqued()
+    }
+
+    public var moonrakerWebSocketURLCandidates: [URL] {
+        [moonrakerWebSocketURL, directMoonrakerWebSocketURL].compactMap { $0 }.uniqued()
+    }
+
+    // MARK: - Camera
+
+    /// The MJPEG endpoints a Klipper Pi commonly exposes, derived from this
+    /// configuration so the scheme and host are never hardcoded at the call
+    /// site. crowsnest/nginx serves the first two; mjpg-streamer answers
+    /// directly on 8080 when the proxy is not in front of it.
+    public var cameraPresets: [String] {
+        let base = "\(scheme)://\(host.trimmingCharacters(in: .whitespacesAndNewlines))"
+        return [
+            "\(base)/webcam/?action=stream",
+            "\(base)/webcam/?action=snapshot",
+            "\(base):8080/?action=stream",
+            "\(base)/webcam2/?action=stream"
+        ]
+    }
+
+    public var defaultCameraStreamURL: String { cameraPresets[0] }
+
     public var isValid: Bool {
         let trimmed = host.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }
         guard (1...65535).contains(moonrakerPort), (1...65535).contains(backendPort) else { return false }
         return moonrakerBaseURL != nil
+    }
+}
+
+extension Array where Element: Hashable {
+    /// Order-preserving duplicate removal.
+    func uniqued() -> [Element] {
+        var seen = Set<Element>()
+        return filter { seen.insert($0).inserted }
     }
 }
 

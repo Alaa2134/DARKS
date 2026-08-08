@@ -410,14 +410,7 @@ struct CameraSettingsView: View {
         .navigationBarTitleDisplayMode(.inline)
     }
 
-    private var presets: [String] {
-        [
-            "http://\(settings.host)/webcam/?action=stream",
-            "http://\(settings.host)/webcam/?action=snapshot",
-            "http://\(settings.host):8080/?action=stream",
-            "http://\(settings.host)/webcam2/?action=stream"
-        ]
-    }
+    private var presets: [String] { settings.connection.cameraPresets }
 }
 
 // MARK: - Developer settings

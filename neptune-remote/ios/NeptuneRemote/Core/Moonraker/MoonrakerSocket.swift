@@ -58,8 +58,10 @@ final class MoonrakerSocket {
         let changed = config != self.config || apiKey != self.apiKey
         self.config = config
         self.apiKey = apiKey
-        if changed, shouldReconnect {
-            restart()
+        if changed {
+            // New coordinates invalidate whichever endpoint had been chosen.
+            candidateIndex = 0
+            if shouldReconnect { restart() }
         }
     }
 
@@ -93,12 +95,24 @@ final class MoonrakerSocket {
         pingTask = nil
     }
 
+    /// Index into `config.moonrakerWebSocketURLCandidates`. A socket that never
+    /// reaches `connected` advances this, so a missing or misconfigured nginx
+    /// vhost falls through to Moonraker's own port instead of retrying a dead
+    /// endpoint forever.
+    private var candidateIndex = 0
+
+    /// The endpoint the current attempt is using, for diagnostics.
+    private(set) var activeURL: URL?
+
     private func openConnection() {
         cancelTasks()
-        guard let url = config.moonrakerWebSocketURL else {
+        let candidates = config.moonrakerWebSocketURLCandidates
+        guard !candidates.isEmpty else {
             state = .failed(L.t("error.invalid_url"))
             return
         }
+        let url = candidates[candidateIndex % candidates.count]
+        activeURL = url
 
         state = .connecting
         var request = URLRequest(url: url)
@@ -206,6 +220,10 @@ final class MoonrakerSocket {
                 if state != .connected {
                     state = .connected
                     reconnectAttempt = 0
+                    // This endpoint works. Fold the index back into range so it
+                    // keeps selecting this same candidate without growing
+                    // without bound across a long-lived session.
+                    candidateIndex %= max(config.moonrakerWebSocketURLCandidates.count, 1)
                     onEvent?(.connected)
                 }
                 switch message {
@@ -279,6 +297,12 @@ final class MoonrakerSocket {
     // MARK: - Failure handling
 
     private func handleFailure(_ error: Error) {
+        // A socket that never got a single frame through was pointed at the
+        // wrong endpoint; try the next candidate. One that had been connected
+        // stays where it is - that endpoint is known good and simply dropped.
+        if state != .connected {
+            candidateIndex += 1
+        }
         let message = APIError.from(error, host: config.host).localizedDescription
         state = .failed(message)
         onEvent?(.disconnected(message))

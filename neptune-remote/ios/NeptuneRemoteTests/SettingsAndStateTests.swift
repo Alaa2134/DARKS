@@ -34,6 +34,61 @@ final class ConnectionConfigTests: XCTestCase {
         XCTAssertEqual(config.moonrakerWebSocketURL?.absoluteString, "wss://pi.example/websocket")
     }
 
+    /// The expected endpoint set for the documented Pi, spelled out.
+    func testExpectedEndpointsForTheDocumentedSetup() {
+        let config = ConnectionConfig.default
+        XCTAssertEqual(config.moonrakerBaseURL?.absoluteString, "http://100.78.2.66")
+        XCTAssertEqual(config.directMoonrakerBaseURL?.absoluteString, "http://100.78.2.66:7125")
+        XCTAssertEqual(config.backendBaseURL?.absoluteString, "http://100.78.2.66:8710")
+        XCTAssertEqual(config.moonrakerWebSocketURL?.absoluteString, "ws://100.78.2.66/websocket")
+        XCTAssertEqual(
+            config.directMoonrakerWebSocketURL?.absoluteString,
+            "ws://100.78.2.66:7125/websocket"
+        )
+        XCTAssertEqual(config.backendWebSocketURL?.absoluteString, "ws://100.78.2.66:8710/ws")
+    }
+
+    /// HTTP must never be silently upgraded: the Pi speaks HTTP only, and an
+    /// automatic https:// or wss:// rewrite would hang instead of connecting.
+    func testHTTPIsNeverUpgradedWhenHTTPSIsOff() {
+        let config = ConnectionConfig.default
+        XCTAssertEqual(config.scheme, "http")
+        XCTAssertEqual(config.webSocketScheme, "ws")
+        for url in config.moonrakerBaseURLCandidates + config.moonrakerWebSocketURLCandidates {
+            XCTAssertFalse(url.absoluteString.hasPrefix("https"), "\(url) was upgraded")
+            XCTAssertFalse(url.absoluteString.hasPrefix("wss"), "\(url) was upgraded")
+        }
+        XCTAssertTrue(config.backendBaseURL!.absoluteString.hasPrefix("http://"))
+        XCTAssertTrue(config.backendWebSocketURL!.absoluteString.hasPrefix("ws://"))
+    }
+
+    func testCandidatesFallBackToTheDirectPort() {
+        let config = ConnectionConfig.default
+        XCTAssertEqual(
+            config.moonrakerBaseURLCandidates.map(\.absoluteString),
+            ["http://100.78.2.66", "http://100.78.2.66:7125"]
+        )
+    }
+
+    /// A user already pointing at 7125 must not be probed twice.
+    func testCandidatesAreDeduplicated() {
+        let config = ConnectionConfig(host: "pi", moonrakerPort: 7125, backendPort: 8710, useHTTPS: false)
+        XCTAssertEqual(config.moonrakerBaseURLCandidates.map(\.absoluteString), ["http://pi:7125"])
+        XCTAssertEqual(
+            config.moonrakerWebSocketURLCandidates.map(\.absoluteString),
+            ["ws://pi:7125/websocket"]
+        )
+    }
+
+    func testCameraPresetsFollowTheConfiguredScheme() {
+        XCTAssertEqual(
+            ConnectionConfig.default.defaultCameraStreamURL,
+            "http://100.78.2.66/webcam/?action=stream"
+        )
+        let secure = ConnectionConfig(host: "pi", moonrakerPort: 443, backendPort: 8710, useHTTPS: true)
+        XCTAssertTrue(secure.cameraPresets.allSatisfy { $0.hasPrefix("https://") })
+    }
+
     func testValidation() {
         XCTAssertTrue(ConnectionConfig.default.isValid)
         XCTAssertFalse(ConnectionConfig(host: "  ", moonrakerPort: 80, backendPort: 8710, useHTTPS: false).isValid)

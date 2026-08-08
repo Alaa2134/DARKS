@@ -7,6 +7,10 @@ enum APIError: LocalizedError, Equatable {
     case offline
     case timedOut
     case cannotConnect(String)
+    /// iOS refused the request before it left the device because App Transport
+    /// Security would not allow plain HTTP. Distinct from every other failure:
+    /// nothing was ever sent, so the Pi is not at fault.
+    case blockedByATS
     case unauthorized
     case notFound(String)
     case server(status: Int, message: String)
@@ -28,6 +32,8 @@ enum APIError: LocalizedError, Equatable {
             return L.t("error.timeout")
         case .cannotConnect(let host):
             return L.t("error.cannot_connect") + " (\(host))"
+        case .blockedByATS:
+            return L.t("error.ats_blocked")
         case .unauthorized:
             return L.t("error.unauthorized")
         case .notFound(let what):
@@ -57,6 +63,8 @@ enum APIError: LocalizedError, Equatable {
             return "error.hint.timeout"
         case .cannotConnect:
             return "error.hint.cannot_connect"
+        case .blockedByATS:
+            return "error.hint.ats_blocked"
         case .offline:
             return "error.hint.offline"
         case .unauthorized:
@@ -68,12 +76,27 @@ enum APIError: LocalizedError, Equatable {
         }
     }
 
+    /// `true` when the request never reached the server, so trying a different
+    /// endpoint is worthwhile. An HTTP status - even 401 or 404 - means we found
+    /// the server and should keep talking to it.
+    var isTransportFailure: Bool {
+        switch self {
+        case .offline, .timedOut, .cannotConnect, .blockedByATS, .invalidURL, .notConfigured:
+            return true
+        case .unauthorized, .notFound, .server, .decoding, .moonraker,
+             .unsafeOperation, .cancelled, .unknown:
+            return false
+        }
+    }
+
     /// Whether offering a "Retry" button makes sense.
     var isRetryable: Bool {
         switch self {
         case .offline, .timedOut, .cannotConnect, .server, .moonraker, .unknown:
             return true
-        case .notConfigured, .invalidURL, .unauthorized, .notFound, .decoding, .unsafeOperation, .cancelled:
+        // Retrying an ATS refusal just fails again: the app binary has to change.
+        case .blockedByATS, .notConfigured, .invalidURL, .unauthorized, .notFound,
+             .decoding, .unsafeOperation, .cancelled:
             return false
         }
     }
@@ -97,6 +120,8 @@ enum APIError: LocalizedError, Equatable {
         case NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost,
              NSURLErrorDNSLookupFailed, NSURLErrorSecureConnectionFailed:
             return .cannotConnect(host)
+        case NSURLErrorAppTransportSecurityRequiresSecureConnection:
+            return .blockedByATS
         default:
             return .unknown(nsError.localizedDescription)
         }

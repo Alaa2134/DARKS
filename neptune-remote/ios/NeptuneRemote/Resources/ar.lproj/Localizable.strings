@@ -326,6 +326,19 @@
 "diagnostics.backend_url" = "رابط الخادم";
 "diagnostics.websocket" = "اتصال WebSocket";
 "diagnostics.klipper_ready" = "كليبر جاهز";
+"diagnostics.network" = "الوصول للراسبيري باي";
+"diagnostics.moonraker_websocket" = "مونريكر (WebSocket)";
+"diagnostics.backend_websocket" = "الخادم (WebSocket)";
+"diagnostics.technical" = "تفاصيل تقنية";
+"diagnostics.klippy_state" = "حالة كليبر";
+"diagnostics.ats" = "سياسة App Transport Security";
+"diagnostics.direct_port" = "الاتصال تم على منفذ مونريكر المباشر 7125 - وسيط nginx على المنفذ 80 لم يستجب";
+"diagnostics.moonraker_unreachable" = "تعذر الوصول إلى مونريكر";
+"diagnostics.moonraker_ok_klipper_down" = "مونريكر متصل - كليبر غير مشغّل";
+"diagnostics.moonraker_ok_klipper_not_ready" = "مونريكر متصل - كليبر غير جاهز";
+"diagnostics.klipper_unknown" = "لم يُفحص: مونريكر لم يستجب";
+"diagnostics.backend_connected" = "خادم الراسبيري باي متصل";
+"diagnostics.websocket_failed" = "فشل WebSocket";
 "diagnostics.slicer" = "السلايسر";
 "diagnostics.slicer_available" = "السلايسر مثبت";
 "diagnostics.power_provider" = "مصدر التحكم في الكهرباء";
@@ -460,6 +473,9 @@
 "error.klipper_not_ready" = "كليبر غير جاهز";
 "error.cancelled" = "تم الإلغاء";
 "error.unknown" = "حدث خطأ ما";
+
+"error.ats_blocked" = "iOS منع الاتصال (App Transport Security)";
+"error.hint.ats_blocked" = "هذه النسخة ترفض HTTP العادي، فالطلب لم يخرج من الأيفون أصلًا. الراسبيري باي ليس السبب. ثبّت نسخة يحتوي ملف Info.plist بها على NSAllowsArbitraryLoads وحده دون أي مفتاح آخر في نفس القسم.";
 
 "error.hint.timeout" = "لم يصل أي رد على الإطلاق. تأكد أن Tailscale (أو الـ VPN) متصل على هذا الأيفون، وأن الراسبيري باي يعمل، وأن العنوان صحيح.";
 "error.hint.cannot_connect" = "الراسبيري باي رد لكنه رفض هذا المنفذ — غالبًا الخدمة غير مشغّلة. تحقق بالأمر: systemctl status neptune-remote";

@@ -238,15 +238,11 @@ struct CameraView: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     SectionHeader("camera.setup.urls", systemImage: "link")
-                    Text(verbatim: "http://\(settings.host)/webcam/?action=stream")
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
-                    Text(verbatim: "http://\(settings.host)/webcam/?action=snapshot")
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
-                    Text(verbatim: "http://\(settings.host):8080/?action=stream")
-                        .font(.system(.caption, design: .monospaced))
-                        .textSelection(.enabled)
+                    ForEach(settings.connection.cameraPresets.prefix(3), id: \.self) { preset in
+                        Text(verbatim: preset)
+                            .font(.system(.caption, design: .monospaced))
+                            .textSelection(.enabled)
+                    }
                 }
                 .card()
 

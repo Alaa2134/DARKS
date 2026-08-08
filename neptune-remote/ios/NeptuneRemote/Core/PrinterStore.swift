@@ -727,20 +727,98 @@ final class PrinterStore: ObservableObject {
         var powerProvider: String?
         var moonrakerError: APIError?
         var backendError: APIError?
+
+        // Independent probes. Each of these can pass or fail without saying
+        // anything about the others: Moonraker can be up while Klipper is in
+        // shutdown, the backend can be up while Moonraker is not, and either
+        // WebSocket can fail while the matching HTTP endpoint answers fine.
+        var hostReachable: Bool?
+        var klippyConnected: Bool?
+        var klippyState: String?
+        var klipperError: APIError?
+        var moonrakerWebSocketConnected: Bool?
+        var moonrakerWebSocketError: APIError?
+        var backendWebSocketConnected: Bool?
+        var backendWebSocketError: APIError?
+
+        /// Endpoints actually used, so the diagnostics panel shows the URL that
+        /// was tried rather than the one the user assumes was tried.
+        var moonrakerURL: String?
+        var backendURL: String?
+        var moonrakerWebSocketURL: String?
+        var backendWebSocketURL: String?
+        var usingDirectMoonrakerPort = false
+        var atsSummary: String = ""
+
+        /// One-line verdict for the Klipper row, as a localisation key.
+        ///
+        /// Lives here rather than in the view so that the rule it encodes - a
+        /// healthy Moonraker with a stopped Klipper is a *Klipper* problem, not
+        /// a connection problem - is testable.
+        var klipperVerdictKey: String? {
+            guard moonrakerReachable == true else { return "diagnostics.klipper_unknown" }
+            if klipperReady == true { return nil }
+            if klippyConnected == false { return "diagnostics.moonraker_ok_klipper_down" }
+            return "diagnostics.moonraker_ok_klipper_not_ready"
+        }
+
+        /// Moonraker being down must never be reported as Klipper being down,
+        /// and vice versa.
+        var moonrakerVerdictKey: String? {
+            if moonrakerReachable == true {
+                return usingDirectMoonrakerPort ? "diagnostics.direct_port" : nil
+            }
+            return moonrakerError == nil ? "diagnostics.moonraker_unreachable" : nil
+        }
     }
 
     func runDiagnostics() async -> Diagnostics {
         var result = Diagnostics(websocketConnected: moonrakerConnected)
+        result.atsSummary = ATSPolicy.summary()
+        result.backendURL = settings.connection.backendBaseURL?.absoluteString
+        result.backendWebSocketURL = settings.connection.backendWebSocketURL?.absoluteString
 
-        do {
-            let info = try await moonraker.serverInfo()
-            result.moonrakerReachable = true
-            result.klipperReady = info.klippyConnected && info.klippyState == "ready"
-        } catch {
+        // ATS blocks requests before they leave the device, so there is nothing
+        // to learn from probing the network - and every result would be a
+        // misleading "the Pi is unreachable".
+        guard ATSPolicy.allowsPlainHTTP || settings.connection.useHTTPS else {
+            result.hostReachable = false
             result.moonrakerReachable = false
-            result.moonrakerError = APIError.from(error, host: settings.host)
+            result.backendReachable = false
+            result.moonrakerError = .blockedByATS
+            result.backendError = .blockedByATS
+            return result
         }
 
+        // 1 + 2. Moonraker over HTTP, which doubles as the host reachability
+        // check: anything other than a transport failure means packets are
+        // getting to the Pi.
+        do {
+            let info = try await moonraker.serverInfo()
+            result.hostReachable = true
+            result.moonrakerReachable = true
+
+            // 3. Klipper, reported separately from Moonraker.
+            result.klippyConnected = info.klippyConnected
+            result.klippyState = info.klippyState
+            result.klipperReady = info.klippyConnected && info.klippyState == "ready"
+            if !result.klipperReady! {
+                result.klipperError = .moonraker(L.t("error.klipper_not_ready"))
+            }
+        } catch {
+            let apiError = APIError.from(error, host: settings.host)
+            result.moonrakerReachable = false
+            result.moonrakerError = apiError
+            // A reply of any kind - 401, 404, malformed JSON - proves the host
+            // is up even though Moonraker itself did not answer usefully.
+            result.hostReachable = apiError.isTransportFailure ? false : true
+        }
+        result.moonrakerURL = await moonraker.baseURL?.absoluteString
+        result.usingDirectMoonrakerPort = await moonraker.isUsingDirectPort
+        result.moonrakerWebSocketURL = moonrakerSocket.activeURL?.absoluteString
+            ?? settings.connection.moonrakerWebSocketURL?.absoluteString
+
+        // 4. Backend, independent of everything above.
         do {
             let health = try await backend.health()
             result.backendReachable = true
@@ -748,10 +826,22 @@ final class PrinterStore: ObservableObject {
             result.slicerAvailable = health.slicerAvailable
             result.powerProvider = health.powerProvider
             backendHealth = health
+            if result.hostReachable != true { result.hostReachable = true }
         } catch {
+            let apiError = APIError.from(error, host: settings.host)
             result.backendReachable = false
-            result.backendError = APIError.from(error, host: settings.host)
+            result.backendError = apiError
+            if result.hostReachable == nil, !apiError.isTransportFailure {
+                result.hostReachable = true
+            }
         }
+
+        // 5. The two WebSockets, each reported on its own.
+        result.moonrakerWebSocketConnected = moonrakerConnected
+        if !moonrakerConnected, case .failed(let message) = moonrakerSocket.state {
+            result.moonrakerWebSocketError = .unknown(message)
+        }
+        result.backendWebSocketConnected = backendSocket.isConnected
 
         return result
     }

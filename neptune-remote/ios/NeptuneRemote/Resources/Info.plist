@@ -62,12 +62,30 @@
 
 	<!-- Moonraker and the backend are plain HTTP over Tailscale, which is
 	     already an encrypted WireGuard tunnel. ATS is relaxed for arbitrary
-	     hosts because the Pi's address is user-configurable. -->
+	     hosts because the Pi's address is user-configurable.
+
+	     NSAllowsArbitraryLoads MUST BE THE ONLY KEY IN THIS DICTIONARY.
+
+	     Apple ignores NSAllowsArbitraryLoads - falling back to its default of
+	     NO - whenever NSAllowsLocalNetworking, NSAllowsArbitraryLoadsInWebContent
+	     or NSAllowsArbitraryLoadsForMedia is also present and the app is linked
+	     against the iOS 10+ SDK. This file used to carry NSAllowsLocalNetworking
+	     as well, which silently disabled arbitrary loads and left only the
+	     local-network allowance. Tailscale hands out CGNAT addresses in
+	     100.64.0.0/10, which is not a local network as far as ATS is concerned,
+	     so every plain-HTTP request to the Pi failed with
+	     NSURLErrorAppTransportSecurityRequiresSecureConnection (-1022) while
+	     Safari - which is not subject to this app's ATS policy - loaded the very
+	     same URL.
+
+	     Arbitrary loads already covers everything NSAllowsLocalNetworking would
+	     have permitted, so nothing is lost by dropping it. Do not "restore" that
+	     key: it re-breaks HTTP over Tailscale.
+
+	     ATSPolicyTests and scripts/build_unsigned_ipa.sh both assert this. -->
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>
-		<true/>
-		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
 

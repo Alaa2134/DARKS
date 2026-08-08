@@ -326,6 +326,19 @@
 "diagnostics.backend_url" = "Backend URL";
 "diagnostics.websocket" = "WebSocket";
 "diagnostics.klipper_ready" = "Klipper ready";
+"diagnostics.network" = "Raspberry Pi reachable";
+"diagnostics.moonraker_websocket" = "Moonraker WebSocket";
+"diagnostics.backend_websocket" = "Backend WebSocket";
+"diagnostics.technical" = "Technical details";
+"diagnostics.klippy_state" = "Klipper state";
+"diagnostics.ats" = "App Transport Security";
+"diagnostics.direct_port" = "Connected on Moonraker's own port 7125 - the nginx proxy on port 80 did not answer";
+"diagnostics.moonraker_unreachable" = "Could not reach Moonraker";
+"diagnostics.moonraker_ok_klipper_down" = "Moonraker is connected - Klipper is not running";
+"diagnostics.moonraker_ok_klipper_not_ready" = "Moonraker is connected - Klipper is not ready";
+"diagnostics.klipper_unknown" = "Not checked: Moonraker did not answer";
+"diagnostics.backend_connected" = "Raspberry Pi backend connected";
+"diagnostics.websocket_failed" = "WebSocket failed";
 "diagnostics.slicer" = "Slicer";
 "diagnostics.slicer_available" = "Slicer installed";
 "diagnostics.power_provider" = "Power provider";
@@ -460,6 +473,9 @@
 "error.klipper_not_ready" = "Klipper is not ready";
 "error.cancelled" = "Cancelled";
 "error.unknown" = "Something went wrong";
+
+"error.ats_blocked" = "iOS blocked the request (App Transport Security)";
+"error.hint.ats_blocked" = "This build refuses plain HTTP, so the request never left the iPhone. The Raspberry Pi is not at fault. Install a build whose Info.plist sets NSAllowsArbitraryLoads and nothing else in that dictionary.";
 
 "error.hint.timeout" = "Nothing answered at all. Check that Tailscale (or the VPN) is connected on this iPhone, that the Raspberry Pi is powered on, and that the address is correct.";
 "error.hint.cannot_connect" = "The Raspberry Pi answered but refused this port — the service is probably not running. Check it with: systemctl status neptune-remote";
