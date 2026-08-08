@@ -105,8 +105,16 @@ jobs:
       # sideloading tools take directly.
       #
       # One rolling tag, replaced on every build of this branch.
+      # Publishes on a push *or* a same-repository pull request. Gating on
+      # push alone was wrong: the concurrency group cancels one run of each
+      # push/pull_request pair and which one survives is not deterministic, so
+      # the release step was skipped whenever the pull_request run was the one
+      # that lived. Fork pull requests are excluded because their token is
+      # read-only and gh release would fail.
       - name: Publish the IPA as a rolling pre-release
-        if: github.event_name == 'push'
+        if: >-
+          github.event_name == 'push' ||
+          github.event.pull_request.head.repo.full_name == github.repository
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
