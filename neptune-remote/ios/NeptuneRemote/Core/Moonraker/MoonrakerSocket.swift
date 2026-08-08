@@ -196,11 +196,17 @@ final class MoonrakerSocket {
         await subscribe()
     }
 
-    func subscribe() async {
+    /// Objects this socket subscribes to. Set from the discovered capabilities
+    /// so a machine with extra fans or sensors streams those too; falls back to
+    /// the standard set before discovery has run.
+    private var subscribedObjects = PrinterObjects.queryObjects
+
+    func subscribe(objects names: [String]? = nil) async {
+        if let names, !names.isEmpty { subscribedObjects = names }
         // Moonraker expects {"objects": {"print_stats": null, ...}} where null
         // means "send every field of this object".
         var objects: [String: Any] = [:]
-        for name in PrinterObjects.queryObjects {
+        for name in subscribedObjects {
             objects[name] = NSNull()
         }
         await send(method: "printer.objects.subscribe", params: ["objects": objects])

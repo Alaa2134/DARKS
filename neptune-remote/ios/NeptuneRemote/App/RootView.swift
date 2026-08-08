@@ -193,6 +193,9 @@ struct MoreView: View {
                 NavigationLink { SystemInfoView() } label: {
                     Label(L.t("system.title"), systemImage: "cpu")
                 }
+                NavigationLink { PrinterCapabilitiesView() } label: {
+                    Label(L.t("capabilities.title"), systemImage: "list.bullet.clipboard")
+                }
                 if settings.advancedMode {
                     NavigationLink { TerminalView() } label: {
                         Label(L.t("terminal.title"), systemImage: "terminal")

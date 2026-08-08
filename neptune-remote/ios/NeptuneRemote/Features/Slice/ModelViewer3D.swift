@@ -8,7 +8,10 @@ import UIKit
 struct ModelViewer3D: View {
     let mesh: LoadedMesh
     var showsBuildPlate = true
-    var buildVolume: SIMD3<Float> = SIMD3(320, 320, 400)
+    /// Caller-supplied, from the slicing profile or the printer's own
+    /// axis limits. The default is a neutral placeholder for previews only -
+    /// it is never the size of any real machine.
+    var buildVolume: SIMD3<Float> = SIMD3(200, 200, 200)
 
     @State private var sceneID = UUID()
     @State private var wireframe = false
@@ -168,7 +171,10 @@ struct ModelViewer3D: View {
 struct ModelPreviewView: View {
     let data: Data?
     let filename: String
-    var buildVolume: SIMD3<Float> = SIMD3(320, 320, 400)
+    /// Caller-supplied, from the slicing profile or the printer's own
+    /// axis limits. The default is a neutral placeholder for previews only -
+    /// it is never the size of any real machine.
+    var buildVolume: SIMD3<Float> = SIMD3(200, 200, 200)
 
     @State private var mesh: LoadedMesh?
     @State private var errorMessage: String?

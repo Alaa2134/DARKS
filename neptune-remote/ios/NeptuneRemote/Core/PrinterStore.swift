@@ -22,6 +22,13 @@ final class PrinterStore: ObservableObject {
 
     @Published private(set) var moonrakerConnected = false
     @Published private(set) var backendConnected = false
+
+    /// What this printer can actually do, read from its printer.cfg. Every
+    /// screen that needs a limit, a fan name, a macro or a feature flag asks
+    /// this rather than assuming a Neptune 3 Plus.
+    @Published private(set) var capabilities = PrinterCapabilities()
+    @Published private(set) var capabilityError: APIError?
+    private var capabilityTask: Task<Void, Never>?
     /// Set when Moonraker or the backend rejected our credentials. Tracked
     /// separately from "not connected" because the fix is different: the user
     /// has to correct an API key, not chase a network.
@@ -119,6 +126,9 @@ final class PrinterStore: ObservableObject {
             case .connected:
                 self.moonrakerConnected = true
                 self.appendConsole(L.t("terminal.connected"), kind: .info)
+                // A reconnect may be to a Pi that rebooted with an edited
+                // printer.cfg, so re-read rather than trusting what we had.
+                self.refreshCapabilities()
             case .disconnected(let message):
                 self.moonrakerConnected = false
                 if let message { self.appendConsole(message, kind: .error) }
@@ -129,6 +139,9 @@ final class PrinterStore: ObservableObject {
                 self.appendConsole(line, kind: line.hasPrefix("!!") ? .error : .response)
             case .klippyReady:
                 self.appendConsole(L.t("klippy.state.ready"), kind: .info)
+                // FIRMWARE_RESTART and RESTART both land here, and both are how
+                // a printer.cfg edit takes effect.
+                self.refreshCapabilities(force: true)
             case .klippyShutdown, .klippyDisconnected:
                 self.snapshot.klippy = .shutdown
                 self.appendConsole(L.t("error.klipper_not_ready"), kind: .error)
@@ -495,12 +508,75 @@ final class PrinterStore: ObservableObject {
         await send(gcode: axes.isEmpty ? "G28" : "G28 \(axes.uppercased())")
     }
 
-    func jog(axis: String, distance: Double, feedrate: Double) async {
+    /// Jogs an axis, never past the travel configured in printer.cfg.
+    ///
+    /// The move is clamped against `stepper_<axis>.position_min/max` using the
+    /// live toolhead position, so a long step near the end of an axis becomes a
+    /// short one instead of a command Klipper refuses - or worse, one it obeys
+    /// into the frame. An axis whose limits were never discovered is refused
+    /// outright rather than moved on a guess.
+    @discardableResult
+    func jog(axis: String, distance: Double, feedrate: Double) async -> Bool {
+        let key = axis.lowercased()
+
+        guard !capabilities.axisLimits.isEmpty else {
+            // Before discovery has run there is nothing to check against.
+            // Refusing here would make the app unusable on a machine whose
+            // config could not be read, so the move goes through unclamped and
+            // Klipper's own limits remain the backstop.
+            return await sendJog(axis: axis, distance: distance, feedrate: feedrate)
+        }
+        guard let limit = capabilities.axisLimits[key] else {
+            lastError = .unsafeOperation([L.t("control.axis_unknown", axis.uppercased())])
+            Haptics.warning()
+            return false
+        }
+        guard capabilities.isHomed(key) || snapshot.homedAxes.isEmpty else {
+            // Unhomed position is meaningless, so there is nothing to clamp
+            // against; Klipper refuses the move itself.
+            lastError = .unsafeOperation([L.t("control.axis_not_homed", axis.uppercased())])
+            Haptics.warning()
+            return false
+        }
+
+        let current = livePosition(for: key) ?? limit.min
+        let allowed = limit.clamp(current + distance) - current
+        guard abs(allowed) > 0.0005 else {
+            lastError = .unsafeOperation([
+                L.t("control.axis_at_limit", axis.uppercased(), limit.min, limit.max)
+            ])
+            Haptics.warning()
+            return false
+        }
+        if abs(allowed - distance) > 0.0005 {
+            lastMessage = L.t("control.move_clamped", axis.uppercased(), allowed)
+        }
+        return await sendJog(axis: axis, distance: allowed, feedrate: feedrate)
+    }
+
+    private func sendJog(axis: String, distance: Double, feedrate: Double) async -> Bool {
         Haptics.impact(.light)
         // Relative move, then restore absolute positioning (Klipper style).
         await send(gcode: "G91", echo: false)
-        await send(gcode: String(format: "G1 %@%.3f F%.0f", axis.uppercased(), distance, feedrate))
+        let ok = await send(
+            gcode: String(format: "G1 %@%.3f F%.0f", axis.uppercased(), distance, feedrate)
+        )
         await send(gcode: "G90", echo: false)
+        return ok
+    }
+
+    /// Toolhead position for one axis, from the live `toolhead`/`gcode_move`
+    /// objects the socket streams.
+    func livePosition(for axis: String) -> Double? {
+        let index: Int
+        switch axis.lowercased() {
+        case "x": index = 0
+        case "y": index = 1
+        case "z": index = 2
+        default: return nil
+        }
+        guard snapshot.position.count > index else { return nil }
+        return snapshot.position[index]
     }
 
     func disableSteppers() async {
@@ -508,27 +584,99 @@ final class PrinterStore: ObservableObject {
     }
 
     /// Cold extrusion is refused unless the user explicitly overrides it.
+    ///
+    /// Both limits come from the extruder section of printer.cfg when it has
+    /// been read: `min_extrude_temp` for the cold guard and
+    /// `max_extrude_only_distance` for the length, since Klipper aborts a longer
+    /// extrude-only move outright.
     func extrude(length: Double, speedMMPerSecond: Double) async -> Bool {
-        if !settings.allowColdExtrusion,
-           !snapshot.canExtrude(minimumTemperature: settings.minExtrusionTemp) {
-            lastError = .unknown(L.t("control.cold_extrusion_blocked", settings.minExtrusionTemp))
+        let extruder = capabilities.primaryExtruder
+        let minimum = extruder?.minExtrudeTemp ?? settings.minExtrusionTemp
+
+        if !settings.allowColdExtrusion, !snapshot.canExtrude(minimumTemperature: minimum) {
+            lastError = .unknown(L.t("control.cold_extrusion_blocked", minimum))
             Haptics.warning()
             return false
         }
+
+        var requested = length
+        if let maximum = extruder?.maxExtrudeOnlyDistance, maximum > 0, abs(length) > maximum {
+            requested = length < 0 ? -maximum : maximum
+            lastMessage = L.t("control.extrude_clamped", maximum)
+        }
+
         Haptics.impact(.light)
         await send(gcode: "M83", echo: false)
-        let ok = await send(gcode: String(format: "G1 E%.2f F%.0f", length, speedMMPerSecond * 60))
-        return ok
+        return await send(gcode: String(format: "G1 E%.2f F%.0f", requested, speedMMPerSecond * 60))
+    }
+
+    // MARK: - Fans
+
+    /// Sets one discovered fan by its exact Klipper object name.
+    ///
+    /// The command depends on the fan's kind: only the part-cooling `fan`
+    /// answers M106/M107 and only `fan_generic` answers SET_FAN_SPEED. Fans
+    /// Klipper drives itself (heater_fan, controller_fan, temperature_fan) are
+    /// read-only here, because commanding them would mean guessing at a pin.
+    @discardableResult
+    func setFan(_ fan: PrinterCapabilities.FanSpec, percent: Double) async -> Bool {
+        guard let command = fan.speedCommand(percent: percent) else {
+            lastError = .unsafeOperation([L.t("fan.not_controllable", fan.displayName)])
+            return false
+        }
+        Haptics.impact(.light)
+        return await send(gcode: command)
+    }
+
+    // MARK: - Macros
+
+    /// Runs a macro Klipper reported. Nothing is invented: the name came from
+    /// `[gcode_macro ...]` in the user's own config.
+    @discardableResult
+    func runMacro(_ macro: PrinterCapabilities.MacroSpec, arguments: String = "") async -> Bool {
+        let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
+        let command = trimmed.isEmpty ? macro.name : "\(macro.name) \(trimmed)"
+        Haptics.impact(.medium)
+        return await send(gcode: command)
     }
 
     // MARK: Temperature
 
+    /// Sets the nozzle target, never above the configured `max_temp`.
+    ///
+    /// Klipper rejects an over-limit target and shuts down, so clamping here
+    /// turns a printer-halting mistake into a capped request. The ceiling comes
+    /// from the extruder section of printer.cfg, not from a constant.
     func setNozzleTarget(_ temperature: Double) async {
-        await send(gcode: String(format: "M104 S%.0f", max(0, temperature)))
+        let target = clampHeaterTarget(temperature, heater: capabilities.primaryExtruder)
+        await send(gcode: String(format: "M104 S%.0f", target))
     }
 
     func setBedTarget(_ temperature: Double) async {
-        await send(gcode: String(format: "M140 S%.0f", max(0, temperature)))
+        guard capabilities.hasHeatedBed || capabilities.isEmpty else {
+            lastError = .unsafeOperation([L.t("temperature.no_heated_bed")])
+            return
+        }
+        let target = clampHeaterTarget(temperature, heater: capabilities.bedHeater)
+        await send(gcode: String(format: "M140 S%.0f", target))
+    }
+
+    /// Clamps to the heater's configured range. With no discovered heater the
+    /// value only has its floor applied - Klipper still enforces its own limit.
+    private func clampHeaterTarget(_ value: Double, heater: PrinterCapabilities.HeaterSpec?) -> Double {
+        guard let heater, heater.maxTemp > 0 else { return max(0, value) }
+        let clamped = heater.clampTarget(value)
+        if clamped < value {
+            lastMessage = L.t("temperature.clamped", heater.displayName, heater.maxTemp)
+        }
+        return clamped
+    }
+
+    /// The highest target a temperature control may offer for a heater, so the
+    /// slider itself cannot be dragged into a shutdown.
+    func maxTarget(for heater: PrinterCapabilities.HeaterSpec?) -> Double {
+        guard let heater, heater.maxTemp > 0 else { return 300 }
+        return heater.maxTemp
     }
 
     func preheat(_ preset: TemperaturePreset, nozzle: Bool = true, bed: Bool = true) async {
@@ -594,18 +742,36 @@ final class PrinterStore: ObservableObject {
         }
     }
 
+    // Print control prefers the printer's own PAUSE / RESUME / CANCEL_PRINT
+    // macros when they are defined, because on most configs those do more than
+    // the bare Moonraker call - park the head, retract, lift Z, restore state.
+    // Calling the endpoint instead would skip all of it. Where the macros are
+    // not defined, the Moonraker API is the correct fallback.
+
     func pausePrint() async {
         if settings.demoMode { demo.pause(); Haptics.impact(.medium); return }
+        if let macro = capabilities.macro(named: "PAUSE") {
+            await runMacro(macro)
+            return
+        }
         await run { try await self.moonraker.pausePrint() }
     }
 
     func resumePrint() async {
         if settings.demoMode { demo.resume(); Haptics.impact(.medium); return }
+        if let macro = capabilities.macro(named: "RESUME") {
+            await runMacro(macro)
+            return
+        }
         await run { try await self.moonraker.resumePrint() }
     }
 
     func cancelPrint() async {
         if settings.demoMode { demo.cancel(); Haptics.warning(); return }
+        if let macro = capabilities.macro(named: "CANCEL_PRINT") {
+            await runMacro(macro)
+            return
+        }
         await run { try await self.moonraker.cancelPrint() }
     }
 
@@ -749,6 +915,70 @@ final class PrinterStore: ObservableObject {
             handle(error)
             return false
         }
+    }
+
+    // MARK: - Capability discovery
+
+    /// Re-reads printer.cfg through Klipper and rebuilds the capability model.
+    ///
+    /// Called on every Moonraker connect and on every Klipper ready event, so a
+    /// printer.cfg edit followed by FIRMWARE_RESTART is picked up without
+    /// touching the app. `force` skips the "nothing changed" shortcut.
+    func refreshCapabilities(force: Bool = false) {
+        guard !settings.demoMode else {
+            capabilities = DemoCapabilities.neptune3Plus
+            return
+        }
+        capabilityTask?.cancel()
+        capabilityTask = Task { [weak self] in
+            await self?.discoverCapabilities(force: force)
+        }
+    }
+
+    private func discoverCapabilities(force: Bool) async {
+        do {
+            let discovered = try await moonraker.discoverCapabilities(homedAxes: snapshot.homedAxes)
+            guard !Task.isCancelled else { return }
+            capabilityError = nil
+
+            // The signature covers every section and option, so an unchanged
+            // config re-uses what is already on screen and avoids a needless
+            // round of view updates on every reconnect.
+            if force || discovered.configSignature != capabilities.configSignature {
+                capabilities = discovered
+                // The set of objects worth subscribing to changed with it.
+                await resubscribe()
+            } else {
+                capabilities.homedAxes = discovered.homedAxes
+            }
+        } catch {
+            guard !Task.isCancelled else { return }
+            capabilityError = APIError.from(error, host: settings.host)
+        }
+    }
+
+    /// Re-issues the Moonraker subscription so newly discovered objects start
+    /// streaming.
+    private func resubscribe() async {
+        await moonrakerSocket.subscribe(objects: subscriptionObjects)
+    }
+
+    /// The objects to subscribe to: the standard set the dashboard decodes, plus
+    /// everything discovered on this particular machine.
+    var subscriptionObjects: [String] {
+        var names = Set(PrinterObjects.queryObjects)
+        names.formUnion(capabilities.fans.map(\.object))
+        names.formUnion(capabilities.temperatureSensors.map(\.object))
+        names.formUnion(capabilities.filamentSensors.map(\.object))
+        names.formUnion(capabilities.heaters.map(\.object))
+        if capabilities.hasBedMesh { names.insert("bed_mesh") }
+        if capabilities.hasExcludeObject { names.insert("exclude_object") }
+        if capabilities.hasPauseResume { names.insert("pause_resume") }
+        if let probe = capabilities.probe { names.insert(probe.kind) }
+        // Only ask for objects Klipper actually reported; a subscription to an
+        // object that does not exist makes Moonraker reject the whole request.
+        let available = Set(capabilities.objects)
+        return names.filter { available.isEmpty || available.contains($0) }.sorted()
     }
 
     // MARK: - Diagnostics

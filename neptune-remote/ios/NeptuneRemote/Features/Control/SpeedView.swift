@@ -7,7 +7,12 @@ struct SpeedView: View {
     @State private var speedFactor: Double = 100
     @State private var flowFactor: Double = 100
     @State private var fanPercent: Double = 0
+    /// Speeds for fan_generic fans, which have no live feed to track.
+    @State private var extraFanPercent: [String: Double] = [:]
 
+    // Seeded from the printer's own configured maximums once discovery has run,
+    // rather than from constants. The values below are only what the sliders
+    // show before the first read.
     @State private var maxVelocity: Double = 300
     @State private var maxAcceleration: Double = 3_000
     @State private var squareCornerVelocity: Double = 5
@@ -40,9 +45,24 @@ struct SpeedView: View {
         speedFactor = snapshot.speedFactor * 100
         flowFactor = snapshot.extrudeFactor * 100
         fanPercent = snapshot.fanSpeed * 100
-        if snapshot.maxVelocity > 0 { maxVelocity = snapshot.maxVelocity }
-        if snapshot.maxAcceleration > 0 { maxAcceleration = snapshot.maxAcceleration }
-        if snapshot.squareCornerVelocity > 0 { squareCornerVelocity = snapshot.squareCornerVelocity }
+        // Live toolhead values first - they reflect any runtime SET_VELOCITY_LIMIT.
+        // Failing that, the configured maximums from printer.cfg.
+        let capabilities = printer.capabilities
+        if snapshot.maxVelocity > 0 {
+            maxVelocity = snapshot.maxVelocity
+        } else if let value = capabilities.maxVelocity {
+            maxVelocity = value
+        }
+        if snapshot.maxAcceleration > 0 {
+            maxAcceleration = snapshot.maxAcceleration
+        } else if let value = capabilities.maxAccel {
+            maxAcceleration = value
+        }
+        if snapshot.squareCornerVelocity > 0 {
+            squareCornerVelocity = snapshot.squareCornerVelocity
+        } else if let value = capabilities.squareCornerVelocity {
+            squareCornerVelocity = value
+        }
     }
 
     // MARK: - Cards
@@ -118,31 +138,90 @@ struct SpeedView: View {
         .card()
     }
 
+    /// One control per fan Klipper reported, addressed by its exact object name.
+    ///
+    /// A printer with a cooling upgrade has several fans, and the ones Klipper
+    /// drives itself (heater_fan, controller_fan, temperature_fan) must be shown
+    /// as read-only rather than given a slider that would have to guess at a
+    /// pin. Before discovery has run, the part-cooling fan is the safe default
+    /// because M106 is universal.
     private var fanCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("speed.fan", systemImage: "fanblades.fill")
-            LabelledSlider(
-                titleKey: "speed.fan",
-                value: $fanPercent,
-                range: 0...100,
-                step: 5,
-                unit: "%"
-            ) { value in
-                Task { await printer.setFanSpeed(value) }
-            }
-            HStack(spacing: 10) {
-                ForEach([0.0, 50.0, 100.0], id: \.self) { value in
-                    Button("\(Int(value))%") {
-                        fanPercent = value
-                        Task { await printer.setFanSpeed(value) }
-                    }
-                    .buttonStyle(.bordered)
-                    .controlSize(.small)
-                    .frame(maxWidth: .infinity)
+        VStack(alignment: .leading, spacing: 16) {
+            SectionHeader("fan.section", systemImage: "fanblades.fill")
+
+            if printer.capabilities.fans.isEmpty {
+                LabelledSlider(
+                    titleKey: "speed.fan",
+                    value: $fanPercent,
+                    range: 0...100,
+                    step: 5,
+                    unit: "%"
+                ) { value in
+                    Task { await printer.setFanSpeed(value) }
+                }
+                presetRow { value in
+                    fanPercent = value
+                    Task { await printer.setFanSpeed(value) }
+                }
+            } else {
+                ForEach(printer.capabilities.fans) { fan in
+                    fanRow(fan)
+                    if fan.id != printer.capabilities.fans.last?.id { Divider() }
                 }
             }
         }
         .card()
+    }
+
+    @ViewBuilder
+    private func fanRow(_ fan: PrinterCapabilities.FanSpec) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(fan.displayName).font(.subheadline.weight(.medium))
+                Spacer()
+                Text(fan.object).font(.caption2).monospaced().foregroundStyle(.secondary)
+            }
+
+            if fan.isControllable {
+                // The part-cooling fan is the one the snapshot reports, so its
+                // slider tracks live state; a fan_generic has no such feed and
+                // stays where the user put it.
+                let binding = fan.kind == "fan"
+                    ? $fanPercent
+                    : Binding(
+                        get: { extraFanPercent[fan.object] ?? 0 },
+                        set: { extraFanPercent[fan.object] = $0 }
+                    )
+                LabelledSlider(
+                    titleKey: "speed.fan",
+                    value: binding,
+                    range: 0...100,
+                    step: 5,
+                    unit: "%"
+                ) { value in
+                    Task { await printer.setFan(fan, percent: value) }
+                }
+                presetRow { value in
+                    binding.wrappedValue = value
+                    Task { await printer.setFan(fan, percent: value) }
+                }
+            } else {
+                Text(localized: "fan.read_only")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private func presetRow(_ action: @escaping (Double) -> Void) -> some View {
+        HStack(spacing: 10) {
+            ForEach([0.0, 50.0, 100.0], id: \.self) { value in
+                Button("\(Int(value))%") { action(value) }
+                    .buttonStyle(.bordered)
+                    .controlSize(.small)
+                    .frame(maxWidth: .infinity)
+            }
+        }
     }
 
     private var advancedHint: some View {

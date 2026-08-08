@@ -188,13 +188,22 @@ struct SliceView: View {
         .card()
     }
 
+    /// The build volume to draw the model against.
+    ///
+    /// The slicing profile wins when one is selected, because that is what the
+    /// G-code will actually be sliced for. Otherwise it falls back to the axis
+    /// travel discovered from the connected printer's printer.cfg - never to a
+    /// hardcoded size.
     private var buildVolume: SIMD3<Float> {
+        let discovered = printer.capabilities.buildVolume
         guard let profile = slicing.profiles.printers.first(where: { $0.id == slicing.printerProfile })
-        else { return SIMD3(320, 320, 400) }
-        let height = Float(profile.values["max_print_height"] ?? "400") ?? 400
+        else { return discovered ?? SIMD3(200, 200, 200) }
+
+        let fallback = discovered ?? SIMD3(200, 200, 200)
+        let height = profile.values["max_print_height"].flatMap(Float.init) ?? fallback.z
         let shape = profile.values["bed_shape"] ?? ""
-        var width: Float = 320
-        var depth: Float = 320
+        var width = fallback.x
+        var depth = fallback.y
         let points = shape.split(separator: ",").compactMap { token -> (Float, Float)? in
             let parts = token.split(separator: "x")
             guard parts.count == 2, let x = Float(parts[0]), let y = Float(parts[1]) else { return nil }

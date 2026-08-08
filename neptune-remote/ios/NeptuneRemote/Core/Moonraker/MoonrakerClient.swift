@@ -136,6 +136,91 @@ actor MoonrakerClient {
         ).result.objects
     }
 
+    // MARK: - Capability discovery
+
+    /// Klipper's view of the loaded printer.cfg.
+    ///
+    /// `configfile.settings` is the parsed and normalised config - lowercased
+    /// keys, numbers already typed - which is why it is preferred over reading
+    /// the raw file. `save_config_pending` tells us there are tuning values
+    /// Klipper has not written back yet.
+    struct ConfigFile: Decodable {
+        var settings: [String: ConfigValue] = [:]
+        var config: [String: ConfigValue] = [:]
+        var saveConfigPending: Bool = false
+
+        enum CodingKeys: String, CodingKey {
+            case settings, config
+            case saveConfigPending = "save_config_pending"
+        }
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            settings = try container.decodeIfPresent([String: ConfigValue].self, forKey: .settings) ?? [:]
+            config = try container.decodeIfPresent([String: ConfigValue].self, forKey: .config) ?? [:]
+            saveConfigPending = try container.decodeIfPresent(Bool.self, forKey: .saveConfigPending) ?? false
+        }
+
+        /// `settings` when Klipper provided it, falling back to the raw
+        /// `config` section map on the older builds that only expose that.
+        var effective: [String: ConfigValue] { settings.isEmpty ? config : settings }
+    }
+
+    func configFile() async throws -> ConfigFile {
+        struct Status: Decodable { let configfile: ConfigFile }
+        struct Payload: Decodable { let status: Status }
+        return try await http.decode(
+            MoonrakerEnvelope<Payload>.self,
+            from: try request(
+                "printer/objects/query",
+                query: [URLQueryItem(name: "configfile", value: nil)],
+                timeout: 20
+            )
+        ).result.status.configfile
+    }
+
+    /// Saved bed mesh profiles, which live in the runtime object rather than in
+    /// the config sections.
+    func bedMeshProfiles() async throws -> [String] {
+        struct Mesh: Decodable {
+            let profiles: [String: ConfigValue]?
+            enum CodingKeys: String, CodingKey { case profiles }
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                profiles = try container.decodeIfPresent([String: ConfigValue].self, forKey: .profiles)
+            }
+        }
+        struct Status: Decodable { let bed_mesh: Mesh? }
+        struct Payload: Decodable { let status: Status }
+        let result = try await http.decode(
+            MoonrakerEnvelope<Payload>.self,
+            from: try request(
+                "printer/objects/query",
+                query: [URLQueryItem(name: "bed_mesh", value: nil)]
+            )
+        ).result
+        return Array(result.status.bed_mesh?.profiles?.keys ?? [:].keys)
+    }
+
+    /// Reads everything needed to describe this printer and assembles it.
+    func discoverCapabilities(homedAxes: String = "") async throws -> PrinterCapabilities {
+        let objects = try await objectList()
+        let configuration = try await configFile()
+        // Only ask for mesh profiles when the module is actually loaded.
+        let profiles = objects.contains("bed_mesh")
+            ? ((try? await bedMeshProfiles()) ?? [])
+            : []
+        let version = (try? await printerInfo())?.softwareVersion ?? ""
+
+        return CapabilityDiscovery.build(
+            settings: configuration.effective,
+            objects: objects,
+            homedAxes: homedAxes,
+            meshProfiles: profiles,
+            klipperVersion: version
+        )
+    }
+
     // MARK: - Status
 
     func queryObjects(_ objects: [String] = PrinterObjects.queryObjects) async throws -> PrinterObjects {

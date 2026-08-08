@@ -23,20 +23,28 @@ struct TemperatureView: View {
                     actual: snapshot.nozzleActual,
                     current: snapshot.nozzleTarget,
                     target: $nozzleTarget,
-                    range: 0...300
+                    // The ceiling is the extruder's configured max_temp. A
+                    // slider that goes past it can only produce a target
+                    // Klipper refuses - and shuts down over.
+                    range: 0...printer.maxTarget(for: printer.capabilities.primaryExtruder)
                 ) { value in
                     Task { await printer.setNozzleTarget(value) }
                 }
-                heaterCard(
-                    titleKey: "temperature.bed",
-                    systemImage: "square.stack.3d.down.right.fill",
-                    tint: Theme.bed,
-                    actual: snapshot.bedActual,
-                    current: snapshot.bedTarget,
-                    target: $bedTarget,
-                    range: 0...120
-                ) { value in
-                    Task { await printer.setBedTarget(value) }
+
+                // No heater_bed section means this machine has no heated bed;
+                // showing the control would invite a command that cannot work.
+                if printer.capabilities.hasHeatedBed || printer.capabilities.isEmpty {
+                    heaterCard(
+                        titleKey: "temperature.bed",
+                        systemImage: "square.stack.3d.down.right.fill",
+                        tint: Theme.bed,
+                        actual: snapshot.bedActual,
+                        current: snapshot.bedTarget,
+                        target: $bedTarget,
+                        range: 0...printer.maxTarget(for: printer.capabilities.bedHeater)
+                    ) { value in
+                        Task { await printer.setBedTarget(value) }
+                    }
                 }
                 presetsCard
                 actionsCard

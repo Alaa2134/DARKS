@@ -1108,3 +1108,43 @@
 
 /* Slicer profiles */
 "slicer.golden.marked" = "Marked as the Golden profile";
+
+"fan.part_cooling" = "Part cooling fan";
+"fan.not_controllable" = "%@ is driven by Klipper and cannot be set from here";
+"fan.section" = "Fans";
+"fan.read_only" = "Managed by Klipper";
+"control.axis_unknown" = "No travel limits were found for %@ in printer.cfg";
+"control.axis_not_homed" = "%@ is not homed";
+"control.axis_at_limit" = "%@ is already at its configured limit (%.1f to %.1f mm)";
+"control.move_clamped" = "Shortened to %.2f mm on %@ to stay inside the configured travel";
+"control.extrude_clamped" = "Shortened to %.0f mm - max_extrude_only_distance";
+"temperature.no_heated_bed" = "This printer has no heater_bed configured";
+"temperature.clamped" = "Capped at the configured max_temp for %@ (%.0f°C)";
+"capabilities.title" = "What the app detected";
+"capabilities.subtitle" = "Read from your printer.cfg through Klipper";
+"capabilities.refresh" = "Re-read the configuration";
+"capabilities.none" = "Nothing discovered yet - connect to Moonraker first";
+"capabilities.klipper_version" = "Klipper version";
+"capabilities.kinematics" = "Kinematics";
+"capabilities.axes" = "Axis travel";
+"capabilities.heaters" = "Heaters";
+"capabilities.sensors" = "Temperature sensors";
+"capabilities.filament_sensors" = "Filament sensors";
+"capabilities.macros" = "Macros";
+"capabilities.modules" = "Optional modules";
+"capabilities.motion" = "Configured maximums";
+"capabilities.objects" = "Klipper objects";
+"capabilities.probe" = "Probe";
+"capabilities.bed_mesh" = "Bed mesh";
+"capabilities.discovered_at" = "Last read";
+"capabilities.signature" = "Config fingerprint";
+"capabilities.macro_count" = "%d macros";
+"capabilities.object_count" = "%d objects";
+"capabilities.present" = "Present";
+"capabilities.absent" = "Not configured";
+"capabilities.safe_z_home" = "safe_z_home";
+"capabilities.no_probe" = "No probe configured - Z is set with the endstop";
+"capabilities.run" = "Run";
+"capabilities.macro_confirm" = "Run %@?";
+"capabilities.macro_confirm_body" = "This macro is defined in your printer.cfg and may move or heat the machine.";
+"capabilities.macro_arguments" = "Parameters (optional)";

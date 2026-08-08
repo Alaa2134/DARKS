@@ -1108,3 +1108,43 @@
 
 /* بروفايلات التقطيع */
 "slicer.golden.marked" = "اتعلم كبروفايل ذهبي";
+
+"fan.part_cooling" = "مروحة تبريد القطعة";
+"fan.not_controllable" = "%@ يتحكم فيها كليبر ولا يمكن ضبطها من هنا";
+"fan.section" = "المراوح";
+"fan.read_only" = "يديرها كليبر";
+"control.axis_unknown" = "لم يتم العثور على حدود حركة لـ %@ في printer.cfg";
+"control.axis_not_homed" = "%@ لم يتم تصفيره";
+"control.axis_at_limit" = "%@ عند حده المضبوط بالفعل (%.1f إلى %.1f مم)";
+"control.move_clamped" = "تم تقصيرها إلى %.2f مم على %@ للبقاء داخل الحدود المضبوطة";
+"control.extrude_clamped" = "تم تقصيرها إلى %.0f مم - max_extrude_only_distance";
+"temperature.no_heated_bed" = "هذه الطابعة ليس بها heater_bed مضبوط";
+"temperature.clamped" = "تم تحديدها عند max_temp المضبوط لـ %@ (%.0f°م)";
+"capabilities.title" = "ما اكتشفه التطبيق";
+"capabilities.subtitle" = "مقروء من printer.cfg الخاص بك عبر كليبر";
+"capabilities.refresh" = "أعد قراءة الإعدادات";
+"capabilities.none" = "لم يُكتشف شيء بعد - اتصل بمونريكر أولًا";
+"capabilities.klipper_version" = "إصدار كليبر";
+"capabilities.kinematics" = "نوع الحركة";
+"capabilities.axes" = "مدى المحاور";
+"capabilities.heaters" = "السخانات";
+"capabilities.sensors" = "حساسات الحرارة";
+"capabilities.filament_sensors" = "حساسات الفيلامنت";
+"capabilities.macros" = "الماكروهات";
+"capabilities.modules" = "وحدات اختيارية";
+"capabilities.motion" = "الحدود القصوى المضبوطة";
+"capabilities.objects" = "كائنات كليبر";
+"capabilities.probe" = "المجس";
+"capabilities.bed_mesh" = "شبكة السطح";
+"capabilities.discovered_at" = "آخر قراءة";
+"capabilities.signature" = "بصمة الإعدادات";
+"capabilities.macro_count" = "%d ماكرو";
+"capabilities.object_count" = "%d كائن";
+"capabilities.present" = "موجود";
+"capabilities.absent" = "غير مضبوط";
+"capabilities.safe_z_home" = "safe_z_home";
+"capabilities.no_probe" = "لا يوجد مجس مضبوط - يتم ضبط Z بالنهاية الطرفية";
+"capabilities.run" = "تشغيل";
+"capabilities.macro_confirm" = "تشغيل %@؟";
+"capabilities.macro_confirm_body" = "هذا الماكرو معرّف في printer.cfg الخاص بك وقد يحرّك الجهاز أو يسخّنه.";
+"capabilities.macro_arguments" = "المعاملات (اختياري)";
