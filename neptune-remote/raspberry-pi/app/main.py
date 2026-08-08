@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from .config import AppConfig, get_config, load_config, set_config
 from .routers import (
     core,
+    doctor,
     files,
     history,
     inventory,
@@ -98,6 +99,7 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
     # Loopback-tolerant: the Klipper timelapse macro, and nothing else.
     app.include_router(media.local_router, prefix="/api", tags=["camera"])
     app.include_router(vision.router, prefix="/api", tags=["vision"])
+    app.include_router(doctor.router, prefix="/api", tags=["doctor"])
     app.include_router(inventory.router, prefix="/api", tags=["inventory"])
     app.include_router(support.router, prefix="/api", tags=["support"])
     app.include_router(websocket.router, tags=["realtime"])

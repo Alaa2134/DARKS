@@ -443,7 +443,10 @@ def _finalise(
     approved = {p.strip().lower() for p in (golden_profiles or []) if p.strip()}
     profile_key = (report.profile_name or "").strip().lower()
 
-    if profile_key and profile_key in approved:
+    # Golden status requires BOTH the approved slicer and an approved profile
+    # name. A profile id is just a comment: a file from another slicer (or a
+    # hand-edited one) must not inherit trust by claiming a known name.
+    if report.slicer == "PrusaSlicer" and profile_key and profile_key in approved:
         report.verified_profile = True
         report.profile_status = "golden"
     elif report.slicer == "PrusaSlicer":

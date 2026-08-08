@@ -32,7 +32,16 @@ from .db import Database
 from .filament.store import FilamentStore, grams_from_mm
 from .hub import EventHub
 from .knowledge import translate_error
+from .doctor.engine import DiagnosticInput, DiagnosticsEngine
+from .doctor.workflows import WorkflowRunner
+from .gcode.validator import GCodeReport, analyse_gcode
+from .klipper.model import ParsedConfig, parse_config
+from .klipper.store import ConfigStore
+from .klipper.validator import NEPTUNE_3_PLUS
 from .library.store import LibraryStore
+from .preflight import PreflightReport, run_preflight
+from .safety.engine import PrinterSafetyEngine, SafetyContext
+from .slicer.golden import GoldenProfileStore
 from .maintenance.store import MaintenanceStore
 from .moonraker import MoonrakerClient, MoonrakerError
 from .paths import StorageLayout
@@ -105,6 +114,32 @@ class AppState:
         self.maintenance = MaintenanceStore(self.db)
         self.queue = PrintQueueStore(self.db)
         self.backups = BackupService(config, self.layout)
+
+        # ---- safety, diagnosis and calibration ----------------------------
+        # Every printer command in this project goes through `self.safety`.
+        # Nothing calls moonraker.run_gcode directly for movement.
+        self.config_store = ConfigStore(self.db, self.layout.root / "config_versions")
+        self.slicer_profiles = GoldenProfileStore(self.db)
+        self.printer_profile = NEPTUNE_3_PLUS
+        self.diagnostics = DiagnosticsEngine(profile=self.printer_profile)
+        self.safety = PrinterSafetyEngine(
+            runner=self._run_safe_gcode,
+            on_backup=self._backup_before_save_config,
+        )
+        self.workflows = WorkflowRunner(
+            self.safety, self.moonraker, context_factory=self.safety_context
+        )
+        #: Parsed live printer.cfg, refreshed on demand and cached.
+        self.live_config: Optional[ParsedConfig] = None
+        self.live_config_text: str = ""
+        self.live_config_error: str = ""
+        self.live_config_fetched_at: float = 0.0
+        #: Probe / endstop readings, only ever set from a real query.
+        self.probe_triggered: Optional[bool] = None
+        self.endstop_states: Dict[str, str] = {}
+        self.calibration_session: Optional[str] = None
+        self.testz_total_down: float = 0.0
+        self._last_status_at: float = 0.0
 
         # ---- media --------------------------------------------------------
         self.camera = CameraService(config.camera, self.layout)
@@ -285,6 +320,7 @@ class AppState:
     async def _handle_status(self, status: PrinterStatusResponse) -> None:
         previous = self.last_status
         self.last_status = status
+        self._last_status_at = time.time()
 
         payload = status.model_dump()
         payload["item"] = self._current_item_payload()
@@ -724,6 +760,300 @@ class AppState:
         return await self.recording.start(
             gcode_name=self.last_status.filename, item_id=self.current_item_id, mode="manual"
         )
+
+    # --------------------------------------------------------------- safety
+    async def _run_safe_gcode(self, command: str) -> Any:
+        """The only path from this project to a printer movement command.
+
+        Called by the safety engine after it has approved and possibly adjusted
+        the command. Nothing else should call ``moonraker.run_gcode`` for motion.
+        """
+        log.info("safe gcode: %s", command)
+        result = await self.moonraker.run_gcode(command)
+        self._track_calibration_session(command)
+        return result
+
+    def _track_calibration_session(self, command: str) -> None:
+        """Follow PROBE_CALIBRATE / TESTZ / ACCEPT so the engine's session rules
+        reflect what actually ran."""
+        word = command.strip().split()[0].upper() if command.strip() else ""
+        if word in {"PROBE_CALIBRATE", "Z_ENDSTOP_CALIBRATE"}:
+            self.calibration_session = word.lower()
+            self.testz_total_down = 0.0
+        elif word in {"ACCEPT", "ABORT"}:
+            self.calibration_session = None
+            self.testz_total_down = 0.0
+        elif word == "TESTZ":
+            from .safety.engine import parse_named_params
+
+            step = parse_named_params(command).get("Z")
+            if step is not None and step < 0:
+                self.testz_total_down += abs(step)
+
+    async def _backup_before_save_config(self, _command: str) -> None:
+        """SAVE_CONFIG rewrites printer.cfg, so snapshot it first."""
+        try:
+            text = await self.moonraker.read_config_file("printer.cfg")
+        except Exception as error:                        # noqa: BLE001
+            log.warning("Could not back up printer.cfg before SAVE_CONFIG: %s", error)
+            return
+        self.config_store.snapshot(text, reason="pre_save_config")
+
+    async def ensure_status_fresh(self, *, max_age: float = 5.0) -> PrinterStatusResponse:
+        """Make sure ``last_status`` is recent enough to make a safety decision on.
+
+        The poll loop normally keeps it current, but a request that arrives
+        immediately after startup would otherwise see ``klippy_state: unknown``
+        and be refused for the wrong reason. Refusing because we genuinely do
+        not know is correct; refusing because nobody has looked yet is not.
+        """
+        # A cached *good* reading can be reused. A cached offline/unknown one
+        # cannot: it may simply predate the connection coming up, and refusing
+        # a command on stale bad news is the wrong kind of caution.
+        cached_is_usable = self.last_status.online and self.last_status.klippy_state == "ready"
+        if cached_is_usable and time.time() - self._last_status_at <= max_age:
+            return self.last_status
+        try:
+            status = await fetch_status(self.moonraker)
+        except Exception as error:                        # noqa: BLE001
+            log.debug("Status refresh failed: %s", error)
+            return self.last_status
+        self.last_status = status
+        self._last_status_at = time.time()
+        return status
+
+    def safety_context(self) -> SafetyContext:
+        """Assemble the engine's view of the printer from live state."""
+        status = self.last_status
+        return SafetyContext(
+            klippy_ready=status.klippy_state == "ready",
+            klippy_state=status.klippy_state,
+            klippy_message=status.klippy_message,
+            printing=status.state == "printing",
+            paused=status.state == "paused",
+            homed_axes=status.homed_axes,
+            position=tuple(status.position or (0.0, 0.0, 0.0)),
+            nozzle_temp=status.nozzle.actual,
+            nozzle_target=status.nozzle.target,
+            bed_temp=status.bed.actual,
+            bed_target=status.bed.target,
+            probe_triggered=self.probe_triggered,
+            endstops=dict(self.endstop_states),
+            config=self.live_config,
+            calibration_session=self.calibration_session,
+            testz_total_down=self.testz_total_down,
+        )
+
+    # ---------------------------------------------------------- live config
+    async def refresh_live_config(self, *, force: bool = False) -> Optional[ParsedConfig]:
+        """Read printer.cfg from Moonraker and parse it.
+
+        Cached for 30 s: the safety engine consults it on every command, and
+        re-reading the file each time would hammer Moonraker for no benefit.
+        """
+        fresh_enough = time.time() - self.live_config_fetched_at < 30.0
+        if not force and self.live_config is not None and fresh_enough:
+            return self.live_config
+
+        try:
+            text = await self.moonraker.read_config_file("printer.cfg")
+        except Exception as error:                        # noqa: BLE001
+            self.live_config_error = str(error)
+            log.warning("Could not read printer.cfg: %s", error)
+            return self.live_config
+
+        self.live_config_text = text
+        self.live_config = parse_config(text)
+        self.live_config_error = ""
+        self.live_config_fetched_at = time.time()
+
+        # First sight of a config with no history: record it so there is
+        # something to roll back to.
+        if self.config_store.latest() is None:
+            self.config_store.snapshot(text, reason="imported", label="First seen")
+        return self.live_config
+
+    @property
+    def live_config_sha(self) -> str:
+        import hashlib
+
+        if not self.live_config_text:
+            return ""
+        return hashlib.sha256(self.live_config_text.encode("utf-8")).hexdigest()
+
+    # ------------------------------------------------------------ readings
+    async def query_probe(self) -> Optional[bool]:
+        """Read the probe. Sets ``probe_triggered`` only from a real answer -
+        a failed query leaves it None, which the engine treats as unknown."""
+        try:
+            output = await self.moonraker.run_gcode_and_collect("QUERY_PROBE")
+        except Exception as error:                        # noqa: BLE001
+            log.warning("QUERY_PROBE failed: %s", error)
+            self.probe_triggered = None
+            return None
+        lowered = output.lower()
+        if "probe: triggered" in lowered:
+            self.probe_triggered = True
+        elif "probe: open" in lowered:
+            self.probe_triggered = False
+        else:
+            self.probe_triggered = None
+        return self.probe_triggered
+
+    async def query_endstops(self) -> Dict[str, str]:
+        try:
+            output = await self.moonraker.run_gcode_and_collect("QUERY_ENDSTOPS")
+        except Exception as error:                        # noqa: BLE001
+            log.warning("QUERY_ENDSTOPS failed: %s", error)
+            return {}
+        states: Dict[str, str] = {}
+        for part in output.replace("\n", " ").split():
+            if ":" in part:
+                name, _, value = part.partition(":")
+                if name.strip().lower() in {"x", "y", "z"} and value.strip():
+                    states[name.strip().lower()] = value.strip().lower()
+        if states:
+            self.endstop_states = states
+        return states
+
+    # ---------------------------------------------------------- diagnosis
+    async def diagnose(self, *, deep: bool = False) -> Dict[str, Any]:
+        """Run the full "Fix My Printer" inspection.
+
+        ``deep`` additionally queries the probe and endstops, which sends
+        read-only G-code. It still never moves the printer.
+        """
+        await self.ensure_status_fresh()
+        await self.refresh_live_config()
+
+        if deep:
+            await self.query_probe()
+            await self.query_endstops()
+
+        klipper_log: List[str] = []
+        try:
+            klipper_log = await self.moonraker.klipper_log_tail(200)
+        except Exception:                                 # noqa: BLE001
+            pass
+
+        status = self.last_status
+        raw = status.raw or {}
+        mcu = raw.get("mcu", {}) if isinstance(raw, dict) else {}
+        heaters: Dict[str, Dict[str, float]] = {}
+        for key in ("extruder", "heater_bed"):
+            block = raw.get(key) if isinstance(raw, dict) else None
+            if isinstance(block, dict):
+                heaters[key] = {
+                    "temperature": block.get("temperature", 0.0),
+                    "target": block.get("target", 0.0),
+                    "power": block.get("power", 0.0),
+                }
+
+        fans: Dict[str, float] = {}
+        if isinstance(raw, dict):
+            for key, block in raw.items():
+                if key.startswith("fan") and isinstance(block, dict):
+                    fans[key] = block.get("speed", 0.0)
+
+        sensor = None
+        sensor_enabled = None
+        if isinstance(raw, dict):
+            for key, block in raw.items():
+                if key.startswith(("filament_switch_sensor", "filament_motion_sensor")):
+                    if isinstance(block, dict):
+                        sensor = block.get("filament_detected")
+                        sensor_enabled = block.get("enabled")
+                    break
+
+        system = self.last_system or {}
+        known_good = self.config_store.last_known_good()
+
+        data = DiagnosticInput(
+            moonraker_reachable=status.online,
+            klippy_state=status.klippy_state,
+            klippy_message=status.klippy_message,
+            printing=status.state == "printing",
+            paused=status.state == "paused",
+            config=self.live_config,
+            config_error=self.live_config_error,
+            homed_axes=status.homed_axes,
+            endstops=dict(self.endstop_states),
+            probe_triggered=self.probe_triggered,
+            heaters=heaters,
+            fans=fans,
+            filament_detected=sensor,
+            filament_sensor_enabled=sensor_enabled,
+            mcu_awake=bool(mcu) if mcu else (True if status.online and status.klippy_state == "ready" else None),
+            mcu_version=str(mcu.get("mcu_version", "")) if isinstance(mcu, dict) else "",
+            mcu_load=(mcu.get("last_stats", {}) or {}).get("mcu_task_avg") if isinstance(mcu, dict) else None,
+            host_cpu_percent=system.get("cpu_percent"),
+            host_temp_c=system.get("cpu_temp_c"),
+            disk_free_gb=(
+                (system.get("disk_total_gb", 0.0) - system.get("disk_used_gb", 0.0))
+                if system.get("disk_total_gb") is not None
+                else None
+            ),
+            camera_available=self.camera.status(probe_devices=False).available,
+            accelerometer_present=None,
+            klipper_log_tail=klipper_log,
+            config_sha=self.live_config_sha,
+            known_good_sha=known_good.sha256 if known_good else "",
+            known_good_label=known_good.label if known_good else "",
+        )
+        return self.diagnostics.run(data).as_dict()
+
+    # ----------------------------------------------------------- preflight
+    async def analyse_gcode_path(self, filename: str) -> GCodeReport:
+        """Statically analyse a G-code file. Reads only - never rewrites."""
+        await self.refresh_live_config()
+        text = ""
+        local = self.gcodes.path_for(filename)
+        if local.is_file():
+            text = local.read_text(encoding="utf-8", errors="replace")
+        else:
+            data = await self.moonraker.download_gcode(filename)
+            text = data.decode("utf-8", errors="replace")
+        return analyse_gcode(
+            text,
+            config=self.live_config,
+            golden_profiles=self.slicer_profiles.golden_names(),
+        )
+
+    async def preflight(self, filename: str, *, strict: bool = False) -> Dict[str, Any]:
+        await self.ensure_status_fresh()
+        await self.refresh_live_config()
+        health = self.diagnostics.run(
+            DiagnosticInput(
+                moonraker_reachable=self.last_status.online,
+                klippy_state=self.last_status.klippy_state,
+                klippy_message=self.last_status.klippy_message,
+                config=self.live_config,
+                homed_axes=self.last_status.homed_axes,
+                probe_triggered=self.probe_triggered,
+                mcu_awake=True if self.last_status.klippy_state == "ready" else None,
+            )
+        )
+        try:
+            gcode = await self.analyse_gcode_path(filename)
+        except Exception as error:                        # noqa: BLE001
+            log.warning("Could not analyse %s: %s", filename, error)
+            gcode = None
+
+        filament_ok = None
+        filament_message = ""
+        if gcode is not None and gcode.filament_mm:
+            check = self.filament.check_enough(grams_from_mm(gcode.filament_mm))
+            filament_ok = check.get("ok")
+            filament_message = check.get("message_key", "")
+
+        report = run_preflight(
+            health=health,
+            gcode=gcode,
+            strict=strict,
+            filament_ok=filament_ok,
+            filament_message=filament_message,
+        )
+        return report.as_dict()
 
     def status_summary(self) -> Dict[str, Any]:
         """Everything the Home screen needs in one payload."""

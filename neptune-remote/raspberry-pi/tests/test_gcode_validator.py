@@ -313,3 +313,15 @@ def test_the_report_serialises_for_the_api():
     assert payload["slicer"] == "PrusaSlicer"
     assert payload["bounds"]["max_x"] == 300.0
     assert payload["profile_status"] == "golden"
+
+
+def test_a_foreign_file_cannot_claim_a_golden_profile_by_name():
+    """A profile id is only a comment - trust needs the approved slicer too."""
+    header = (
+        ";Generated with Cura_SteamEngine 5.6.0\n"
+        "; print_settings_id = Neptune3Plus 0.20 Standard\n"
+    )
+    report = analyse(good(header=header))
+    assert report.verified_profile is False
+    assert report.profile_status == "unverified"
+    assert any(i.code == "non_prusaslicer" for i in report.warnings)
