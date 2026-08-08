@@ -246,15 +246,37 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    // MARK: - Import trace
+    //
+    // Importing has failed silently in several different ways - a picker whose
+    // callback never fired, a read that stalled, an error written to a store no
+    // screen was showing. Each one looked identical from the outside: nothing
+    // happens. This records every step so the next failure names itself on
+    // screen instead of needing another round of guessing.
+
+    @Published private(set) var importTrace: [String] = []
+
+    func trace(_ line: String) {
+        let stamp = Date().formatted(date: .omitted, time: .standard)
+        importTrace.append("\(stamp)  \(line)")
+        if importTrace.count > 14 { importTrace.removeFirst() }
+    }
+
+    func clearImportTrace() { importTrace.removeAll() }
+
     @discardableResult
     func importModel(url: URL, nameAR: String = "", category: String = "other") async -> LibraryItem? {
+        trace("read: \(url.lastPathComponent)")
+
         // Reading goes through ImportedFile so an iCloud placeholder is
         // downloaded first and the failure says which step failed, rather than
         // reporting "unreadable" for a file the user can plainly see in Files.
         let data: Data
         do {
             data = try await ImportedFile.read(url)
+            trace("read ok: \(Format.fileSize(Int64(data.count)))")
         } catch {
+            trace("read FAILED: \(error.localizedDescription)")
             lastError = .unknown(error.localizedDescription)
             Haptics.error()
             return nil
@@ -266,6 +288,7 @@ final class LibraryStore: ObservableObject {
         }
 
         do {
+            trace("upload started")
             let item = try await printer.backend.uploadLibraryModel(
                 filename: url.lastPathComponent,
                 data: data,
@@ -273,11 +296,14 @@ final class LibraryStore: ObservableObject {
                 category: category
             )
             items.insert(item, at: 0)
+            trace("upload ok: \(item.displayName)")
             Haptics.success()
             lastError = nil
             return item
         } catch {
-            lastError = APIError.from(error, host: settings.host)
+            let apiError = APIError.from(error, host: settings.host)
+            trace("upload FAILED: \(apiError.localizedDescription)")
+            lastError = apiError
             Haptics.error()
             return nil
         }

@@ -544,6 +544,7 @@
 "library.import" = "ضيف موديل";
 "library.import.unreadable" = "مش قادر أقرأ الملف ده";
 "library.import.uploading" = "بيترفع وبتتعمل له صورة…";
+"library.import.trace" = "آخر محاولة استيراد";
 "library.section.favourites" = "المفضلة";
 "library.section.recent" = "اتطبع قريب";
 "library.section.new" = "أحدث الإضافات";

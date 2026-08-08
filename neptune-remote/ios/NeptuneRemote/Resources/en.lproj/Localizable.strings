@@ -544,6 +544,7 @@
 "library.import" = "Add a model";
 "library.import.unreadable" = "That file could not be read";
 "library.import.uploading" = "Uploading and rendering a preview…";
+"library.import.trace" = "Last import";
 "library.section.favourites" = "Favourites";
 "library.section.recent" = "Recently printed";
 "library.section.new" = "Recently added";

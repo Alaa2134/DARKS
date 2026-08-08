@@ -37,6 +37,29 @@ struct LibraryView: View {
                     .card()
                 }
 
+                // What the last import attempt actually did, step by step.
+                // Shown because every previous failure was invisible from the
+                // outside - one screenshot of this says which step broke.
+                if !library.importTrace.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text(localized: "library.import.trace")
+                                .font(.caption.weight(.semibold))
+                            Spacer()
+                            Button(L.t("common.close")) { library.clearImportTrace() }
+                                .font(.caption)
+                        }
+                        ForEach(library.importTrace, id: \.self) { line in
+                            Text(line)
+                                .font(.caption2)
+                                .monospaced()
+                                .textSelection(.enabled)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                    }
+                    .card()
+                }
+
                 if library.query.isEmpty {
                     browse
                 } else {
@@ -326,17 +349,26 @@ struct LibraryView: View {
     // MARK: - Import
 
     private func handleImport(_ result: Result<[URL], Error>) {
-        guard case .success(let urls) = result, !urls.isEmpty else {
-            if case .failure(let error) = result {
-                library.lastError = .unknown(error.localizedDescription)
-            }
+        // Logged before anything else: if this line never appears, the picker's
+        // callback did not fire at all, which is a different problem from a
+        // read or an upload failing.
+        library.clearImportTrace()
+
+        switch result {
+        case .failure(let error):
+            library.trace("picker FAILED: \(error.localizedDescription)")
+            library.lastError = .unknown(error.localizedDescription)
             return
-        }
-        Task {
-            isImporting = true
-            defer { isImporting = false }
-            for url in urls {
-                await library.importModel(url: url)
+        case .success(let urls):
+            library.trace("picker returned \(urls.count) file(s)")
+            guard !urls.isEmpty else { return }
+
+            Task {
+                isImporting = true
+                defer { isImporting = false }
+                for url in urls {
+                    await library.importModel(url: url)
+                }
             }
         }
     }
