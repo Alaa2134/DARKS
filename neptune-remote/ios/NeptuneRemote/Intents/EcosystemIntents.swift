@@ -167,43 +167,7 @@ struct PrinterSnapshotIntent: AppIntent {
         return .result(dialog: "Snapshot saved on the Raspberry Pi.")
     }
 }
-
-// MARK: - Shortcut phrases
-
-struct EcosystemShortcuts: AppShortcutsProvider {
-    static var appShortcuts: [AppShortcut] {
-        AppShortcut(
-            intent: WhatIsPrintingIntent(),
-            phrases: [
-                "What is printing in \(.applicationName)",
-                "What is my printer making with \(.applicationName)"
-            ],
-            shortTitle: "What Is Printing",
-            systemImageName: "cube"
-        )
-        AppShortcut(
-            intent: FilamentRemainingIntent(),
-            phrases: ["How much filament is left in \(.applicationName)"],
-            shortTitle: "Filament Left",
-            systemImageName: "circle.hexagongrid"
-        )
-        AppShortcut(
-            intent: StartNextQueuedPrintIntent(),
-            phrases: ["Start the next print in \(.applicationName)"],
-            shortTitle: "Start Next Print",
-            systemImageName: "list.number"
-        )
-        AppShortcut(
-            intent: PrintMonitorStatusIntent(),
-            phrases: ["Is my print okay in \(.applicationName)"],
-            shortTitle: "Print Monitor",
-            systemImageName: "eye"
-        )
-        AppShortcut(
-            intent: PrinterSnapshotIntent(),
-            phrases: ["Take a printer snapshot with \(.applicationName)"],
-            shortTitle: "Save Snapshot",
-            systemImageName: "camera"
-        )
-    }
-}
+// The App Shortcut phrases for these intents live in `NeptuneShortcuts`
+// (PrinterIntents.swift): iOS allows one AppShortcutsProvider per app and at
+// most ten shortcuts, so they are declared together in one place. Every intent
+// here is still available to build Shortcuts with by hand.

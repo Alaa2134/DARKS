@@ -215,10 +215,31 @@ struct NeptuneShortcuts: AppShortcutsProvider {
             systemImageName: "printer"
         )
         AppShortcut(
-            intent: OpenPrinterIntent(),
-            phrases: ["Open \(.applicationName)"],
-            shortTitle: "Open Printer",
-            systemImageName: "house"
+            intent: WhatIsPrintingIntent(),
+            phrases: [
+                "What is printing in \(.applicationName)",
+                "What is my printer making with \(.applicationName)"
+            ],
+            shortTitle: "What Is Printing",
+            systemImageName: "cube"
+        )
+        AppShortcut(
+            intent: FilamentRemainingIntent(),
+            phrases: ["How much filament is left in \(.applicationName)"],
+            shortTitle: "Filament Left",
+            systemImageName: "circle.hexagongrid"
+        )
+        AppShortcut(
+            intent: StartNextQueuedPrintIntent(),
+            phrases: ["Start the next print in \(.applicationName)"],
+            shortTitle: "Start Next Print",
+            systemImageName: "list.number"
+        )
+        AppShortcut(
+            intent: PrintMonitorStatusIntent(),
+            phrases: ["Is my print okay in \(.applicationName)"],
+            shortTitle: "Print Monitor",
+            systemImageName: "eye"
         )
     }
 }
