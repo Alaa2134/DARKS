@@ -219,7 +219,7 @@ final class AppSettings: ObservableObject {
 
     var layoutDirection: LayoutDirection {
         if let direction = language.layoutDirection { return direction }
-        return Locale.characterDirection(forLanguage: Locale.current.identifier) == .rightToLeft
+        return Locale.Language(identifier: Locale.current.identifier).characterDirection == .rightToLeft
             ? .rightToLeft
             : .leftToRight
     }

@@ -61,17 +61,19 @@ jobs:
         run: python3 scripts/generate_xcodeproj.py
 
       - name: iOS unit tests
+        # pipefail matters: without it the pipe through xcpretty swallows
+        # xcodebuild's exit status and a failing build reports success.
         run: |
+          set -o pipefail
           xcodebuild test \
             -project ios/NeptuneRemote.xcodeproj \
             -scheme NeptuneRemote \
-            -destination 'platform=iOS Simulator,name=iPhone 15,OS=latest' \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
             CODE_SIGNING_ALLOWED=NO \
-            | xcpretty || exit ${PIPESTATUS[0]}
-        continue-on-error: false
+            | xcpretty
 
       - name: Build the unsigned IPA
-        run: ./scripts/build_unsigned_ipa.sh
+        run: bash ./scripts/build_unsigned_ipa.sh
 
       - name: Upload the IPA
         uses: actions/upload-artifact@v4

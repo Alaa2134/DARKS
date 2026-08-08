@@ -114,7 +114,7 @@ final class ShareViewController: UIViewController {
         return nil
     }
 
-    private static func writeTemporary(data: Data) -> URL? {
+    private nonisolated static func writeTemporary(data: Data) -> URL? {
         let url = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString)
             .appendingPathExtension("stl")

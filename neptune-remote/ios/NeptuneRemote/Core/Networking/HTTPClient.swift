@@ -32,11 +32,16 @@ actor HTTPClient {
     }
 
     private func urlRequest(from request: Request) throws -> URLRequest {
-        var components = URLComponents(url: request.url, resolvingAgainstBaseURL: false)
-        if !request.query.isEmpty {
-            components?.queryItems = (components?.queryItems ?? []) + request.query
+        guard var components = URLComponents(url: request.url, resolvingAgainstBaseURL: false) else {
+            throw APIError.invalidURL
         }
-        guard let url = components?.url else { throw APIError.invalidURL }
+        if !request.query.isEmpty {
+            // Read into a local first: mutating `components` while also reading
+            // it is an exclusivity violation.
+            let existing = components.queryItems ?? []
+            components.queryItems = existing + request.query
+        }
+        guard let url = components.url else { throw APIError.invalidURL }
 
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = request.method

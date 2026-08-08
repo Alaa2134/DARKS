@@ -39,9 +39,10 @@ struct OneTapPrintView: View {
                 supportsToggle
                 filamentStatus
                 if let error = slicing.lastError {
-                    ErrorBanner(message: error.localizedDescription) {
-                        slicing.lastError = nil
-                    }
+                    ErrorBanner(
+                        message: error.localizedDescription,
+                        onDismiss: { slicing.lastError = nil }
+                    )
                 }
                 startButton
             }
