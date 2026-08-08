@@ -47,6 +47,9 @@ jobs:
     name: Unsigned IPA
     needs: verify
     runs-on: macos-14
+    # Needed to publish the IPA as a release asset.
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: neptune-remote
@@ -94,3 +97,38 @@ jobs:
           name: build-logs
           path: neptune-remote/dist/*.log
           if-no-files-found: ignore
+
+      # A workflow artifact is always served as a ZIP and always needs a GitHub
+      # login, so it cannot be installed from the phone that is going to run it
+      # - iOS just reports the download as an unsupported file. A release asset
+      # is the raw .ipa on a permanent, unauthenticated URL, which is what
+      # sideloading tools take directly.
+      #
+      # One rolling tag, replaced on every build of this branch.
+      - name: Publish the IPA as a rolling pre-release
+        if: github.event_name == 'push'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="latest-ios"
+          SHA256="$(shasum -a 256 dist/NeptuneRemote-unsigned.ipa | cut -d' ' -f1)"
+          NOTES="Unsigned IPA, built from ${GITHUB_SHA}.
+
+          Not code signed. Sign it yourself, or install it with a sideloading
+          tool such as Sideloadly or AltStore. See docs/BUILD_IPA.md.
+
+          SHA-256: ${SHA256}"
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release edit "${TAG}" --notes "${NOTES}" --prerelease
+            gh release upload "${TAG}" dist/NeptuneRemote-unsigned.ipa --clobber
+          else
+            gh release create "${TAG}" dist/NeptuneRemote-unsigned.ipa \
+              --title "Neptune Remote - unsigned IPA" \
+              --notes "${NOTES}" \
+              --prerelease
+          fi
+
+          echo "Direct download:"
+          echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/NeptuneRemote-unsigned.ipa"
