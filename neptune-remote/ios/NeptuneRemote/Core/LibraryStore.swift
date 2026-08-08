@@ -27,6 +27,9 @@ final class LibraryStore: ObservableObject {
     @Published private(set) var ideas: [LibraryItem] = []
     @Published private(set) var isLoadingIdeas = false
 
+    /// Models staged by the Share Extension and not yet uploaded.
+    @Published private(set) var pendingShareCount = 0
+
     private let settings: AppSettings
     private let printer: PrinterStore
     private var searchTask: Task<Void, Never>?
@@ -274,6 +277,50 @@ final class LibraryStore: ObservableObject {
             Haptics.error()
             return nil
         }
+    }
+
+    /// Files handed over by the Share Extension. The extension only stages
+    /// them in the App Group - the upload happens here, with the app's own
+    /// Keychain-held token, so no credential ever leaves the app.
+    @discardableResult
+    func importPendingShares() async -> Int {
+        let pending = SharedStore.pendingImports()
+        guard !pending.isEmpty else { return 0 }
+
+        var imported = 0
+        for item in pending {
+            guard let url = SharedStore.fileURL(for: item),
+                  FileManager.default.fileExists(atPath: url.path)
+            else {
+                SharedStore.consume(item)   // nothing on disk; drop the record
+                continue
+            }
+
+            guard !settings.demoMode else { continue }
+
+            guard let data = try? Data(contentsOf: url) else {
+                lastError = .unknown(L.t("library.import.unreadable"))
+                SharedStore.consume(item)
+                continue
+            }
+
+            do {
+                let created = try await printer.backend.uploadLibraryModel(
+                    filename: item.filename, data: data, nameAR: "", category: "other"
+                )
+                items.insert(created, at: 0)
+                SharedStore.consume(item)
+                imported += 1
+            } catch {
+                // Leave the file staged so the next launch can retry.
+                lastError = APIError.from(error, host: settings.host)
+                break
+            }
+        }
+
+        pendingShareCount = SharedStore.pendingImports().count
+        if imported > 0 { Haptics.success() }
+        return imported
     }
 
     func setThumbnail(_ item: LibraryItem, imageData: Data) async {

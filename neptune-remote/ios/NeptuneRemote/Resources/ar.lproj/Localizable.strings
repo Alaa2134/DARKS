@@ -864,3 +864,13 @@
 "common.on" = "شغال";
 "common.off" = "مقفول";
 "home.state.error.hint" = "اقرأ الرسالة، وبعدين افتح المساعدة.";
+
+/* النشاط المباشر + إضافة المشاركة */
+"live_activity.disabled" = "الأنشطة المباشرة مقفولة للتطبيق ده";
+"share.working" = "بيحفظ الموديل…";
+"share.staged" = "اتحفظ %d موديل. افتح Neptune Remote علشان يتضافوا للمكتبة.";
+"share.unsupported" = "بس ملفات STL و3MF وOBJ اللي ينفع تتضاف";
+"share.no_app_group" = "الحاوية المشتركة مش متاحة في النسخة دي";
+"share.open_app" = "افتح Neptune Remote";
+"import.pending" = "في %d موديل متشارك مستني";
+"import.pending.add" = "ضيفهم دلوقتي";

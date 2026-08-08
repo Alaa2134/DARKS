@@ -24,10 +24,12 @@ PROJECT = IOS / "NeptuneRemote.xcodeproj"
 
 APP = "NeptuneRemote"
 WIDGET = "NeptuneRemoteWidget"
+SHARE = "NeptuneRemoteShare"
 TESTS = "NeptuneRemoteTests"
 
 BUNDLE_ID = "com.neptune.remote"
 WIDGET_BUNDLE_ID = BUNDLE_ID + ".widget"
+SHARE_BUNDLE_ID = BUNDLE_ID + ".share"
 TESTS_BUNDLE_ID = BUNDLE_ID + ".tests"
 DEPLOYMENT_TARGET = "17.0"
 SWIFT_VERSION = "5.0"
@@ -38,7 +40,14 @@ BUILD_VERSION = "1"
 SHARED_WITH_WIDGET = [
     "NeptuneRemote/Shared/SharedModels.swift",
     "NeptuneRemote/Shared/ConnectionConfig.swift",
+    "NeptuneRemote/Shared/PrintActivityAttributes.swift",
     "NeptuneRemote/Core/Utils/Formatters.swift",
+]
+
+# The Share Extension only needs the shared container types - never anything
+# that could carry a credential.
+SHARED_WITH_SHARE = [
+    "NeptuneRemote/Shared/SharedModels.swift",
 ]
 
 _used_ids: set[str] = set()
@@ -102,6 +111,7 @@ def main() -> None:
     # ------------------------------------------------------------------ files
     app_sources = collect(IOS / APP, (".swift",))
     widget_sources = collect(IOS / WIDGET, (".swift",))
+    share_sources = collect(IOS / SHARE, (".swift",))
     test_sources = collect(IOS / TESTS, (".swift",))
 
     if not app_sources:
@@ -111,6 +121,8 @@ def main() -> None:
     widget_plist = f"{WIDGET}/Info.plist"
     app_entitlements = f"{APP}/{APP}.entitlements"
     widget_entitlements = f"{WIDGET}/{WIDGET}.entitlements"
+    share_plist = f"{SHARE}/Info.plist"
+    share_entitlements = f"{SHARE}/{SHARE}.entitlements"
     app_assets = f"{APP}/Resources/Assets.xcassets"
     widget_assets = f"{WIDGET}/Assets.xcassets"
 
@@ -144,6 +156,7 @@ def main() -> None:
 
     product_app = uid("product", APP)
     product_widget = uid("product", WIDGET)
+    product_share = uid("product", SHARE)
     product_tests = uid("product", TESTS)
     emit(
         f'\t\t{product_app} /* {APP}.app */ = {{isa = PBXFileReference; explicitFileType = '
@@ -152,6 +165,10 @@ def main() -> None:
     emit(
         f'\t\t{product_widget} /* {WIDGET}.appex */ = {{isa = PBXFileReference; explicitFileType = '
         f'"wrapper.app-extension"; includeInIndex = 0; path = {WIDGET}.appex; sourceTree = BUILT_PRODUCTS_DIR; }};'
+    )
+    emit(
+        f'\t\t{product_share} /* {SHARE}.appex */ = {{isa = PBXFileReference; explicitFileType = '
+        f'"wrapper.app-extension"; includeInIndex = 0; path = {SHARE}.appex; sourceTree = BUILT_PRODUCTS_DIR; }};'
     )
     emit(
         f'\t\t{product_tests} /* {TESTS}.xctest */ = {{isa = PBXFileReference; explicitFileType = '
@@ -168,10 +185,10 @@ def main() -> None:
             node = node.child(part)
         node.files.append((file_ref(path), parts[-1]))
 
-    for source in app_sources + widget_sources + test_sources:
+    for source in app_sources + widget_sources + share_sources + test_sources:
         add_to_tree(rel(source))
-    for extra in (app_plist, widget_plist, app_entitlements, widget_entitlements,
-                  app_assets, widget_assets):
+    for extra in (app_plist, widget_plist, share_plist, app_entitlements,
+                  widget_entitlements, share_entitlements, app_assets, widget_assets):
         if (IOS / extra).exists():
             add_to_tree(extra)
 
@@ -204,6 +221,7 @@ def main() -> None:
         f"\t\t\tchildren = (\n"
         f"\t\t\t\t{product_app} /* {APP}.app */,\n"
         f"\t\t\t\t{product_widget} /* {WIDGET}.appex */,\n"
+        f"\t\t\t\t{product_share} /* {SHARE}.appex */,\n"
         f"\t\t\t\t{product_tests} /* {TESTS}.xctest */,\n"
         f"\t\t\t);\n"
         f"\t\t\tname = Products;\n"
@@ -254,6 +272,9 @@ def main() -> None:
     widget_source_build = build_files(
         [rel(p) for p in widget_sources] + SHARED_WITH_WIDGET, WIDGET
     )
+    share_source_build = build_files(
+        [rel(p) for p in share_sources] + SHARED_WITH_SHARE, SHARE
+    )
     test_source_build = build_files([rel(p) for p in test_sources], TESTS)
 
     def resource_build(path: str, target: str, ref: str | None = None) -> tuple[str, str]:
@@ -277,11 +298,23 @@ def main() -> None:
             resource_build("Localizable.strings", WIDGET, ref=variant_group)
         )
 
-    # Embed the widget extension in the app.
+    share_resources = []
+    if strings_refs:
+        share_resources.append(
+            resource_build("Localizable.strings", SHARE, ref=variant_group)
+        )
+
+    # Embed both extensions in the app.
     embed_build = uid("embed", WIDGET)
     emit(
         f"\t\t{embed_build} /* {WIDGET}.appex in Embed Foundation Extensions */ = "
         f"{{isa = PBXBuildFile; fileRef = {product_widget} /* {WIDGET}.appex */; "
+        f"settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};"
+    )
+    embed_share_build = uid("embed", SHARE)
+    emit(
+        f"\t\t{embed_share_build} /* {SHARE}.appex in Embed Foundation Extensions */ = "
+        f"{{isa = PBXBuildFile; fileRef = {product_share} /* {SHARE}.appex */; "
         f"settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};"
     )
 
@@ -308,6 +341,10 @@ def main() -> None:
     widget_resources_phase = phase("PBXResourcesBuildPhase", WIDGET, widget_resources, "Resources")
     widget_frameworks_phase = phase("PBXFrameworksBuildPhase", WIDGET, [], "Frameworks")
 
+    share_sources_phase = phase("PBXSourcesBuildPhase", SHARE, share_source_build, "Sources")
+    share_resources_phase = phase("PBXResourcesBuildPhase", SHARE, share_resources, "Resources")
+    share_frameworks_phase = phase("PBXFrameworksBuildPhase", SHARE, [], "Frameworks")
+
     tests_sources_phase = phase("PBXSourcesBuildPhase", TESTS, test_source_build, "Sources")
     tests_frameworks_phase = phase("PBXFrameworksBuildPhase", TESTS, [], "Frameworks")
     tests_resources_phase = phase("PBXResourcesBuildPhase", TESTS, [], "Resources")
@@ -321,6 +358,7 @@ def main() -> None:
         f"\t\t\tdstSubfolderSpec = 13;\n"
         f"\t\t\tfiles = (\n"
         f"\t\t\t\t{embed_build} /* {WIDGET}.appex in Embed Foundation Extensions */,\n"
+        f"\t\t\t\t{embed_share_build} /* {SHARE}.appex in Embed Foundation Extensions */,\n"
         f"\t\t\t);\n"
         f'\t\t\tname = "Embed Foundation Extensions";\n'
         f"\t\t\trunOnlyForDeploymentPostprocessing = 0;\n"
@@ -331,6 +369,7 @@ def main() -> None:
     project_id = uid("project", "NeptuneRemote")
     app_target = uid("target", APP)
     widget_target = uid("target", WIDGET)
+    share_target = uid("target", SHARE)
     tests_target = uid("target", TESTS)
 
     def dependency(name: str, target_id: str) -> str:
@@ -355,6 +394,7 @@ def main() -> None:
         return dep
 
     widget_dependency = dependency(WIDGET, widget_target)
+    share_dependency = dependency(SHARE, share_target)
     app_dependency = dependency(APP, app_target)
 
     # -------------------------------------------------------- configurations
@@ -474,6 +514,23 @@ def main() -> None:
     widget_release = configuration("Release", WIDGET, widget_settings)
     widget_config_list = configuration_list(WIDGET, widget_debug, widget_release)
 
+    share_settings = {
+        **signing_free,
+        "CODE_SIGN_ENTITLEMENTS": f'"{share_entitlements}"',
+        "CURRENT_PROJECT_VERSION": BUILD_VERSION,
+        "GENERATE_INFOPLIST_FILE": "NO",
+        "INFOPLIST_FILE": f'"{share_plist}"',
+        "LD_RUNPATH_SEARCH_PATHS": '"$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"',
+        "MARKETING_VERSION": MARKETING_VERSION,
+        "PRODUCT_BUNDLE_IDENTIFIER": SHARE_BUNDLE_ID,
+        "PRODUCT_NAME": '"$(TARGET_NAME)"',
+        "SKIP_INSTALL": "YES",
+        "SWIFT_EMIT_LOC_STRINGS": "YES",
+    }
+    share_debug = configuration("Debug", SHARE, share_settings)
+    share_release = configuration("Release", SHARE, share_settings)
+    share_config_list = configuration_list(SHARE, share_debug, share_release)
+
     tests_settings = {
         **signing_free,
         "BUNDLE_LOADER": '"$(TEST_HOST)"',
@@ -500,7 +557,10 @@ def main() -> None:
         f"\t\t\t\t{embed_phase} /* Embed Foundation Extensions */,\n"
         f"\t\t\t);\n"
         f"\t\t\tbuildRules = (\n\t\t\t);\n"
-        f"\t\t\tdependencies = (\n\t\t\t\t{widget_dependency} /* PBXTargetDependency */,\n\t\t\t);\n"
+        f"\t\t\tdependencies = (\n"
+        f"\t\t\t\t{widget_dependency} /* PBXTargetDependency */,\n"
+        f"\t\t\t\t{share_dependency} /* PBXTargetDependency */,\n"
+        f"\t\t\t);\n"
         f"\t\t\tname = {APP};\n"
         f"\t\t\tproductName = {APP};\n"
         f"\t\t\tproductReference = {product_app} /* {APP}.app */;\n"
@@ -521,6 +581,23 @@ def main() -> None:
         f"\t\t\tname = {WIDGET};\n"
         f"\t\t\tproductName = {WIDGET};\n"
         f"\t\t\tproductReference = {product_widget} /* {WIDGET}.appex */;\n"
+        f'\t\t\tproductType = "com.apple.product-type.app-extension";\n'
+        f"\t\t}};"
+    )
+    emit(
+        f"\t\t{share_target} /* {SHARE} */ = {{\n"
+        f"\t\t\tisa = PBXNativeTarget;\n"
+        f"\t\t\tbuildConfigurationList = {share_config_list};\n"
+        f"\t\t\tbuildPhases = (\n"
+        f"\t\t\t\t{share_sources_phase} /* Sources */,\n"
+        f"\t\t\t\t{share_frameworks_phase} /* Frameworks */,\n"
+        f"\t\t\t\t{share_resources_phase} /* Resources */,\n"
+        f"\t\t\t);\n"
+        f"\t\t\tbuildRules = (\n\t\t\t);\n"
+        f"\t\t\tdependencies = (\n\t\t\t);\n"
+        f"\t\t\tname = {SHARE};\n"
+        f"\t\t\tproductName = {SHARE};\n"
+        f"\t\t\tproductReference = {product_share} /* {SHARE}.appex */;\n"
         f'\t\t\tproductType = "com.apple.product-type.app-extension";\n'
         f"\t\t}};"
     )
@@ -553,6 +630,7 @@ def main() -> None:
         f"\t\t\t\tTargetAttributes = {{\n"
         f"\t\t\t\t\t{app_target} = {{CreatedOnToolsVersion = 15.0; }};\n"
         f"\t\t\t\t\t{widget_target} = {{CreatedOnToolsVersion = 15.0; }};\n"
+        f"\t\t\t\t\t{share_target} = {{CreatedOnToolsVersion = 15.0; }};\n"
         f"\t\t\t\t\t{tests_target} = {{CreatedOnToolsVersion = 15.0; TestTargetID = {app_target}; }};\n"
         f"\t\t\t\t}};\n"
         f"\t\t\t}};\n"
@@ -572,6 +650,7 @@ def main() -> None:
         f"\t\t\ttargets = (\n"
         f"\t\t\t\t{app_target} /* {APP} */,\n"
         f"\t\t\t\t{widget_target} /* {WIDGET} */,\n"
+        f"\t\t\t\t{share_target} /* {SHARE} */,\n"
         f"\t\t\t\t{tests_target} /* {TESTS} */,\n"
         f"\t\t\t);\n"
         f"\t\t}};"
@@ -614,6 +693,7 @@ def main() -> None:
     print(f"Wrote {PROJECT}/project.pbxproj")
     print(f"  app sources    : {len(app_sources)}")
     print(f"  widget sources : {len(widget_sources)} (+{len(SHARED_WITH_WIDGET)} shared)")
+    print(f"  share sources  : {len(share_sources)} (+{len(SHARED_WITH_SHARE)} shared)")
     print(f"  test sources   : {len(test_sources)}")
     print(f"  localizations  : {', '.join(sorted(strings_refs))}")
 

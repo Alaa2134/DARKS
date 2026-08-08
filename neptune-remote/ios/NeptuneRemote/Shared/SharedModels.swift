@@ -157,3 +157,75 @@ public enum SharedStore {
         return try? JSONDecoder().decode(PrinterWidgetSnapshot.self, from: data)
     }
 }
+
+// MARK: - Share Extension inbox
+
+/// A model file handed to the app by the Share Extension.
+///
+/// The extension deliberately does not upload anything itself: the backend
+/// token lives in the app's Keychain and is never copied into the shared
+/// container. The extension only stages the file; the app performs the upload
+/// with its own credentials the next time it runs.
+public struct PendingImport: Codable, Equatable, Sendable, Identifiable {
+    public let id: String
+    public let filename: String
+    /// Path relative to the App Group container's `inbox/` directory.
+    public let relativePath: String
+    public let receivedAt: Date
+
+    public init(id: String, filename: String, relativePath: String, receivedAt: Date) {
+        self.id = id
+        self.filename = filename
+        self.relativePath = relativePath
+        self.receivedAt = receivedAt
+    }
+}
+
+public extension SharedStore {
+    private static var inboxKey: String { "import.pending" }
+
+    /// Shared container directory the extension writes staged files into.
+    /// Returns nil when the App Group is not configured on the build.
+    static var inboxDirectory: URL? {
+        guard let container = FileManager.default
+            .containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier)
+        else { return nil }
+        let directory = container.appendingPathComponent("inbox", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return directory
+    }
+
+    static func pendingImports() -> [PendingImport] {
+        guard let data = defaults.data(forKey: inboxKey) else { return [] }
+        return (try? JSONDecoder().decode([PendingImport].self, from: data)) ?? []
+    }
+
+    /// Appends one staged file. Called from the Share Extension.
+    static func enqueue(_ item: PendingImport) {
+        var items = pendingImports()
+        items.removeAll { $0.id == item.id }
+        items.append(item)
+        // Keep the queue bounded so a stuck app cannot fill the container.
+        if items.count > 40 { items.removeFirst(items.count - 40) }
+        if let data = try? JSONEncoder().encode(items) {
+            defaults.set(data, forKey: inboxKey)
+        }
+    }
+
+    /// Removes the record and deletes the staged file. Called by the app once
+    /// the upload succeeded (or the file turned out to be unreadable).
+    static func consume(_ item: PendingImport) {
+        var items = pendingImports()
+        items.removeAll { $0.id == item.id }
+        if let data = try? JSONEncoder().encode(items) {
+            defaults.set(data, forKey: inboxKey)
+        }
+        if let url = fileURL(for: item) {
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
+
+    static func fileURL(for item: PendingImport) -> URL? {
+        inboxDirectory?.appendingPathComponent(item.relativePath)
+    }
+}

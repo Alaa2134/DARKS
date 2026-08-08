@@ -864,3 +864,13 @@
 "common.on" = "On";
 "common.off" = "Off";
 "home.state.error.hint" = "Read the message, then open Help.";
+
+/* Live Activity + Share Extension */
+"live_activity.disabled" = "Live Activities are turned off for this app";
+"share.working" = "Saving the model…";
+"share.staged" = "%d model(s) saved. Open Neptune Remote to add them to your library.";
+"share.unsupported" = "Only STL, 3MF and OBJ files can be added";
+"share.no_app_group" = "The shared container is not available in this build";
+"share.open_app" = "Open Neptune Remote";
+"import.pending" = "%d shared model(s) waiting";
+"import.pending.add" = "Add them now";

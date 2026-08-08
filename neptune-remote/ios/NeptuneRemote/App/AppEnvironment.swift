@@ -15,6 +15,7 @@ final class AppEnvironment: ObservableObject {
     let media: MediaStore
     let inventory: InventoryStore
     let support: SupportStore
+    let liveActivity: LiveActivityController
 
     /// Vision events already turned into a notification, so a repeated summary
     /// frame does not re-alert for the same detection.
@@ -38,6 +39,7 @@ final class AppEnvironment: ObservableObject {
         media = MediaStore(settings: settings, printer: printer)
         inventory = InventoryStore(settings: settings, printer: printer)
         support = SupportStore(settings: settings, printer: printer)
+        liveActivity = LiveActivityController()
 
         printer.onSliceProgress = { [weak self] progress in
             self?.slicing.apply(progressEvent: progress)
@@ -58,6 +60,20 @@ final class AppEnvironment: ObservableObject {
         media.apply(summary)
         inventory.apply(summary)
         announce(summary)
+        syncLiveActivity(summary)
+    }
+
+    /// Keeps the lock screen / Dynamic Island in step with the print. The
+    /// controller starts and ends the activity itself based on printer state.
+    private func syncLiveActivity(_ summary: BackendSummary) {
+        guard settings.notificationsEnabled else { return }
+        liveActivity.sync(
+            snapshot: printer.snapshot,
+            item: summary.item,
+            thumbnailURL: library.mediaURL(summary.item?.thumbnail),
+            printerName: settings.printerName,
+            warningKey: media.unacknowledgedVisionEvents.first?.localizationKey
+        )
     }
 
     private func announce(_ summary: BackendSummary) {
@@ -115,6 +131,7 @@ final class AppEnvironment: ObservableObject {
 
     func start() {
         printer.start()
+        liveActivity.reattach()
         Task {
             await notifications.refreshAuthorizationStatus()
             if settings.notificationsEnabled, notifications.authorizationStatus == .notDetermined {
@@ -127,6 +144,9 @@ final class AppEnvironment: ObservableObject {
     /// Pulls the library / media / inventory state the summary frame does not
     /// carry (lists rather than counters).
     func refreshEcosystem() async {
+        // Anything the Share Extension staged is uploaded first, so a model the
+        // user just shared is already there when the library appears.
+        await library.importPendingShares()
         await library.load()
         await media.load()
         await inventory.load()
@@ -139,6 +159,7 @@ final class AppEnvironment: ObservableObject {
         case .active:
             printer.resume()
             Task {
+                await library.importPendingShares()
                 await printer.refreshSummary()
                 await media.loadVisionEvents()
                 announceVisionEvents()

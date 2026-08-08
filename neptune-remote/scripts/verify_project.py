@@ -74,7 +74,8 @@ def check_project() -> None:
     ):
         check(f"contains {required}", required in isas)
 
-    check("three native targets", isas.count("PBXNativeTarget") == 3,
+    # app + widget extension + share extension + unit tests
+    check("four native targets", isas.count("PBXNativeTarget") == 4,
           f"found {isas.count('PBXNativeTarget')}")
 
     # Every Swift file on disk must be referenced.

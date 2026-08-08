@@ -78,6 +78,13 @@
 	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<!-- Lock screen / Dynamic Island print progress. -->
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
+	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Pick a photo of a finished print to use as the model's picture.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

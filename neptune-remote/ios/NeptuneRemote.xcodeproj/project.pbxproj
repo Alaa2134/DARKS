@@ -7,6 +7,7 @@
 	objects = {
 		4F0749F59039FCA3FCDC3BB2 /* NeptuneRemote.app */ = {isa = PBXFileReference; explicitFileType = "wrapper.application"; includeInIndex = 0; path = NeptuneRemote.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D45C3F1CCEAD9D05DAB6E5F /* NeptuneRemoteWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NeptuneRemoteWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		EFC01414854A738AA711B5FD /* NeptuneRemoteShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NeptuneRemoteShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9AF06103875C9F271E19E003 /* NeptuneRemoteTests.xctest */ = {isa = PBXFileReference; explicitFileType = "wrapper.cfbundle"; includeInIndex = 0; path = NeptuneRemoteTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C97419E84D5F5326256F09A /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppEnvironment.swift"; sourceTree = "<group>"; };
 		BAF3C57686396C4C6A77853F /* NeptuneRemoteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NeptuneRemoteApp.swift"; sourceTree = "<group>"; };
@@ -30,6 +31,7 @@
 		FA53BFF0AB27B314C5B6B477 /* PrinterSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterSnapshot.swift"; sourceTree = "<group>"; };
 		BE67A1A928EADAEB4B8A0205 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError.swift"; sourceTree = "<group>"; };
 		B42D20EAD0893706CDC018B7 /* HTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HTTPClient.swift"; sourceTree = "<group>"; };
+		ACCAB4203E550711ADF5934F /* LiveActivityController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LiveActivityController.swift"; sourceTree = "<group>"; };
 		63292C279885C63027E94D02 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NotificationManager.swift"; sourceTree = "<group>"; };
 		8E0FCF5424CA3D4B23290E1A /* PowerProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PowerProvider.swift"; sourceTree = "<group>"; };
 		81129A769A02DF299BB84B09 /* PowerSafety.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PowerSafety.swift"; sourceTree = "<group>"; };
@@ -81,10 +83,15 @@
 		6AA34175B573B8DAF41D58A5 /* DiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DiagnosticsView.swift"; sourceTree = "<group>"; };
 		BAB391AEEF76FBC2E5106936 /* SupportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SupportView.swift"; sourceTree = "<group>"; };
 		219383DCA399B4A2883D8A9A /* SystemInfoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SystemInfoView.swift"; sourceTree = "<group>"; };
+		E7881C1B850BE16F8C611F3B /* EcosystemIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EcosystemIntents.swift"; sourceTree = "<group>"; };
 		839017D19CA0E7D5ED528FBE /* PrinterIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterIntents.swift"; sourceTree = "<group>"; };
 		F479B7C80F5A794DC0A29811 /* ConnectionConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConnectionConfig.swift"; sourceTree = "<group>"; };
+		2FA906F3F6FAA867AA78D67C /* PrintActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintActivityAttributes.swift"; sourceTree = "<group>"; };
 		524458702E198572FC5CE3B8 /* SharedModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SharedModels.swift"; sourceTree = "<group>"; };
 		1C4587696D254E8A487AAC55 /* NeptuneWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NeptuneWidget.swift"; sourceTree = "<group>"; };
+		170879B0FB629239D2038861 /* PrintLiveActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintLiveActivity.swift"; sourceTree = "<group>"; };
+		8234B47C61D9A610835098AE /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ShareViewController.swift"; sourceTree = "<group>"; };
+		A464B815DD4754605B807349 /* EcosystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EcosystemTests.swift"; sourceTree = "<group>"; };
 		D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeshLoaderTests.swift"; sourceTree = "<group>"; };
 		B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoonrakerParsingTests.swift"; sourceTree = "<group>"; };
 		317599B370EB651828731588 /* PowerSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PowerSafetyTests.swift"; sourceTree = "<group>"; };
@@ -92,8 +99,10 @@
 		A74C5A338910F10877A0A2E2 /* SliceRequestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SliceRequestTests.swift"; sourceTree = "<group>"; };
 		61919D6EC01546F9DCD9D743 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
 		967BDCD2C0805FA71DA14115 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
+		6EECA74DCCD75E32D90B9AF8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
 		D58DD1EAC44FAE1373F28280 /* NeptuneRemote.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "NeptuneRemote.entitlements"; sourceTree = "<group>"; };
 		F1EC651733193726855F3665 /* NeptuneRemoteWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "NeptuneRemoteWidget.entitlements"; sourceTree = "<group>"; };
+		3A32328E968E9959D4E247AB /* NeptuneRemoteShare.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "NeptuneRemoteShare.entitlements"; sourceTree = "<group>"; };
 		AAC8F582BFE45736E9F4DFEE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
 		F94D5E48A17F72AE6B785A21 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
 		0ED928D7E24DE98CC7E77A0D /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = "en.lproj/Localizable.strings"; sourceTree = "<group>"; };
@@ -112,6 +121,7 @@
 			children = (
 				4F0749F59039FCA3FCDC3BB2 /* NeptuneRemote.app */,
 				2D45C3F1CCEAD9D05DAB6E5F /* NeptuneRemoteWidget.appex */,
+				EFC01414854A738AA711B5FD /* NeptuneRemoteShare.appex */,
 				9AF06103875C9F271E19E003 /* NeptuneRemoteTests.xctest */,
 			);
 			name = Products;
@@ -172,6 +182,7 @@
 		6DE5570AD5EC4C935B6D897C /* Notifications */ = {
 			isa = PBXGroup;
 			children = (
+				ACCAB4203E550711ADF5934F /* LiveActivityController.swift */,
 				63292C279885C63027E94D02 /* NotificationManager.swift */,
 			);
 			path = "Notifications";
@@ -390,6 +401,7 @@
 		3222296150B89E9786BC63EC /* Intents */ = {
 			isa = PBXGroup;
 			children = (
+				E7881C1B850BE16F8C611F3B /* EcosystemIntents.swift */,
 				839017D19CA0E7D5ED528FBE /* PrinterIntents.swift */,
 			);
 			path = "Intents";
@@ -409,6 +421,7 @@
 			isa = PBXGroup;
 			children = (
 				F479B7C80F5A794DC0A29811 /* ConnectionConfig.swift */,
+				2FA906F3F6FAA867AA78D67C /* PrintActivityAttributes.swift */,
 				524458702E198572FC5CE3B8 /* SharedModels.swift */,
 			);
 			path = "Shared";
@@ -428,9 +441,20 @@
 			path = "NeptuneRemote";
 			sourceTree = "<group>";
 		};
+		44E03A203EFF244BB94EF7BE /* NeptuneRemoteShare */ = {
+			isa = PBXGroup;
+			children = (
+				6EECA74DCCD75E32D90B9AF8 /* Info.plist */,
+				3A32328E968E9959D4E247AB /* NeptuneRemoteShare.entitlements */,
+				8234B47C61D9A610835098AE /* ShareViewController.swift */,
+			);
+			path = "NeptuneRemoteShare";
+			sourceTree = "<group>";
+		};
 		153AA60FCD5ECE48FC87D090 /* NeptuneRemoteTests */ = {
 			isa = PBXGroup;
 			children = (
+				A464B815DD4754605B807349 /* EcosystemTests.swift */,
 				D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */,
 				B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */,
 				317599B370EB651828731588 /* PowerSafetyTests.swift */,
@@ -447,6 +471,7 @@
 				967BDCD2C0805FA71DA14115 /* Info.plist */,
 				F1EC651733193726855F3665 /* NeptuneRemoteWidget.entitlements */,
 				1C4587696D254E8A487AAC55 /* NeptuneWidget.swift */,
+				170879B0FB629239D2038861 /* PrintLiveActivity.swift */,
 			);
 			path = "NeptuneRemoteWidget";
 			sourceTree = "<group>";
@@ -455,6 +480,7 @@
 			isa = PBXGroup;
 			children = (
 				E9BACDF11A949E4FD9EB1027 /* NeptuneRemote */,
+				44E03A203EFF244BB94EF7BE /* NeptuneRemoteShare */,
 				153AA60FCD5ECE48FC87D090 /* NeptuneRemoteTests */,
 				EC68570050D4CA67313D62E6 /* NeptuneRemoteWidget */,
 				43931CF8D8FF624E4C75AE32 /* Products */,
@@ -484,6 +510,7 @@
 		95E4C447A113DE606FF9957F /* PrinterSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA53BFF0AB27B314C5B6B477 /* PrinterSnapshot.swift */; };
 		905BFE8F33E629C6B2A76F48 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE67A1A928EADAEB4B8A0205 /* APIError.swift */; };
 		211B97BACF82DF2FB7590B9E /* HTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B42D20EAD0893706CDC018B7 /* HTTPClient.swift */; };
+		22A066DAB16279750D5A55E5 /* LiveActivityController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ACCAB4203E550711ADF5934F /* LiveActivityController.swift */; };
 		8DF44AA57029E903E97A8F2C /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63292C279885C63027E94D02 /* NotificationManager.swift */; };
 		287ADEA25C63609276A60A80 /* PowerProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0FCF5424CA3D4B23290E1A /* PowerProvider.swift */; };
 		B17EB39334EF8D1A67E79F37 /* PowerSafety.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81129A769A02DF299BB84B09 /* PowerSafety.swift */; };
@@ -535,13 +562,20 @@
 		F92B74F857383857E1186C71 /* DiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA34175B573B8DAF41D58A5 /* DiagnosticsView.swift */; };
 		59D45A569C149F468BF67A48 /* SupportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAB391AEEF76FBC2E5106936 /* SupportView.swift */; };
 		FB46536E27549372F4377598 /* SystemInfoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 219383DCA399B4A2883D8A9A /* SystemInfoView.swift */; };
+		91E2D1CC5E89B6224C71621E /* EcosystemIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7881C1B850BE16F8C611F3B /* EcosystemIntents.swift */; };
 		364ADAABFC84A287ED5A58E3 /* PrinterIntents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 839017D19CA0E7D5ED528FBE /* PrinterIntents.swift */; };
 		FB457E81086C515E95560C29 /* ConnectionConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F479B7C80F5A794DC0A29811 /* ConnectionConfig.swift */; };
+		A89783ED12AA93A4CFE4A47E /* PrintActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FA906F3F6FAA867AA78D67C /* PrintActivityAttributes.swift */; };
 		86B6E9F7EFCC1B34B0D243EF /* SharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524458702E198572FC5CE3B8 /* SharedModels.swift */; };
 		8E163B8E1E46E13A608A56CB /* NeptuneWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C4587696D254E8A487AAC55 /* NeptuneWidget.swift */; };
+		BD7751879EF5E5E5AF350771 /* PrintLiveActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170879B0FB629239D2038861 /* PrintLiveActivity.swift */; };
 		D854FD690E045726F95B525A /* SharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524458702E198572FC5CE3B8 /* SharedModels.swift */; };
 		586CC4887EDC969DFAFE7EEC /* ConnectionConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = F479B7C80F5A794DC0A29811 /* ConnectionConfig.swift */; };
+		F5ED7CD9A10B156096C19A7C /* PrintActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FA906F3F6FAA867AA78D67C /* PrintActivityAttributes.swift */; };
 		34505ED0477ED62F39604A4A /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7E362D1959C75BC20E3B3F /* Formatters.swift */; };
+		88592F09CA5185976B237762 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8234B47C61D9A610835098AE /* ShareViewController.swift */; };
+		C236EF25AB44127C3771BEA5 /* SharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524458702E198572FC5CE3B8 /* SharedModels.swift */; };
+		E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A464B815DD4754605B807349 /* EcosystemTests.swift */; };
 		9EA6CE005C650DFE211FF700 /* MeshLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */; };
 		C4B8BB0FF0543E42EBE4B4A9 /* MoonrakerParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */; };
 		25E087702BD255C49241B1FB /* PowerSafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317599B370EB651828731588 /* PowerSafetyTests.swift */; };
@@ -551,7 +585,9 @@
 		2AC7E86AF2F161D6347EC7B9 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B176280EB12884632B08E736 /* Localizable.strings */; };
 		1FBA81D9C71D4B960F7768BF /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = F94D5E48A17F72AE6B785A21 /* Assets.xcassets */; };
 		4F2C93D81D1690A28AD563FF /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B176280EB12884632B08E736 /* Localizable.strings */; };
+		D8AFB66D6F704B9F26DB040E /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = B176280EB12884632B08E736 /* Localizable.strings */; };
 		0E0456A757C2084B248202C3 /* NeptuneRemoteWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2D45C3F1CCEAD9D05DAB6E5F /* NeptuneRemoteWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		2C2DC98BDEE0B96112E72AA6 /* NeptuneRemoteShare.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EFC01414854A738AA711B5FD /* NeptuneRemoteShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		69073A820D1643BC5593561D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -578,6 +614,7 @@
 				95E4C447A113DE606FF9957F /* PrinterSnapshot.swift in Sources */,
 				905BFE8F33E629C6B2A76F48 /* APIError.swift in Sources */,
 				211B97BACF82DF2FB7590B9E /* HTTPClient.swift in Sources */,
+				22A066DAB16279750D5A55E5 /* LiveActivityController.swift in Sources */,
 				8DF44AA57029E903E97A8F2C /* NotificationManager.swift in Sources */,
 				287ADEA25C63609276A60A80 /* PowerProvider.swift in Sources */,
 				B17EB39334EF8D1A67E79F37 /* PowerSafety.swift in Sources */,
@@ -629,8 +666,10 @@
 				F92B74F857383857E1186C71 /* DiagnosticsView.swift in Sources */,
 				59D45A569C149F468BF67A48 /* SupportView.swift in Sources */,
 				FB46536E27549372F4377598 /* SystemInfoView.swift in Sources */,
+				91E2D1CC5E89B6224C71621E /* EcosystemIntents.swift in Sources */,
 				364ADAABFC84A287ED5A58E3 /* PrinterIntents.swift in Sources */,
 				FB457E81086C515E95560C29 /* ConnectionConfig.swift in Sources */,
+				A89783ED12AA93A4CFE4A47E /* PrintActivityAttributes.swift in Sources */,
 				86B6E9F7EFCC1B34B0D243EF /* SharedModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -657,8 +696,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				8E163B8E1E46E13A608A56CB /* NeptuneWidget.swift in Sources */,
+				BD7751879EF5E5E5AF350771 /* PrintLiveActivity.swift in Sources */,
 				D854FD690E045726F95B525A /* SharedModels.swift in Sources */,
 				586CC4887EDC969DFAFE7EEC /* ConnectionConfig.swift in Sources */,
+				F5ED7CD9A10B156096C19A7C /* PrintActivityAttributes.swift in Sources */,
 				34505ED0477ED62F39604A4A /* Formatters.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -680,10 +721,36 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		53FE71DFCA121B0B0C2EF788 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				88592F09CA5185976B237762 /* ShareViewController.swift in Sources */,
+				C236EF25AB44127C3771BEA5 /* SharedModels.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C8041E5067ED7A7FC95AAFF3 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D8AFB66D6F704B9F26DB040E /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		EE82408069FB936080FB1ED6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		923C40AF6BE6663277C3331C /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */,
 				9EA6CE005C650DFE211FF700 /* MeshLoaderTests.swift in Sources */,
 				C4B8BB0FF0543E42EBE4B4A9 /* MoonrakerParsingTests.swift in Sources */,
 				25E087702BD255C49241B1FB /* PowerSafetyTests.swift in Sources */,
@@ -715,6 +782,7 @@
 			dstSubfolderSpec = 13;
 			files = (
 				0E0456A757C2084B248202C3 /* NeptuneRemoteWidget.appex in Embed Foundation Extensions */,
+				2C2DC98BDEE0B96112E72AA6 /* NeptuneRemoteShare.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -730,6 +798,18 @@
 			isa = PBXTargetDependency;
 			target = 85F75823EB59C8BF418023AA /* NeptuneRemoteWidget */;
 			targetProxy = 71F858E7EF809A58212EE4F9 /* PBXContainerItemProxy */;
+		};
+		4D012DF7AD2041074116103C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A15B26A31E2636B9DC9CDF78 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 30590592ACB36919E55CF46A;
+			remoteInfo = NeptuneRemoteShare;
+		};
+		EBAE2649B41643296F9A3315 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 30590592ACB36919E55CF46A /* NeptuneRemoteShare */;
+			targetProxy = 4D012DF7AD2041074116103C /* PBXContainerItemProxy */;
 		};
 		83542D5C4EA1F9B9C3DEF63E /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -920,6 +1000,55 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		54C8C033B316796E980630D4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "NeptuneRemoteShare/NeptuneRemoteShare.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "NeptuneRemoteShare/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.neptune.remote.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Debug;
+		};
+		DF877B80041C0F80479EE368 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = "NeptuneRemoteShare/NeptuneRemoteShare.entitlements";
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "NeptuneRemoteShare/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.neptune.remote.share;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+			};
+			name = Release;
+		};
+		F5AC7D21C54B82C858569324 /* Build configuration list for NeptuneRemoteShare */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54C8C033B316796E980630D4 /* Debug */,
+				DF877B80041C0F80479EE368 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		C0A7A7CE7581333F6FC9FD0E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -976,6 +1105,7 @@
 			);
 			dependencies = (
 				AB2EF34BC540A2B38BCC84DC /* PBXTargetDependency */,
+				EBAE2649B41643296F9A3315 /* PBXTargetDependency */,
 			);
 			name = NeptuneRemote;
 			productName = NeptuneRemote;
@@ -997,6 +1127,23 @@
 			name = NeptuneRemoteWidget;
 			productName = NeptuneRemoteWidget;
 			productReference = 2D45C3F1CCEAD9D05DAB6E5F /* NeptuneRemoteWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		30590592ACB36919E55CF46A /* NeptuneRemoteShare */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F5AC7D21C54B82C858569324;
+			buildPhases = (
+				53FE71DFCA121B0B0C2EF788 /* Sources */,
+				EE82408069FB936080FB1ED6 /* Frameworks */,
+				C8041E5067ED7A7FC95AAFF3 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NeptuneRemoteShare;
+			productName = NeptuneRemoteShare;
+			productReference = EFC01414854A738AA711B5FD /* NeptuneRemoteShare.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
 		6B853855A72C2E478929FCA6 /* NeptuneRemoteTests */ = {
@@ -1026,6 +1173,7 @@
 				TargetAttributes = {
 					65E6E7EAB94E18197CF6076E = {CreatedOnToolsVersion = 15.0; };
 					85F75823EB59C8BF418023AA = {CreatedOnToolsVersion = 15.0; };
+					30590592ACB36919E55CF46A = {CreatedOnToolsVersion = 15.0; };
 					6B853855A72C2E478929FCA6 = {CreatedOnToolsVersion = 15.0; TestTargetID = 65E6E7EAB94E18197CF6076E; };
 				};
 			};
@@ -1045,6 +1193,7 @@
 			targets = (
 				65E6E7EAB94E18197CF6076E /* NeptuneRemote */,
 				85F75823EB59C8BF418023AA /* NeptuneRemoteWidget */,
+				30590592ACB36919E55CF46A /* NeptuneRemoteShare */,
 				6B853855A72C2E478929FCA6 /* NeptuneRemoteTests */,
 			);
 		};

@@ -254,6 +254,7 @@ struct NeptuneWidget: Widget {
 struct NeptuneWidgetBundle: WidgetBundle {
     var body: some Widget {
         NeptuneWidget()
+        PrintLiveActivity()
     }
 }
 
