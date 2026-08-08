@@ -326,6 +326,10 @@
 "diagnostics.backend_url" = "رابط الخادم";
 "diagnostics.websocket" = "اتصال WebSocket";
 "diagnostics.klipper_ready" = "كليبر جاهز";
+"connection.connected" = "متصل";
+"connection.connecting" = "جاري الاتصال…";
+"connection.disconnected" = "غير متصل";
+"connection.auth_failed" = "تم رفض المصادقة";
 "diagnostics.network" = "الوصول للراسبيري باي";
 "diagnostics.moonraker_websocket" = "مونريكر (WebSocket)";
 "diagnostics.backend_websocket" = "الخادم (WebSocket)";

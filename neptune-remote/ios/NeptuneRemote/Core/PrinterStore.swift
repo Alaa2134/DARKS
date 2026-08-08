@@ -22,6 +22,38 @@ final class PrinterStore: ObservableObject {
 
     @Published private(set) var moonrakerConnected = false
     @Published private(set) var backendConnected = false
+    /// Set when Moonraker or the backend rejected our credentials. Tracked
+    /// separately from "not connected" because the fix is different: the user
+    /// has to correct an API key, not chase a network.
+    @Published private(set) var authenticationFailed = false
+
+    /// The four states the UI distinguishes.
+    enum ConnectionPhase: Equatable {
+        case connected
+        case connecting
+        case disconnected
+        case authenticationFailed
+
+        var localizationKey: String {
+            switch self {
+            case .connected: return "connection.connected"
+            case .connecting: return "connection.connecting"
+            case .disconnected: return "connection.disconnected"
+            case .authenticationFailed: return "connection.auth_failed"
+            }
+        }
+    }
+
+    var connectionPhase: ConnectionPhase {
+        if settings.demoMode { return .connected }
+        if authenticationFailed { return .authenticationFailed }
+        if moonrakerConnected || backendConnected { return .connected }
+        switch moonrakerSocket.state {
+        case .connecting, .idle: return .connecting
+        case .connected: return .connected
+        case .failed: return .disconnected
+        }
+    }
     @Published private(set) var backendHealth: BackendHealth?
     @Published private(set) var power = PowerReading.unavailable
     @Published private(set) var isBusy = false
@@ -283,10 +315,14 @@ final class PrinterStore: ObservableObject {
             objects = try await moonraker.queryObjects()
             applyObjects()
             lastError = nil
+            authenticationFailed = false
         } catch {
             let apiError = APIError.from(error, host: settings.host)
             update(snapshot: .offline(error: apiError.localizedDescription))
             lastError = apiError
+            // A rejected API key is not the same as an unreachable printer, and
+            // needs a different action from the user, so it is tracked apart.
+            authenticationFailed = (apiError == .unauthorized)
         }
     }
 

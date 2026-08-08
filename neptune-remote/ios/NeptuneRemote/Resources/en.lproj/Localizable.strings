@@ -326,6 +326,10 @@
 "diagnostics.backend_url" = "Backend URL";
 "diagnostics.websocket" = "WebSocket";
 "diagnostics.klipper_ready" = "Klipper ready";
+"connection.connected" = "Connected";
+"connection.connecting" = "Connecting…";
+"connection.disconnected" = "Not connected";
+"connection.auth_failed" = "Authentication rejected";
 "diagnostics.network" = "Raspberry Pi reachable";
 "diagnostics.moonraker_websocket" = "Moonraker WebSocket";
 "diagnostics.backend_websocket" = "Backend WebSocket";
