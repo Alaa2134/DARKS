@@ -171,9 +171,15 @@ struct PrinterSnapshot: Equatable {
 
         snapshot.fanSpeed = objects.fan?.speed ?? 0
 
+        // `errorMessage` carries Klipper's own words and nothing else. It used
+        // to be filled in with a generic "not ready" string whenever Klipper was
+        // not ready, which is how a routine startup or an unhomed axis ended up
+        // presented as a fault. Classification now belongs to
+        // PrinterConditionEvaluator, which reads live objects; this field is
+        // only the raw text it shows under technical details.
         if snapshot.klippy == .shutdown || snapshot.klippy == .error {
             snapshot.errorMessage = snapshot.klippyMessage.isEmpty
-                ? L.t("error.klipper_not_ready")
+                ? nil
                 : snapshot.klippyMessage
         }
 

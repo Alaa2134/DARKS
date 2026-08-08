@@ -733,6 +733,25 @@ final class PrinterStore: ObservableObject {
             Haptics.success()
             return
         }
+
+        // A print started on unhomed axes fails at the first move, sometimes
+        // after the bed has already heated. Refuse and say which axes, so the
+        // Home button on the condition card is the obvious next tap.
+        let missing = PrinterConditionEvaluator.missingAxes(
+            homed: snapshot.homedAxes,
+            configured: capabilities.axisLimits.isEmpty
+                ? ["x", "y", "z"]
+                : capabilities.axisLimits.keys.sorted()
+        )
+        if !missing.isEmpty {
+            lastError = .unsafeOperation([
+                L.t("condition.home_first.title"),
+                L.t("condition.home_first.body")
+            ])
+            Haptics.warning()
+            return
+        }
+
         do {
             try await moonraker.startPrint(filename: filename)
             lastMessage = L.t("print.started", filename)
@@ -915,6 +934,86 @@ final class PrinterStore: ObservableObject {
             handle(error)
             return false
         }
+    }
+
+    // MARK: - Conditions
+
+    /// What is currently worth telling the user, derived from live Klipper
+    /// objects rather than from log text.
+    ///
+    /// Recomputed from the snapshot every time it changes, so a condition
+    /// disappears the moment its cause is resolved - homing clears the homing
+    /// card without anything having to remember to dismiss it.
+    var conditions: [PrinterCondition] {
+        PrinterConditionEvaluator.conditions(for: conditionInput)
+    }
+
+    /// The worst condition, for the single card Home shows.
+    var primaryCondition: PrinterCondition? { conditions.first }
+
+    /// Genuine faults only - used where the UI wants to know whether something
+    /// is actually wrong, as opposed to merely needing a Home.
+    var errorConditions: [PrinterCondition] { conditions.filter(\.isError) }
+
+    private var conditionInput: PrinterConditionEvaluator.Input {
+        var input = PrinterConditionEvaluator.Input()
+        input.klippy = snapshot.klippy
+        input.klippyMessage = snapshot.klippyMessage
+        input.homedAxes = snapshot.homedAxes
+        input.printState = snapshot.state
+        input.isPrinting = snapshot.isActive
+        input.connected = moonrakerConnected
+        // Only ask about axes this printer actually has.
+        if !capabilities.axisLimits.isEmpty {
+            input.configuredAxes = capabilities.axisLimits.keys.sorted()
+        }
+        return input
+    }
+
+    /// Whether a print may start: every configured axis homed and Klipper ready.
+    var isReadyToPrint: Bool {
+        guard snapshot.klippy == .ready else { return false }
+        return PrinterConditionEvaluator.missingAxes(
+            homed: snapshot.homedAxes,
+            configured: capabilities.axisLimits.isEmpty
+                ? ["x", "y", "z"]
+                : capabilities.axisLimits.keys.sorted()
+        ).isEmpty
+    }
+
+    /// Homes the printer, refusing when it would be unsafe.
+    ///
+    /// G28 goes through `safe_z_home` when the config has it, which is why no
+    /// Z coordinate is invented here: Klipper moves to the configured position
+    /// itself. The checks are the ones a person would make before pressing the
+    /// button - Klipper alive, nothing printing, no shutdown pending.
+    @discardableResult
+    func homeSafely(axes: String = "") async -> Bool {
+        guard !settings.demoMode else {
+            await home(axes)
+            return true
+        }
+        guard moonrakerConnected || snapshot.isOnline else {
+            lastError = .unsafeOperation([L.t("condition.home.not_connected")])
+            Haptics.warning()
+            return false
+        }
+        guard snapshot.klippy == .ready else {
+            lastError = .unsafeOperation([L.t("condition.home.not_ready")])
+            Haptics.warning()
+            return false
+        }
+        guard !snapshot.isActive else {
+            lastError = .unsafeOperation([L.t("condition.home.printing")])
+            Haptics.warning()
+            return false
+        }
+
+        let ok = await send(gcode: axes.isEmpty ? "G28" : "G28 \(axes.uppercased())")
+        // Homing changes homed_axes, and that is what the condition list keys
+        // off, so pull a fresh reading rather than waiting for the next poll.
+        if ok { await refreshNow() }
+        return ok
     }
 
     // MARK: - Capability discovery

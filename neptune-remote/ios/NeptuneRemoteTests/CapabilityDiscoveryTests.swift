@@ -194,7 +194,7 @@ final class CapabilityDiscoveryTests: XCTestCase {
         XCTAssertEqual(probe??.zOffset, 1.94)
 
         let inductive = CapabilityDiscovery.build(
-            settings: decode("""{"probe": {"z_offset": 2.2, "speed": 5}}"""),
+            settings: decode(#"{"probe": {"z_offset": 2.2, "speed": 5}}"#),
             objects: ["probe"]
         )
         XCTAssertEqual(inductive.probe?.kind, "probe")
@@ -332,10 +332,10 @@ final class CapabilityDiscoveryTests: XCTestCase {
     /// Klipper writes coordinate pairs as arrays in some sections and as
     /// comma-separated strings in others.
     func testCoordinatePairsParseFromBothShapes() {
-        let asArray = decode("""{"bed_mesh": {"mesh_min": [10, 12]}}""")
+        let asArray = decode(#"{"bed_mesh": {"mesh_min": [10, 12]}}"#)
         XCTAssertEqual(asArray.section("bed_mesh")?.numbers("mesh_min") ?? [], [10, 12])
 
-        let asString = decode("""{"bed_mesh": {"mesh_min": "10, 12"}}""")
+        let asString = decode(#"{"bed_mesh": {"mesh_min": "10, 12"}}"#)
         XCTAssertEqual(asString.section("bed_mesh")?.numbers("mesh_min") ?? [], [10, 12])
     }
 

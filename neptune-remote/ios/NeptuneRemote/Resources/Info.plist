@@ -130,5 +130,144 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+
+	<!-- iOS ships no system type for STL, OBJ or 3MF. Without these
+	     declarations `UTType(filenameExtension: "stl")` returns a *dynamic*
+	     type (dyn.ah62d4...), and a dynamic type never matches the type the
+	     Files app assigns to a real file - so every .stl in the picker is
+	     greyed out and cannot be selected.
+
+	     Declaring them as imported types gives the extensions a concrete UTI
+	     that both the picker and Open-in resolve against. STL is listed both
+	     as text and binary because the format has both encodings and the app
+	     must accept either. -->
+	<key>UTImportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>public.standard-tesselated-geometry-format</string>
+			<key>UTTypeDescription</key>
+			<string>STL 3D Model</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.3d-content</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>stl</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>model/stl</string>
+					<string>application/sla</string>
+					<string>application/vnd.ms-pki.stl</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>org.3mf.3dmanufacturing</string>
+			<key>UTTypeDescription</key>
+			<string>3MF 3D Model</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.3d-content</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>3mf</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>model/3mf</string>
+					<string>application/vnd.ms-package.3dmanufacturing-3dmodel+xml</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>public.geometry-definition-format</string>
+			<key>UTTypeDescription</key>
+			<string>OBJ 3D Model</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.3d-content</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>obj</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>model/obj</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeIdentifier</key>
+			<string>com.neptune.remote.gcode</string>
+			<key>UTTypeDescription</key>
+			<string>G-code</string>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.data</string>
+				<string>public.plain-text</string>
+			</array>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>gcode</string>
+					<string>gco</string>
+					<string>g</string>
+				</array>
+				<key>public.mime-type</key>
+				<array>
+					<string>text/x.gcode</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
+
+	<!-- Lets the app appear in the Share sheet and in "Open With" for these
+	     files, which is the other half of getting a model in. -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>3D Model</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>public.standard-tesselated-geometry-format</string>
+				<string>org.3mf.3dmanufacturing</string>
+				<string>public.geometry-definition-format</string>
+			</array>
+		</dict>
+		<dict>
+			<key>CFBundleTypeName</key>
+			<string>G-code</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+			<key>LSItemContentTypes</key>
+			<array>
+				<string>com.neptune.remote.gcode</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -82,16 +82,15 @@ struct LibraryView: View {
     }
 
     /// STL / 3MF / OBJ - matching what the backend's mesh parser supports.
-    static let modelTypes: [UTType] = {
-        var types: [UTType] = [.data]
-        for identifier in ["public.standard-tesselated-geometry-format", "org.3mf.3dmanufacturing", "public.geometry-definition-format"] {
-            if let type = UTType(identifier) { types.insert(type, at: 0) }
-        }
-        for suffix in ["stl", "3mf", "obj"] {
-            if let type = UTType(filenameExtension: suffix) { types.insert(type, at: 0) }
-        }
-        return types
-    }()
+    ///
+    /// The identifiers come from the `UTImportedTypeDeclarations` in
+    /// Info.plist. Without those declarations `UTType(filenameExtension: "stl")`
+    /// hands back a *dynamic* type, which never matches the type the Files app
+    /// assigns to a real file, and every .stl in the picker is greyed out.
+    ///
+    /// `.data` stays last as a catch-all so a file arriving from a provider that
+    /// reports no useful type at all is still selectable.
+    static let modelTypes: [UTType] = ModelFileTypes.pickerTypes
 
     // MARK: - Search field
 

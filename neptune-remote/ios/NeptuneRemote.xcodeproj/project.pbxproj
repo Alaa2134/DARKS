@@ -35,6 +35,7 @@
 		F27DFEC948449D25F905F484 /* MoonrakerModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoonrakerModels.swift"; sourceTree = "<group>"; };
 		CF10A219B053BB1826C8DA02 /* MoonrakerSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoonrakerSocket.swift"; sourceTree = "<group>"; };
 		A5817A222D55BAAA0322B3DA /* PrinterCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterCapabilities.swift"; sourceTree = "<group>"; };
+		0B7C3D2558D9524A5D72BC07 /* PrinterCondition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterCondition.swift"; sourceTree = "<group>"; };
 		FA53BFF0AB27B314C5B6B477 /* PrinterSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterSnapshot.swift"; sourceTree = "<group>"; };
 		BE67A1A928EADAEB4B8A0205 /* APIError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "APIError.swift"; sourceTree = "<group>"; };
 		3587CC1D5CE36BD374E4D8A2 /* ATSPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ATSPolicy.swift"; sourceTree = "<group>"; };
@@ -53,10 +54,13 @@
 		18A08B0C83253977BCFCCE79 /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppLog.swift"; sourceTree = "<group>"; };
 		FD7E362D1959C75BC20E3B3F /* Formatters.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Formatters.swift"; sourceTree = "<group>"; };
 		962CDBD70FC72BC018E370F4 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Haptics.swift"; sourceTree = "<group>"; };
+		D03445140C9D8DA392087696 /* ImportedFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ImportedFile.swift"; sourceTree = "<group>"; };
 		96C68FAAF810465B19D315BC /* Localization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Localization.swift"; sourceTree = "<group>"; };
+		C4F1A74B0708896A323CD6E2 /* ModelFileTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelFileTypes.swift"; sourceTree = "<group>"; };
 		9C28A57EFCE55414712A76B0 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CameraView.swift"; sourceTree = "<group>"; };
 		4A2FD14EEAD6D421B26E2E63 /* MJPEGStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MJPEGStream.swift"; sourceTree = "<group>"; };
 		1A63D8DFF51D150A7E07BA9F /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Components.swift"; sourceTree = "<group>"; };
+		2E1788ACF4320141030627FA /* ConditionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConditionCard.swift"; sourceTree = "<group>"; };
 		26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConnectionTestPanel.swift"; sourceTree = "<group>"; };
 		8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintChecklistView.swift"; sourceTree = "<group>"; };
 		A75F726275E9D379775415A6 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Theme.swift"; sourceTree = "<group>"; };
@@ -113,6 +117,7 @@
 		D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeshLoaderTests.swift"; sourceTree = "<group>"; };
 		B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoonrakerParsingTests.swift"; sourceTree = "<group>"; };
 		317599B370EB651828731588 /* PowerSafetyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PowerSafetyTests.swift"; sourceTree = "<group>"; };
+		43B751D9C76D2FF490B97957 /* PrinterConditionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterConditionTests.swift"; sourceTree = "<group>"; };
 		3E3E1838070E7508F0DB749F /* SettingsAndStateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsAndStateTests.swift"; sourceTree = "<group>"; };
 		A74C5A338910F10877A0A2E2 /* SliceRequestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SliceRequestTests.swift"; sourceTree = "<group>"; };
 		61919D6EC01546F9DCD9D743 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info.plist"; sourceTree = "<group>"; };
@@ -189,6 +194,7 @@
 				F27DFEC948449D25F905F484 /* MoonrakerModels.swift */,
 				CF10A219B053BB1826C8DA02 /* MoonrakerSocket.swift */,
 				A5817A222D55BAAA0322B3DA /* PrinterCapabilities.swift */,
+				0B7C3D2558D9524A5D72BC07 /* PrinterCondition.swift */,
 				FA53BFF0AB27B314C5B6B477 /* PrinterSnapshot.swift */,
 			);
 			path = "Moonraker";
@@ -238,7 +244,9 @@
 				18A08B0C83253977BCFCCE79 /* AppLog.swift */,
 				FD7E362D1959C75BC20E3B3F /* Formatters.swift */,
 				962CDBD70FC72BC018E370F4 /* Haptics.swift */,
+				D03445140C9D8DA392087696 /* ImportedFile.swift */,
 				96C68FAAF810465B19D315BC /* Localization.swift */,
+				C4F1A74B0708896A323CD6E2 /* ModelFileTypes.swift */,
 			);
 			path = "Utils";
 			sourceTree = "<group>";
@@ -281,6 +289,7 @@
 			isa = PBXGroup;
 			children = (
 				1A63D8DFF51D150A7E07BA9F /* Components.swift */,
+				2E1788ACF4320141030627FA /* ConditionCard.swift */,
 				26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */,
 				8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */,
 				A75F726275E9D379775415A6 /* Theme.swift */,
@@ -502,6 +511,7 @@
 				D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */,
 				B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */,
 				317599B370EB651828731588 /* PowerSafetyTests.swift */,
+				43B751D9C76D2FF490B97957 /* PrinterConditionTests.swift */,
 				3E3E1838070E7508F0DB749F /* SettingsAndStateTests.swift */,
 				A74C5A338910F10877A0A2E2 /* SliceRequestTests.swift */,
 			);
@@ -558,6 +568,7 @@
 		0D6A378A9D0FEE71D7FAB652 /* MoonrakerModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = F27DFEC948449D25F905F484 /* MoonrakerModels.swift */; };
 		C23473ED49F89CC7E0954025 /* MoonrakerSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF10A219B053BB1826C8DA02 /* MoonrakerSocket.swift */; };
 		A3602C35D40E0CDD3A9CDDD4 /* PrinterCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5817A222D55BAAA0322B3DA /* PrinterCapabilities.swift */; };
+		7D56E93CECA912076C12039E /* PrinterCondition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B7C3D2558D9524A5D72BC07 /* PrinterCondition.swift */; };
 		95E4C447A113DE606FF9957F /* PrinterSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA53BFF0AB27B314C5B6B477 /* PrinterSnapshot.swift */; };
 		905BFE8F33E629C6B2A76F48 /* APIError.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE67A1A928EADAEB4B8A0205 /* APIError.swift */; };
 		5B3C6DD64013BD18A0451C28 /* ATSPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3587CC1D5CE36BD374E4D8A2 /* ATSPolicy.swift */; };
@@ -576,10 +587,13 @@
 		312B2CA968781ED17E10CAE8 /* AppLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A08B0C83253977BCFCCE79 /* AppLog.swift */; };
 		77E292BFDD3B3E29338881DE /* Formatters.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD7E362D1959C75BC20E3B3F /* Formatters.swift */; };
 		EDE827AF8FE3D3E81F59990B /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 962CDBD70FC72BC018E370F4 /* Haptics.swift */; };
+		58775F30D32C402EFCB18213 /* ImportedFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = D03445140C9D8DA392087696 /* ImportedFile.swift */; };
 		1423077D4048FB6B83B76DC9 /* Localization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96C68FAAF810465B19D315BC /* Localization.swift */; };
+		9BBEA36EA3C488F4C0920BE8 /* ModelFileTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F1A74B0708896A323CD6E2 /* ModelFileTypes.swift */; };
 		9922596F25CFD7DB252D4ED6 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C28A57EFCE55414712A76B0 /* CameraView.swift */; };
 		CAC8E3A7769D6B4223274E02 /* MJPEGStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A2FD14EEAD6D421B26E2E63 /* MJPEGStream.swift */; };
 		D9FFC02229DBFFD8CE88FFBB /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63D8DFF51D150A7E07BA9F /* Components.swift */; };
+		64906A251A84361C9FE8235D /* ConditionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1788ACF4320141030627FA /* ConditionCard.swift */; };
 		8FCBC5E92CA2956AD680784B /* ConnectionTestPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */; };
 		E0BEBD9BD843AD980A176AD1 /* PrintChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */; };
 		35FCB473A4886F280BCAC397 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75F726275E9D379775415A6 /* Theme.swift */; };
@@ -641,6 +655,7 @@
 		9EA6CE005C650DFE211FF700 /* MeshLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */; };
 		C4B8BB0FF0543E42EBE4B4A9 /* MoonrakerParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */; };
 		25E087702BD255C49241B1FB /* PowerSafetyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317599B370EB651828731588 /* PowerSafetyTests.swift */; };
+		792462EAE7E9BA76DEF8FD91 /* PrinterConditionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 43B751D9C76D2FF490B97957 /* PrinterConditionTests.swift */; };
 		39785298CCA11A2C870F7698 /* SettingsAndStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3E1838070E7508F0DB749F /* SettingsAndStateTests.swift */; };
 		C18D82BAE3A6119C63C96B8B /* SliceRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A74C5A338910F10877A0A2E2 /* SliceRequestTests.swift */; };
 		707E5E6ED164E91BD6D5081B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AAC8F582BFE45736E9F4DFEE /* Assets.xcassets */; };
@@ -680,6 +695,7 @@
 				0D6A378A9D0FEE71D7FAB652 /* MoonrakerModels.swift in Sources */,
 				C23473ED49F89CC7E0954025 /* MoonrakerSocket.swift in Sources */,
 				A3602C35D40E0CDD3A9CDDD4 /* PrinterCapabilities.swift in Sources */,
+				7D56E93CECA912076C12039E /* PrinterCondition.swift in Sources */,
 				95E4C447A113DE606FF9957F /* PrinterSnapshot.swift in Sources */,
 				905BFE8F33E629C6B2A76F48 /* APIError.swift in Sources */,
 				5B3C6DD64013BD18A0451C28 /* ATSPolicy.swift in Sources */,
@@ -698,10 +714,13 @@
 				312B2CA968781ED17E10CAE8 /* AppLog.swift in Sources */,
 				77E292BFDD3B3E29338881DE /* Formatters.swift in Sources */,
 				EDE827AF8FE3D3E81F59990B /* Haptics.swift in Sources */,
+				58775F30D32C402EFCB18213 /* ImportedFile.swift in Sources */,
 				1423077D4048FB6B83B76DC9 /* Localization.swift in Sources */,
+				9BBEA36EA3C488F4C0920BE8 /* ModelFileTypes.swift in Sources */,
 				9922596F25CFD7DB252D4ED6 /* CameraView.swift in Sources */,
 				CAC8E3A7769D6B4223274E02 /* MJPEGStream.swift in Sources */,
 				D9FFC02229DBFFD8CE88FFBB /* Components.swift in Sources */,
+				64906A251A84361C9FE8235D /* ConditionCard.swift in Sources */,
 				8FCBC5E92CA2956AD680784B /* ConnectionTestPanel.swift in Sources */,
 				E0BEBD9BD843AD980A176AD1 /* PrintChecklistView.swift in Sources */,
 				35FCB473A4886F280BCAC397 /* Theme.swift in Sources */,
@@ -834,6 +853,7 @@
 				9EA6CE005C650DFE211FF700 /* MeshLoaderTests.swift in Sources */,
 				C4B8BB0FF0543E42EBE4B4A9 /* MoonrakerParsingTests.swift in Sources */,
 				25E087702BD255C49241B1FB /* PowerSafetyTests.swift in Sources */,
+				792462EAE7E9BA76DEF8FD91 /* PrinterConditionTests.swift in Sources */,
 				39785298CCA11A2C870F7698 /* SettingsAndStateTests.swift in Sources */,
 				C18D82BAE3A6119C63C96B8B /* SliceRequestTests.swift in Sources */,
 			);

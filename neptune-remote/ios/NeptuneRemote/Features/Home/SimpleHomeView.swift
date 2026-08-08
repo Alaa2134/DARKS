@@ -80,6 +80,10 @@ struct SimpleHomeView: View {
                 }
 
                 stateCard
+                // Classified Klipper conditions, each with its own remedy. An
+                // unhomed axis appears here as a calm "needs Home" card rather
+                // than as a red error.
+                ConditionList()
                 primaryAction
                 attentionCards
                 if phase == .printing { livePeek }
@@ -190,8 +194,12 @@ struct SimpleHomeView: View {
     private var hintText: String {
         switch phase {
         case .error:
-            let message = snapshot.errorMessage ?? snapshot.klippyMessage
-            return message.isEmpty ? L.t("home.state.error") : message
+            // The condition cards carry the detail and the remedy; the hint
+            // line stays short rather than repeating a raw Klipper message.
+            if let condition = printer.primaryCondition {
+                return L.t(condition.titleKey)
+            }
+            return L.t("home.state.error")
         case .printing:
             return printer.summary?.item?.displayName ?? snapshot.filename
         default:

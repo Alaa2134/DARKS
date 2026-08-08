@@ -213,14 +213,18 @@ final class FilesStore: ObservableObject {
         _ url: URL,
         _ body: @escaping (Data, String) async throws -> Bool
     ) async -> Bool {
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-
+        // ImportedFile owns the security scope, the iCloud download and the
+        // coordinated read - a picked G-code file is as likely to be an
+        // undownloaded iCloud placeholder as a model is.
         do {
-            let data = try Data(contentsOf: url)
+            let data = try await ImportedFile.read(url)
             let ok = try await body(data, url.lastPathComponent)
             if ok { lastError = nil }
             return ok
+        } catch let error as ImportedFile.ReadError {
+            lastError = .unknown(error.localizedDescription)
+            Haptics.error()
+            return false
         } catch {
             lastError = APIError.from(error, host: settings.host)
             Haptics.error()

@@ -248,11 +248,15 @@ final class LibraryStore: ObservableObject {
 
     @discardableResult
     func importModel(url: URL, nameAR: String = "", category: String = "other") async -> LibraryItem? {
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-
-        guard let data = try? Data(contentsOf: url) else {
-            lastError = .unknown(L.t("library.import.unreadable"))
+        // Reading goes through ImportedFile so an iCloud placeholder is
+        // downloaded first and the failure says which step failed, rather than
+        // reporting "unreadable" for a file the user can plainly see in Files.
+        let data: Data
+        do {
+            data = try await ImportedFile.read(url)
+        } catch {
+            lastError = .unknown(error.localizedDescription)
+            Haptics.error()
             return nil
         }
 

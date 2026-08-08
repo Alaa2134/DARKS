@@ -13,13 +13,7 @@ struct SliceView: View {
     @State private var modelData: Data?
     @State private var isLoadingPreview = false
 
-    private var modelTypes: [UTType] {
-        var types: [UTType] = [.data]
-        if let stl = UTType(filenameExtension: "stl") { types.append(stl) }
-        if let obj = UTType(filenameExtension: "obj") { types.append(obj) }
-        if let threeMF = UTType(filenameExtension: "3mf") { types.append(threeMF) }
-        return types
-    }
+    private var modelTypes: [UTType] { ModelFileTypes.pickerTypes }
 
     var body: some View {
         ScrollView {
@@ -467,10 +461,9 @@ struct SliceView: View {
             if let model = await files.upload(modelURL: url) {
                 slicing.selectedModel = model
                 isLoadingPreview = true
-                // Read locally first so the preview appears instantly.
-                let scoped = url.startAccessingSecurityScopedResource()
-                modelData = try? Data(contentsOf: url)
-                if scoped { url.stopAccessingSecurityScopedResource() }
+                // Read locally so the preview appears instantly. The upload
+                // already succeeded, so a failure here costs only the preview.
+                modelData = try? await ImportedFile.read(url)
                 isLoadingPreview = false
                 Haptics.success()
             }

@@ -1148,3 +1148,37 @@
 "capabilities.macro_confirm" = "Run %@?";
 "capabilities.macro_confirm_body" = "This macro is defined in your printer.cfg and may move or heat the machine.";
 "capabilities.macro_arguments" = "Parameters (optional)";
+
+"library.import.access_denied" = "iOS did not grant access to that file";
+"library.import.not_downloaded" = "The file is in iCloud and has not finished downloading. Open it once in the Files app, then try again.";
+"library.import.download_failed" = "Could not download the file from iCloud";
+"library.import.empty" = "That file is empty";
+"library.import.too_large" = "That file is %@ - the limit is %@";
+
+"condition.severity.info" = "Information";
+"condition.severity.action" = "Action needed";
+"condition.severity.warning" = "Warning";
+"condition.severity.recoverable" = "Klipper stopped";
+"condition.severity.configuration" = "Configuration error";
+"condition.severity.critical" = "Critical";
+"condition.not_homed.title" = "%@ needs homing";
+"condition.not_homed.body" = "This is normal after powering on or restarting Klipper. The printer refuses movement until the axes know where they are. Nothing is wrong.";
+"condition.home_axes" = "Home %@";
+"condition.starting.title" = "Klipper is starting";
+"condition.starting.body" = "Give it a moment to finish connecting to the mainboard.";
+"condition.disconnected.title" = "Klipper is not connected";
+"condition.disconnected.body" = "Moonraker is running but Klipper is not answering it.";
+"condition.shutdown.title" = "Klipper has shut down";
+"condition.shutdown.body" = "Klipper halted the printer. A firmware restart clears this once the cause is understood - read the message below first.";
+"condition.error.title" = "Klipper reported an error";
+"condition.error.body" = "The printer stopped. Read the original message below before restarting.";
+"condition.config_error.title" = "Configuration or mainboard error";
+"condition.config_error.body" = "Restarting will not clear this on its own - printer.cfg or the hardware connection needs attention first.";
+"condition.unknown.title" = "A Klipper message needs review";
+"condition.technical_details" = "Technical details";
+"condition.open_config" = "Check printer.cfg";
+"condition.home.not_ready" = "Klipper is not ready";
+"condition.home.printing" = "A print is running";
+"condition.home.not_connected" = "Not connected to the printer";
+"condition.home_first.title" = "Home the printer first";
+"condition.home_first.body" = "The axes have to know where they are before a print can start.";

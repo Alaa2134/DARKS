@@ -1148,3 +1148,37 @@
 "capabilities.macro_confirm" = "تشغيل %@؟";
 "capabilities.macro_confirm_body" = "هذا الماكرو معرّف في printer.cfg الخاص بك وقد يحرّك الجهاز أو يسخّنه.";
 "capabilities.macro_arguments" = "المعاملات (اختياري)";
+
+"library.import.access_denied" = "لم يمنح iOS صلاحية الوصول لهذا الملف";
+"library.import.not_downloaded" = "الملف على iCloud ولم يكتمل تنزيله. افتحه مرة في تطبيق الملفات ثم أعد المحاولة.";
+"library.import.download_failed" = "تعذر تنزيل الملف من iCloud";
+"library.import.empty" = "هذا الملف فارغ";
+"library.import.too_large" = "حجم الملف %@ - الحد الأقصى %@";
+
+"condition.severity.info" = "معلومة";
+"condition.severity.action" = "يحتاج إجراء";
+"condition.severity.warning" = "تنبيه";
+"condition.severity.recoverable" = "كليبر توقف";
+"condition.severity.configuration" = "خطأ في الإعدادات";
+"condition.severity.critical" = "حرج";
+"condition.not_homed.title" = "محور %@ يحتاج Home";
+"condition.not_homed.body" = "هذا طبيعي بعد تشغيل الطابعة أو إعادة تشغيل كليبر. الطابعة ترفض الحركة حتى تعرف المحاور مكانها. لا يوجد أي عطل.";
+"condition.home_axes" = "اعمل Home لـ %@";
+"condition.starting.title" = "كليبر قيد التشغيل";
+"condition.starting.body" = "امهله لحظة حتى يكمل الاتصال باللوحة.";
+"condition.disconnected.title" = "كليبر غير متصل";
+"condition.disconnected.body" = "مونريكر يعمل لكن كليبر لا يستجيب له.";
+"condition.shutdown.title" = "كليبر أوقف الطابعة";
+"condition.shutdown.body" = "أوقف كليبر الطابعة. إعادة تشغيل الفيرموير تزيل هذا بعد فهم السبب - اقرأ الرسالة بالأسفل أولًا.";
+"condition.error.title" = "كليبر أبلغ عن خطأ";
+"condition.error.body" = "توقفت الطابعة. اقرأ الرسالة الأصلية بالأسفل قبل إعادة التشغيل.";
+"condition.config_error.title" = "خطأ في الإعدادات أو اللوحة";
+"condition.config_error.body" = "إعادة التشغيل وحدها لن تحل هذا - يحتاج printer.cfg أو توصيل العتاد إلى مراجعة أولًا.";
+"condition.unknown.title" = "رسالة من Klipper تحتاج مراجعة";
+"condition.technical_details" = "التفاصيل التقنية";
+"condition.open_config" = "راجع printer.cfg";
+"condition.home.not_ready" = "كليبر غير جاهز";
+"condition.home.printing" = "توجد طباعة قيد التشغيل";
+"condition.home.not_connected" = "غير متصل بالطابعة";
+"condition.home_first.title" = "يجب عمل Home للمحاور أولاً";
+"condition.home_first.body" = "يجب أن تعرف المحاور مكانها قبل بدء الطباعة.";

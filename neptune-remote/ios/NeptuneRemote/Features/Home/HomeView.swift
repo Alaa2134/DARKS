@@ -19,6 +19,11 @@ struct HomeView: View {
                 if let error = printer.lastError { errorBanner(error) }
 
                 PrinterStateCard(snapshot: snapshot, printerName: settings.printerName)
+
+                // Anything that needs attention, worst first. Empty when the
+                // printer is fine, so stale warnings clear themselves.
+                ConditionList()
+
                 PowerCard(
                     power: printer.power,
                     safety: printer.powerOffSafety,
@@ -196,12 +201,9 @@ struct PrinterStateCard: View {
                 Spacer()
             }
 
-            if let error = snapshot.errorMessage, !error.isEmpty {
-                Text(error)
-                    .font(.caption)
-                    .foregroundStyle(Theme.danger)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            // Conditions are rendered as their own cards below, so this one no
+            // longer repeats the message - that repetition was how a single
+            // Klipper state ended up described two or three times on screen.
         }
         .card(tint: Theme.color(for: snapshot.state))
     }

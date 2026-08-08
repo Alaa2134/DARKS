@@ -81,13 +81,7 @@ struct FilesView: View {
         }
     }
 
-    private var importTypes: [UTType] {
-        var types: [UTType] = [.data]
-        for ext in ["stl", "obj", "3mf", "gcode", "gco"] {
-            if let type = UTType(filenameExtension: ext) { types.append(type) }
-        }
-        return types
-    }
+    private var importTypes: [UTType] { ModelFileTypes.allPickerTypes }
 
     @ViewBuilder
     private var content: some View {
