@@ -196,6 +196,40 @@ def check_swift_syntax() -> None:
 STRING_LINE = re.compile(r'^"([^"]+)"\s*=\s*"(.*)";\s*$')
 
 
+STRINGS_ENTRY = re.compile(r'^\s*"(?:[^"\\]|\\.)*"\s*=\s*"(?:[^"\\]|\\.)*"\s*;\s*$')
+
+
+def malformed_strings_lines(path: Path) -> list[tuple[int, str]]:
+    """Lines that are neither a comment nor a complete "key" = "value"; entry.
+
+    Xcode parses the whole file, so one stray fragment fails the build. Block
+    comments are tracked across lines because the headers in these files span
+    several.
+    """
+    problems: list[tuple[int, str]] = []
+    in_block_comment = False
+
+    for number, line in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
+        stripped = line.strip()
+
+        if in_block_comment:
+            if "*/" in stripped:
+                in_block_comment = False
+            continue
+        if not stripped or stripped.startswith("//"):
+            continue
+        if stripped.startswith("/*"):
+            if "*/" not in stripped[2:]:
+                in_block_comment = True
+            continue
+        if not STRINGS_ENTRY.match(line):
+            problems.append((number, stripped[:80]))
+
+    if in_block_comment:
+        problems.append((0, "unterminated block comment"))
+    return problems
+
+
 def parse_strings(path: Path) -> dict[str, str]:
     result: dict[str, str] = {}
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -217,6 +251,20 @@ def check_localization() -> None:
     if not english_path.is_file() or not arabic_path.is_file():
         check("both .strings files exist", False)
         return
+
+    # Syntax first. parse_strings() reads line by line and simply skips
+    # anything it does not recognise, so a file with a stray fragment in it
+    # still yields a full, matching key set - which is exactly how a broken
+    # .strings file passed every check here and then failed the build with
+    # "Couldn't parse property list because the input data was in an invalid
+    # format". Xcode reads the whole file; so must this.
+    for path in (english_path, arabic_path):
+        malformed = malformed_strings_lines(path)
+        check(
+            f"{path.parent.name}/Localizable.strings is well formed",
+            not malformed,
+            "; ".join(f"line {number}: {text}" for number, text in malformed[:3]),
+        )
 
     english = parse_strings(english_path)
     arabic = parse_strings(arabic_path)
