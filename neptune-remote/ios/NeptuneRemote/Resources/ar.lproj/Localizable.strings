@@ -192,6 +192,7 @@
 "slicer.no_models" = "لا توجد موديلات بعد";
 "slicer.no_model" = "اختر موديل أولاً";
 "slicer.uploading" = "جاري رفع %@…";
+"slicer.reading" = "جاري قراءة %@…";
 "slicer.profiles" = "البروفايلات";
 "slicer.printer_profile" = "الطابعة";
 "slicer.filament" = "الخامة";

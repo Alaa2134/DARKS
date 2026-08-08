@@ -192,6 +192,7 @@
 "slicer.no_models" = "No models yet";
 "slicer.no_model" = "Select a model first";
 "slicer.uploading" = "Uploading %@…";
+"slicer.reading" = "Reading %@…";
 "slicer.profiles" = "Profiles";
 "slicer.printer_profile" = "Printer";
 "slicer.filament" = "Filament";

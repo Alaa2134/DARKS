@@ -216,6 +216,14 @@ final class FilesStore: ObservableObject {
         // ImportedFile owns the security scope, the iCloud download and the
         // coordinated read - a picked G-code file is as likely to be an
         // undownloaded iCloud placeholder as a model is.
+        //
+        // The label is set *before* the read, not after. Reading a large file,
+        // or one iOS has to fetch from iCloud first, takes long enough that
+        // leaving the screen untouched until afterwards looked like the app had
+        // ignored the file entirely.
+        uploadProgressLabel = L.t("slicer.reading", url.lastPathComponent)
+        defer { uploadProgressLabel = nil }
+
         do {
             let data = try await ImportedFile.read(url)
             let ok = try await body(data, url.lastPathComponent)

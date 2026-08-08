@@ -59,7 +59,16 @@ enum ImportedFile {
         let scoped = url.startAccessingSecurityScopedResource()
         defer { if scoped { url.stopAccessingSecurityScopedResource() } }
 
-        if let status = downloadStatus(of: url), status != .current {
+        // Only a placeholder actually needs fetching.
+        //
+        // `URLUbiquitousItemDownloadingStatus` has three values, and treating
+        // anything other than `.current` as "needs downloading" was wrong:
+        // `.downloaded` already has a usable local copy that is merely possibly
+        // stale. A file sitting in `.downloaded` never becomes `.current` on its
+        // own, so the poll below ran its whole timeout and then failed - the app
+        // appeared to do nothing at all for two minutes and then gave up on a
+        // file that was readable the entire time.
+        if downloadStatus(of: url) == .notDownloaded {
             try await download(url)
         }
 
@@ -88,7 +97,10 @@ enum ImportedFile {
     /// `startDownloadingUbiquitousItem` is asynchronous with no completion
     /// handler, so the status is polled. The timeout keeps a stalled download
     /// from hanging the import forever.
-    private static func download(_ url: URL, timeout: TimeInterval = 120) async throws {
+    /// 45 seconds, not minutes: this runs while the user is staring at a screen
+    /// that has not changed, so failing with a message they can act on beats
+    /// waiting silently for a download that is not coming.
+    private static func download(_ url: URL, timeout: TimeInterval = 45) async throws {
         do {
             try FileManager.default.startDownloadingUbiquitousItem(at: url)
         } catch {
@@ -100,8 +112,9 @@ enum ImportedFile {
             if Task.isCancelled { throw CancellationError() }
             let status = downloadStatus(of: url)
             // nil means it is not an iCloud item after all, so there is nothing
-            // to wait for; .current means the local copy is up to date.
-            if status == nil || status == .current { return }
+            // to wait for. Either downloaded state means there is a local copy
+            // to read, which is all this needs.
+            if status == nil || status == .current || status == .downloaded { return }
             try? await Task.sleep(nanoseconds: 300_000_000)
         }
         throw ReadError.notDownloaded
