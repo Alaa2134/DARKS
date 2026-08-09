@@ -12,6 +12,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 
 from ..deps import get_state
+from ..klipper import patterns
 from ..klipper.macros import suggest as suggest_macros_for
 from ..klipper.validator import NEPTUNE_3_PLUS, diff_configs, validate
 from ..safety.engine import SafetyBlocked
@@ -260,6 +261,114 @@ async def suggest_macros(state: AppState = Depends(get_state)) -> Dict[str, Any]
             detail=state.live_config_error or "printer.cfg unavailable",
         )
     return suggest_macros_for(config)
+
+
+@router.get("/calibration/tests")
+async def calibration_tests(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """The extrusion calibrations this printer can run, and why not when it cannot.
+
+    Every calibration this project had was about the bed. These four are about
+    what the plastic looks like, and they are the ones nobody measures because
+    measuring them normally means finding a test model and slicing it exactly
+    right. Here the G-code is generated from printer.cfg instead.
+    """
+    config = await state.refresh_live_config()
+    if config is None:
+        raise HTTPException(
+            status_code=503, detail=state.live_config_error or "printer.cfg unavailable"
+        )
+    return {"tests": patterns.available(config)}
+
+
+@router.get("/calibration/tests/{test_id}")
+async def calibration_test(
+    test_id: str,
+    nozzle_temp: float = Query(205.0, ge=150, le=350),
+    bed_temp: float = Query(60.0, ge=0, le=130),
+    state: AppState = Depends(get_state),
+) -> Dict[str, Any]:
+    """Generate one calibration print. Nothing is sent to the printer here."""
+    builder = patterns.BUILDERS.get(test_id)
+    if builder is None:
+        raise HTTPException(status_code=404, detail=f"No calibration test '{test_id}'")
+
+    config = await state.refresh_live_config()
+    if config is None:
+        raise HTTPException(
+            status_code=503, detail=state.live_config_error or "printer.cfg unavailable"
+        )
+
+    kwargs: Dict[str, Any] = {"bed_temp": bed_temp}
+    # The temperature tower sets its own hotend temperature per band.
+    if test_id != "temperature":
+        kwargs["nozzle_temp"] = nozzle_temp
+
+    result = builder(config, **kwargs)
+    if not result.ok:
+        raise HTTPException(status_code=422, detail="; ".join(result.blockers))
+    return result.to_dict()
+
+
+@router.post("/calibration/flow/result")
+async def calibration_flow_result(
+    measured_mm: float = Query(..., gt=0, le=5),
+    expected_mm: float = Query(..., gt=0, le=5),
+    current_flow: float = Query(1.0, gt=0, le=2),
+) -> Dict[str, Any]:
+    """Turn a caliper reading into a flow multiplier.
+
+    Refuses a reading half or double the expected width: that is a
+    mismeasurement or the wrong wall, not a flow error, and acting on it would
+    write a badly wrong multiplier into the profile.
+    """
+    flow = patterns.flow_from_measurement(expected_mm, measured_mm, current_flow)
+    if flow is None:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                f"A {measured_mm:.2f} mm wall against an expected {expected_mm:.2f} mm "
+                "is too far off to be flow. Check you measured a single wall, on the "
+                "flat, and not across a seam."
+            ),
+        )
+    return {
+        "flow": flow,
+        "previous_flow": current_flow,
+        "change_percent": round((flow / current_flow - 1) * 100, 1),
+        "note_ar": "الرقم ده بيتحط في بروفايل السلايسر، مش في printer.cfg.",
+    }
+
+
+@router.post("/calibration/pressure_advance/result")
+async def calibration_pa_result(
+    height_mm: float = Query(..., ge=0, le=500),
+    start: float = Query(0.0, ge=0, le=2),
+    step: float = Query(0.005, gt=0, le=0.5),
+    layer_height: float = Query(0.2, gt=0, le=2),
+) -> Dict[str, Any]:
+    value = patterns.pressure_advance_from_height(
+        height_mm, start=start, step=step, layer_height=layer_height
+    )
+    if value is None:
+        raise HTTPException(
+            status_code=422,
+            detail=(
+                "That height gives a pressure advance outside Klipper's usable "
+                "range. Measure from the bottom of the tower, not the bed."
+            ),
+        )
+    return {
+        "pressure_advance": value,
+        "command": f"SET_PRESSURE_ADVANCE ADVANCE={value}",
+        "config_ar": (
+            f"عشان تثبته، ضيف في [extruder] في printer.cfg:\n"
+            f"pressure_advance: {value}"
+        ),
+        # Deliberately not offered as a one-tap write: this edits printer.cfg,
+        # and this project never rewrites that file without an explicit,
+        # separately-confirmed step that snapshots it first.
+        "applies_immediately": False,
+    }
 
 
 @router.get("/config/versions")
