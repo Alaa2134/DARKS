@@ -46,6 +46,12 @@ WIDTH_RATIO = 1.2
 HEIGHT_RATIO = 0.5
 
 EDGE_MARGIN_MM = 10.0
+#: Fewer lines than this and the camera has nothing to average over.
+MIN_PATCH_LINES = 12
+#: Line spacing as a multiple of the extrusion width, for the first-layer
+#: patch. Three, so the printed lines are unambiguously the narrower of the two
+#: runs the analyser measures - see app/vision/firstlayer.py.
+PATCH_SPACING_RATIO = 3.0
 
 
 @dataclass
@@ -624,10 +630,96 @@ def retraction_tower(
 
 
 # --------------------------------------------------------------------------- #
+# First layer
+# --------------------------------------------------------------------------- #
+
+
+def first_layer_patch(
+    config: ParsedConfig,
+    *,
+    size: float = 40.0,
+    nozzle_temp: float = 205.0,
+    bed_temp: float = 60.0,
+) -> TestPrint:
+    """Parallel lines at a known spacing, for the camera to measure.
+
+    The spacing is three times the extrusion width, so a correct first layer
+    covers a third of the patch. Twice would be more sensitive but useless:
+    lines and gaps would be equal, and nothing in a greyscale profile can then
+    say which of the two is plastic. At a third the lines are always the
+    narrower of the two, whatever colour the filament is.
+
+    The known spacing is also the scale bar. The camera does not need to be
+    calibrated, because whatever the lens and distance, the measured
+    peak-to-peak in pixels corresponds to this spacing in millimetres.
+    """
+    geometry = read_geometry(config)
+    if geometry is None:
+        return TestPrint(
+            id="first_layer", title_ar="فحص الطبقة الأولى",
+            title_en="First layer check", gcode="",
+            blockers=["printer.cfg does not define the travel limits or the extruder"],
+        )
+    if not geometry.fits(size):
+        size = max(20.0, min(geometry.max_x - geometry.min_x,
+                             geometry.max_y - geometry.min_y) - 2 * EDGE_MARGIN_MM)
+
+    spacing = geometry.width * PATCH_SPACING_RATIO
+    lines = max(MIN_PATCH_LINES, int(size / spacing))
+    span = lines * spacing
+    start_x = geometry.centre_x - size / 2
+    end_x = geometry.centre_x + size / 2
+    start_y = geometry.centre_y - span / 2
+
+    gcode = _preamble(geometry, nozzle_temp=nozzle_temp, bed_temp=bed_temp)
+    gcode += _purge_line(geometry)
+    gcode += [
+        "",
+        f"; {lines} lines, {spacing:.3f} mm apart, one layer",
+        f"G1 Z{geometry.layer_height:.3f} F1200",
+    ]
+
+    extrusion = geometry.extrusion_for(size)
+    for index in range(lines):
+        y = start_y + index * spacing
+        # Alternate direction so the nozzle never travels back across the patch,
+        # which would smear a line it just laid down.
+        left, right = (start_x, end_x) if index % 2 == 0 else (end_x, start_x)
+        gcode.append(f"G1 X{left:.3f} Y{y:.3f} F6000")
+        gcode.append(f"G1 X{right:.3f} E{extrusion:.4f} F900")
+
+    gcode += _epilogue(geometry)
+
+    return TestPrint(
+        id="first_layer",
+        title_ar="فحص الطبقة الأولى",
+        title_en="First layer check",
+        gcode="\n".join(gcode) + "\n",
+        parameters={
+            "spacing_mm": round(spacing, 4),
+            "expected_width_mm": round(geometry.width, 4),
+            "first_layer_height_mm": round(geometry.layer_height, 4),
+            "lines": float(lines),
+            "size_mm": round(size, 1),
+        },
+        instructions_ar=[
+            f"هيطبع {lines} خط متوازي، المسافة بينهم {spacing:.2f} مم.",
+            "استنى يخلص وسيبه على السرير — متشيلهوش.",
+            "صوّر الباترن بالكاميرا من فوق قدر الإمكان، وبإضاءة كويسة.",
+            "التطبيق هيقيس عرض الخطوط ويقولك تزوّد أو تقلل Z بكام بالظبط.",
+            "لو الخطوط لونها قريب من لون السرير، التطبيق هيقولك مش شايف — "
+            "غيّر الإضاءة أو استخدم فيلامنت لونه مختلف.",
+        ],
+        estimated_minutes=(lines * size) / 15.0 / 60.0 + 3,
+    )
+
+
+# --------------------------------------------------------------------------- #
 # Catalogue
 # --------------------------------------------------------------------------- #
 
 BUILDERS = {
+    "first_layer": first_layer_patch,
     "flow": flow_cube,
     "pressure_advance": pressure_advance_tower,
     "temperature": temperature_tower,

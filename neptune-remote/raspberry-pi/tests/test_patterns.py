@@ -326,9 +326,11 @@ class TestRetraction:
 
 
 class TestCatalogue:
-    def test_this_printer_can_run_all_four(self):
+    def test_this_printer_can_run_every_test(self):
         entries = available(parse_config(NEPTUNE))
-        assert len(entries) == 4
+        assert {entry["id"] for entry in entries} == {
+            "first_layer", "flow", "pressure_advance", "temperature", "retraction"
+        }
         assert all(entry["ok"] for entry in entries), [
             (entry["id"], entry["blockers"]) for entry in entries
         ]

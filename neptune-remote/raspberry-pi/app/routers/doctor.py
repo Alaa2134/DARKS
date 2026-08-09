@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 
 from ..deps import get_state
 from ..klipper import patterns
+from ..vision import firstlayer
 from ..klipper.macros import suggest as suggest_macros_for
 from ..klipper.validator import NEPTUNE_3_PLUS, diff_configs, validate
 from ..safety.engine import SafetyBlocked
@@ -369,6 +370,51 @@ async def calibration_pa_result(
         # separately-confirmed step that snapshots it first.
         "applies_immediately": False,
     }
+
+
+@router.post("/calibration/first_layer/inspect")
+async def inspect_first_layer(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """Photograph the printed first-layer patch and measure it.
+
+    Returns a millimetre correction and the SET_GCODE_OFFSET command that
+    applies it - or, when the image cannot support a measurement, says so and
+    returns nothing to apply. There is deliberately no middle ground: a Z
+    offset taken from a bad reading drives the nozzle into the bed, so a low
+    confidence number is more dangerous here than no number at all.
+
+    The command is returned, not executed. Applying it is a separate step the
+    user takes after seeing what it is.
+    """
+    if not state.camera.status(probe_devices=False).available:
+        raise HTTPException(
+            status_code=503,
+            detail="No camera is configured, so the first layer cannot be measured.",
+        )
+
+    config = await state.refresh_live_config()
+    if config is None:
+        raise HTTPException(
+            status_code=503, detail=state.live_config_error or "printer.cfg unavailable"
+        )
+
+    pattern = patterns.first_layer_patch(config)
+    if not pattern.ok:
+        raise HTTPException(status_code=422, detail="; ".join(pattern.blockers))
+
+    frame = await state.camera.snapshot()
+    if not frame:
+        raise HTTPException(status_code=503, detail="The camera returned no image.")
+
+    result = firstlayer.analyse(
+        frame,
+        expected_spacing_mm=pattern.parameters["spacing_mm"],
+        expected_width_mm=pattern.parameters["expected_width_mm"],
+        first_layer_height_mm=pattern.parameters["first_layer_height_mm"],
+        roi=state.config.camera.roi,
+    )
+    payload = result.to_dict()
+    payload["pattern"] = pattern.parameters
+    return payload
 
 
 @router.get("/config/versions")
