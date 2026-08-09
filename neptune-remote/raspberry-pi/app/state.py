@@ -45,6 +45,7 @@ from .slicer.golden import GoldenProfileStore
 from .maintenance.store import MaintenanceStore
 from .moonraker import MoonrakerClient, MoonrakerError
 from .paths import StorageLayout
+from .estimate import PrintTimeEstimator, learn_calibration, slicer_seconds_from_metadata
 from .notify import HeartbeatPinger, NotificationService
 from .power import (
     OutageWatcher,
@@ -67,6 +68,14 @@ from .timelapse.service import TimelapseService
 from .vision.detector import VisionDetector, VisionEvent
 
 log = logging.getLogger("neptune.state")
+
+
+def _optional_float(value: Any) -> Optional[float]:
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 0 else None
 
 PRINTER_POLL_SECONDS = 1.0
 POWER_POLL_SECONDS = 15.0
@@ -149,6 +158,15 @@ class AppState:
         self.calibration_session: Optional[str] = None
         self.testz_total_down: float = 0.0
         self._last_status_at: float = 0.0
+
+        # ---- prediction ---------------------------------------------------
+        # Replaces "elapsed / file progress", which divides by a byte count
+        # during the warm-up and is wrong in both directions for the first
+        # third of every print.
+        self.estimator = PrintTimeEstimator()
+        #: Metadata already fetched, keyed by filename, so the same file is not
+        #: re-requested from Moonraker on every poll.
+        self._metadata_cache: Dict[str, Dict[str, Any]] = {}
 
         # ---- alerting -----------------------------------------------------
         # The WebSocket only reaches a phone with the app open in the
@@ -378,6 +396,10 @@ class AppState:
         self.last_status = status
         self._last_status_at = time.time()
 
+        # Before the payload is built, so the broadcast carries the good number
+        # rather than the file-progress division build_status fell back to.
+        await self.apply_estimate(status)
+
         payload = status.model_dump()
         payload["item"] = self._current_item_payload()
         await self.hub.broadcast("printer", payload)
@@ -441,6 +463,80 @@ class AppState:
 
         # ---- automatic power off --------------------------------------------
         await self._check_auto_power_off(status)
+
+    # ----------------------------------------------------------- prediction
+    async def apply_estimate(self, status: PrinterStatusResponse) -> None:
+        """Work out how long is left, and overwrite the naive fallback."""
+        if status.state not in {"printing", "paused"} or not status.filename:
+            if self.estimator.filename:
+                self.estimator.reset()
+            return
+
+        if status.filename != self.estimator.filename:
+            metadata = await self._gcode_metadata(status.filename)
+            self.estimator.begin(
+                status.filename,
+                slicer_seconds_from_metadata(metadata),
+                filament_total_mm=_optional_float(
+                    (metadata or {}).get("filament_total")
+                ),
+            )
+            self._refresh_calibration()
+
+        # A paused print is not progressing, so folding in samples would make
+        # it look like it slowed down. The last estimate stands.
+        if status.state == "paused":
+            status.estimated_time_left = self.estimator.last.remaining_seconds
+            status.estimate = self.estimator.last.to_dict()
+            return
+
+        estimate = self.estimator.update(
+            progress=status.progress,
+            print_duration=status.print_duration,
+            speed_factor=status.speed_factor,
+            filename=status.filename,
+            filament_used_mm=status.filament_used_mm,
+        )
+        # None means "not enough evidence yet", which the UI shows as such.
+        # Keeping the old division as a fallback would put a confidently wrong
+        # number exactly where the honest answer is "I do not know yet".
+        status.estimated_time_left = estimate.remaining_seconds
+        status.estimate = estimate.to_dict()
+
+    async def _gcode_metadata(self, filename: str) -> Optional[Dict[str, Any]]:
+        """The slicer's own numbers for this file, fetched once and cached."""
+        if filename in self._metadata_cache:
+            return self._metadata_cache[filename]
+        try:
+            metadata = await self.moonraker.metadata(filename)
+        except (MoonrakerError, OSError) as exc:
+            log.debug("No metadata for %s: %s", filename, exc)
+            return None
+        if isinstance(metadata, dict):
+            self._metadata_cache[filename] = metadata
+            if len(self._metadata_cache) > 50:
+                self._metadata_cache.pop(next(iter(self._metadata_cache)))
+            return metadata
+        return None
+
+    def _refresh_calibration(self) -> None:
+        """Re-learn how wrong the slicer is on this machine."""
+        if self.history is None:
+            return
+        try:
+            pairs = self.history.calibration_pairs()
+        except Exception:  # noqa: BLE001 - a bad query must not stop a print
+            log.debug("Could not read calibration pairs", exc_info=True)
+            return
+        calibration = learn_calibration(pairs)
+        self.estimator.set_calibration(calibration)
+        if calibration.is_learned:
+            log.info(
+                "Slicer estimates on this printer run %.0f%% %s (%d samples)",
+                abs(calibration.percent_off),
+                "long" if calibration.percent_off > 0 else "short",
+                calibration.samples,
+            )
 
     async def _ensure_extra_objects(self) -> None:
         """Ask Klipper once what else it has worth polling.
@@ -889,6 +985,10 @@ class AppState:
         self._active_history_id = self.history.start_print(
             status.filename,
             start_time=time.time() - status.print_duration,
+            # Recorded now, while we still know what the slicer promised. Paired
+            # with the measured duration when the print ends, it becomes one
+            # calibration sample for the estimator.
+            estimated_seconds=self.estimator.slicer_seconds,
             nozzle_temp=status.nozzle.target or status.nozzle.actual,
             bed_temp=status.bed.target or status.bed.actual,
         )

@@ -152,6 +152,17 @@ CREATE TABLE IF NOT EXISTS print_history (
 CREATE INDEX IF NOT EXISTS idx_history_start ON print_history(start_time DESC);
 """
 
+# Columns added after the first release. Applied with ALTER TABLE rather than
+# by changing SCHEMA above, because SCHEMA only runs CREATE TABLE IF NOT EXISTS
+# and would silently skip an existing database - leaving the new column missing
+# on exactly the installs that have the history worth keeping.
+MIGRATIONS = (
+    # The slicer's own estimate for this file, recorded at print start. Paired
+    # with the measured duration it is one calibration sample: how wrong the
+    # slicer is on this specific machine.
+    ("estimated_seconds", "ALTER TABLE print_history ADD COLUMN estimated_seconds REAL"),
+)
+
 
 class HistoryDB:
     def __init__(self, path: Path) -> None:
@@ -162,7 +173,17 @@ class HistoryDB:
         self._conn.row_factory = sqlite3.Row
         with self._lock:
             self._conn.executescript(SCHEMA)
+            self._migrate()
             self._conn.commit()
+
+    def _migrate(self) -> None:
+        """Add columns a previous version did not have. Caller holds the lock."""
+        existing = {
+            row["name"] for row in self._conn.execute("PRAGMA table_info(print_history)")
+        }
+        for column, statement in MIGRATIONS:
+            if column not in existing:
+                self._conn.execute(statement)
 
     def close(self) -> None:
         with self._lock:
@@ -175,6 +196,7 @@ class HistoryDB:
         *,
         start_time: Optional[float] = None,
         estimated_filament_mm: Optional[float] = None,
+        estimated_seconds: Optional[float] = None,
         nozzle_temp: Optional[float] = None,
         bed_temp: Optional[float] = None,
         speed_profile: Optional[str] = None,
@@ -185,13 +207,15 @@ class HistoryDB:
                 """
                 INSERT INTO print_history
                     (filename, start_time, result, estimated_filament_mm,
-                     nozzle_temp, bed_temp, speed_profile, thumbnail_path)
-                VALUES (?, ?, 'in_progress', ?, ?, ?, ?, ?)
+                     estimated_seconds, nozzle_temp, bed_temp, speed_profile,
+                     thumbnail_path)
+                VALUES (?, ?, 'in_progress', ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     filename,
                     start_time if start_time is not None else time.time(),
                     estimated_filament_mm,
+                    estimated_seconds,
                     nozzle_temp,
                     bed_temp,
                     speed_profile,
@@ -259,6 +283,29 @@ class HistoryDB:
                 "SELECT * FROM print_history WHERE result = 'in_progress' ORDER BY start_time DESC LIMIT 1"
             ).fetchone()
         return _row_to_entry(row) if row else None
+
+    def calibration_pairs(self, limit: int = 40) -> List[tuple]:
+        """(actual_duration, slicer_estimate) for prints that ran to the end.
+
+        Only `completed`: a cancelled print stopped early, so its duration says
+        nothing about how long the file takes, and feeding it in would teach
+        the estimator that this printer is faster than it is.
+        """
+        with self._lock:
+            rows = self._conn.execute(
+                """
+                SELECT duration, estimated_seconds
+                  FROM print_history
+                 WHERE result = 'completed'
+                   AND duration IS NOT NULL
+                   AND estimated_seconds IS NOT NULL
+                   AND estimated_seconds > 0
+                 ORDER BY start_time DESC
+                 LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+        return [(float(row["duration"]), float(row["estimated_seconds"])) for row in rows]
 
     def close_open_entries(self, *, result: str = "interrupted", note: str = "") -> int:
         """Finish every row still marked in_progress. Returns how many.
@@ -361,6 +408,7 @@ def _row_to_entry(row: sqlite3.Row) -> HistoryEntry:
         result=str(data["result"]),
         filament_used_mm=data["filament_used_mm"],
         estimated_filament_mm=data["estimated_filament_mm"],
+        estimated_seconds=data.get("estimated_seconds"),
         nozzle_temp=data["nozzle_temp"],
         bed_temp=data["bed_temp"],
         speed_profile=data["speed_profile"],

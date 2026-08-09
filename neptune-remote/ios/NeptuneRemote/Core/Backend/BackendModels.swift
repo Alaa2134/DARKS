@@ -413,6 +413,60 @@ struct BackendTemperature: Decodable, Equatable {
     }
 }
 
+/// The backend's remaining-time estimate, and how it got there.
+///
+/// Shipped with its reasoning on purpose. A single number carries no sense of
+/// how much to trust it, and this one legitimately varies: in the first minutes
+/// it is the slicer's simulation corrected by a factor learned from past
+/// prints; by the end it is this print's measured rate. Saying which lets the
+/// user calibrate their own confidence instead of assuming the worst case
+/// always applies.
+struct PrintEstimate: Decodable, Equatable {
+    var remainingSeconds: Double?
+    var totalSeconds: Double?
+    /// unknown | slicer | slicer_calibrated | blended | observed
+    var method: String = "unknown"
+    var methodAR: String = ""
+    var methodEN: String = ""
+    /// 0…1. Not a probability — a statement about how much evidence exists.
+    var confidence: Double = 0
+    var slicerSeconds: Double?
+    var speedFactor: Double = 1
+    /// "filament" or "file". Filament progress is materially more accurate;
+    /// "file" means this G-code arrived without a filament total in its
+    /// metadata, so the estimate is working with a coarser signal.
+    var progressSource: String = "file"
+    var calibration: EstimateCalibration?
+
+    var isRough: Bool { confidence < 0.6 }
+
+    enum CodingKeys: String, CodingKey {
+        case method, confidence, calibration
+        case remainingSeconds = "remaining_seconds"
+        case totalSeconds = "total_seconds"
+        case methodAR = "method_ar"
+        case methodEN = "method_en"
+        case slicerSeconds = "slicer_seconds"
+        case speedFactor = "speed_factor"
+        case progressSource = "progress_source"
+    }
+}
+
+/// How wrong this printer's slicer estimates usually are.
+struct EstimateCalibration: Decodable, Equatable {
+    var factor: Double = 1
+    var samples: Int = 0
+    var spread: Double = 0
+    var learned: Bool = false
+    /// Signed: +18 means prints run 18 % longer than the slicer predicts.
+    var percentOff: Double = 0
+
+    enum CodingKeys: String, CodingKey {
+        case factor, samples, spread, learned
+        case percentOff = "percent_off"
+    }
+}
+
 /// One Klipper filament sensor as the backend sees it.
 struct BackendFilamentSensor: Decodable, Equatable {
     var name: String = ""
@@ -465,6 +519,7 @@ struct BackendPrinterStatus: Decodable, Equatable {
     /// Klipper filament sensors, keyed by short name. Discovered per machine -
     /// a printer with no sensor simply reports none.
     let filamentSensors: [String: BackendFilamentSensor]
+    let estimate: PrintEstimate?
     let error: String?
 
     enum CodingKeys: String, CodingKey {
@@ -484,6 +539,7 @@ struct BackendPrinterStatus: Decodable, Equatable {
         case extrudeFactor = "extrude_factor"
         case fanSpeed = "fan_speed"
         case filamentSensors = "filament_sensors"
+        case estimate
     }
 
     /// Decoded field by field with defaults, rather than by the synthesised
@@ -520,6 +576,7 @@ struct BackendPrinterStatus: Decodable, Equatable {
         filamentSensors = try container.decodeIfPresent(
             [String: BackendFilamentSensor].self, forKey: .filamentSensors
         ) ?? [:]
+        estimate = try container.decodeIfPresent(PrintEstimate.self, forKey: .estimate)
         error = try container.decodeIfPresent(String.self, forKey: .error)
     }
 
@@ -551,6 +608,7 @@ struct BackendPrinterStatus: Decodable, Equatable {
         value.extrudeFactor = extrudeFactor
         value.fanSpeed = fanSpeed
         value.filamentSensors = filamentSensors
+        value.estimate = estimate
         value.errorMessage = error
         value.lastUpdate = Date()
         return value

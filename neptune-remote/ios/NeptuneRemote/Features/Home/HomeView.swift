@@ -311,7 +311,22 @@ struct PrintProgressCard: View {
                     }
 
                     InfoRow(titleKey: "print.elapsed", value: Format.clock(snapshot.printDuration))
-                    InfoRow(titleKey: "print.remaining", value: Format.duration(snapshot.estimatedTimeLeft))
+                    InfoRow(
+                        titleKey: "print.remaining",
+                        value: snapshot.estimatedTimeLeft == nil
+                            ? L.t("print.remaining.unknown")
+                            : Format.duration(snapshot.estimatedTimeLeft)
+                    )
+                    // Where the number came from. It legitimately changes
+                    // during a print - the slicer's figure early, this print's
+                    // measured rate late - and a number whose basis is stated
+                    // is one the user can calibrate their own trust against.
+                    if let method = snapshot.estimateMethodText {
+                        Text(method)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
                     if let finish = snapshot.estimatedFinishDate {
                         InfoRow(titleKey: "print.eta", value: finish.formatted(date: .omitted, time: .shortened))
                     }

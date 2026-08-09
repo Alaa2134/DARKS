@@ -46,6 +46,11 @@ struct PrinterSnapshot: Equatable {
     /// printer that has none - never assumed to exist.
     var filamentSensors: [String: BackendFilamentSensor] = [:]
 
+    /// The backend's worked-out remaining time, with its reasoning. Nil when
+    /// talking to Moonraker directly, or when the backend has too little
+    /// evidence to answer yet - which it says rather than guessing.
+    var estimate: PrintEstimate?
+
     // MARK: - Derived
 
     /// A sensor that is switched on and currently seeing no filament.
@@ -75,12 +80,30 @@ struct PrinterSnapshot: Equatable {
         homedAxes.lowercased().contains(axis.lowercased())
     }
 
-    /// Remaining time estimated from elapsed print time and file progress
-    /// (the same approach Mainsail and Fluidd use - Klipper itself has none).
+    /// How long is left.
+    ///
+    /// The backend's estimate when there is one: it has the slicer's own
+    /// figure from the G-code metadata, a correction factor learned from this
+    /// printer's completed prints, and the filament total, none of which the
+    /// phone has. This used to compute `printDuration / progress` locally and
+    /// ignore all of that - the same formula the backend had already been
+    /// fixed to stop using, kept alive in a second place.
+    ///
+    /// The local fallback stays for the Moonraker-direct path, where no
+    /// backend is in the picture at all. It is deliberately silent below 8 %
+    /// rather than dividing by a byte count during the warm-up, which is what
+    /// produced "3 days remaining" thirty seconds into a print.
     var estimatedTimeLeft: TimeInterval? {
-        guard isActive, progress > 0.02, printDuration > 0 else { return nil }
+        if let backend = estimate?.remainingSeconds { return backend }
+        guard isActive, progress > 0.08, printDuration > 0 else { return nil }
         let total = printDuration / progress
         return max(0, total - printDuration)
+    }
+
+    /// Where the number above came from, when the backend supplied it.
+    var estimateMethodText: String? {
+        guard let estimate, estimate.remainingSeconds != nil else { return nil }
+        return L.isArabic ? estimate.methodAR : estimate.methodEN
     }
 
     var estimatedFinishDate: Date? {

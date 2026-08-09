@@ -1275,3 +1275,9 @@
 "condition.filament_runout.title" = "Filament ran out";
 "condition.filament_runout.switch" = "The filament sensor sees no filament and the print paused automatically. Load a new spool and feed it until the sensor detects it, then resume.";
 "condition.filament_runout.motion" = "The motion sensor says the filament has stopped moving - it either ran out or jammed. Check the spool and the extruder before resuming.";
+
+"print.remaining.unknown" = "Too early to say";
+"estimate.calibration" = "Time estimate calibration";
+"estimate.calibration.learned" = "Your prints take %@ of what the slicer predicts (%d prints)";
+"estimate.calibration.learning" = "Still learning — needs %d completed prints";
+"estimate.source.file" = "Estimating from file progress only — this G-code carries no filament total, which is a more accurate signal when present.";

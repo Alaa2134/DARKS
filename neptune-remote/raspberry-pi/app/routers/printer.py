@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -36,9 +38,26 @@ ACTIONS = {
 }
 
 
+# How stale the polled status may be before this endpoint refetches. The
+# monitor polls every second, so the cached one is almost always current.
+STATUS_MAX_AGE_SECONDS = 3.0
+
+
 @router.get("/printer/status", response_model=PrinterStatusResponse)
 async def printer_status(state: AppState = Depends(get_state)) -> PrinterStatusResponse:
+    """The same status the WebSocket broadcasts, including the same estimate.
+
+    Served from the monitor's own last poll when it is fresh. Refetching here
+    used to hand back a *different* remaining-time value than the socket,
+    because the estimator lives on the monitor - one API, two answers to the
+    same question.
+    """
+    age = time.time() - state._last_status_at
+    if state.last_status.online and age <= STATUS_MAX_AGE_SECONDS:
+        return state.last_status
+
     status = await fetch_status(state.moonraker)
+    await state.apply_estimate(status)
     state.last_status = status
     return status
 

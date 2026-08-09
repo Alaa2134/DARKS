@@ -121,6 +121,11 @@ class PrinterStatusResponse(BaseModel):
     extrude_factor: float = 1.0
     fan_speed: float = 0.0
     filament_sensors: Dict[str, FilamentSensorState] = Field(default_factory=dict)
+    #: How `estimated_time_left` was arrived at - the method, the confidence,
+    #: and the calibration factor learned from this printer's own history.
+    #: Reported so the UI can say where the number came from instead of
+    #: presenting every guess with the same authority.
+    estimate: Optional[Dict[str, Any]] = None
     thumbnail_path: Optional[str] = None
     error: Optional[str] = None
     raw: Dict[str, Any] = Field(default_factory=dict)
@@ -333,6 +338,9 @@ class HistoryEntry(BaseModel):
     result: str = "in_progress"  # in_progress | completed | cancelled | error
     filament_used_mm: Optional[float] = None
     estimated_filament_mm: Optional[float] = None
+    #: What the slicer predicted for this file. With `duration` it forms one
+    #: calibration sample: how wrong the slicer is on this machine.
+    estimated_seconds: Optional[float] = None
     nozzle_temp: Optional[float] = None
     bed_temp: Optional[float] = None
     speed_profile: Optional[str] = None
