@@ -15,6 +15,7 @@ Checks:
 
 from __future__ import annotations
 
+import pathlib
 import re
 import subprocess
 import sys
@@ -242,6 +243,63 @@ def parse_strings(path: Path) -> dict[str, str]:
     return result
 
 
+def check_screens_are_reachable() -> None:
+    """Every screen must be constructed from somewhere other than itself.
+
+    A View nobody navigates to compiles, ships, and is invisible - which is
+    exactly how a release went out where three finished screens could not be
+    opened at all. The user's report was "the app looks no different", and
+    nothing in the build caught it.
+
+    A screen here is a View whose name ends in `View` and which sets a
+    navigation title, since that is what distinguishes a destination from a
+    card or a row.
+    """
+    print("\nScreen reachability")
+    files = sorted(p for p in IOS.rglob("*.swift") if ".xcodeproj" not in str(p))
+    sources = {path: path.read_text(encoding="utf-8") for path in files}
+
+    destinations: dict[str, pathlib.Path] = {}
+    for path, text in sources.items():
+        for name in re.findall(r"struct (\w+View)\s*:\s*View", text):
+            # A navigation title is what makes it a place rather than a piece.
+            body = text.split(f"struct {name}", 1)[1]
+            if ".navigationTitle(" in body:
+                destinations[name] = path
+
+    unreachable = []
+    for name, owner in destinations.items():
+        # `Name(`, `Name()` and `Name { ... }` are all construction - the last
+        # one is a trailing closure and has no parentheses at all.
+        pattern = re.compile(rf"\b{name}\s*[({{]")
+        referenced = False
+        for path, text in sources.items():
+            for line in text.splitlines():
+                # Skip the declaration itself; a screen declared beside its
+                # parent in one file is still perfectly reachable.
+                if re.search(rf"struct\s+{name}\s*:", line):
+                    continue
+                if pattern.search(line):
+                    referenced = True
+                    break
+            if referenced:
+                break
+        # The root screens are presented by the tab bar / app entry point,
+        # which some builds do by value rather than by construction.
+        if not referenced and name not in ROOT_SCREENS:
+            unreachable.append(name)
+
+    check(
+        f"all {len(destinations)} screens reachable",
+        not unreachable,
+        "no navigation to: " + ", ".join(sorted(unreachable)),
+    )
+
+
+#: Screens the app shell owns; they need no inbound navigation.
+ROOT_SCREENS = {"RootView", "HomeView", "FilesView", "LibraryView", "SliceView"}
+
+
 def check_localization() -> None:
     print("\nLocalisation")
     resources = IOS / "NeptuneRemote" / "Resources"
@@ -467,6 +525,7 @@ def main() -> int:
     print("Neptune 3 Plus Remote - project verification")
     check_project()
     check_swift_syntax()
+    check_screens_are_reachable()
     check_localization()
     check_secrets()
     check_backend()

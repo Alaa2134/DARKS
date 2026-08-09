@@ -1369,3 +1369,7 @@
 "insights.not_enough" = "عينة صغيرة";
 "insights.counts" = "%d نجحت من %d";
 "insights.early" = "%d فشل بدري";
+
+"anomaly.evidence" = "الأرقام اللي الحساب اتعمل منها";
+
+"preflight.open" = "افحص الملف قبل الطباعة";

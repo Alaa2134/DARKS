@@ -1369,3 +1369,7 @@
 "insights.not_enough" = "Small sample";
 "insights.counts" = "%d of %d succeeded";
 "insights.early" = "%d failed early";
+
+"anomaly.evidence" = "The numbers behind this";
+
+"preflight.open" = "Check the file before printing";

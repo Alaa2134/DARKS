@@ -164,6 +164,24 @@ struct GCodeDetailView: View {
             .controlSize(.large)
             .disabled(printer.snapshot.isActive)
 
+            // The automated counterpart to the manual checklist: it reads the
+            // actual G-code and reports what is wrong with it. It existed,
+            // worked, and had no way in until the reachability check found it.
+            NavigationLink {
+                PreflightView(filename: file.path) {
+                    Task {
+                        await files.startPrint(file)
+                        dismiss()
+                    }
+                }
+            } label: {
+                Label(L.t("preflight.open"), systemImage: "checklist.checked")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .disabled(printer.snapshot.isActive)
+
             Button {
                 Task {
                     isWorking = true

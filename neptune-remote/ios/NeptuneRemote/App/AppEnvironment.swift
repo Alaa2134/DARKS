@@ -25,6 +25,7 @@ final class AppEnvironment: ObservableObject {
     private var announcedVisionEvents = Set<String>()
     private var announcedMaintenance = false
     private var announcedFilamentLow = false
+    private var lastAnomalyRefresh = Date.distantPast
 
     init() {
         let settings = AppSettings()
@@ -67,6 +68,21 @@ final class AppEnvironment: ObservableObject {
         inventory.apply(summary)
         announce(summary)
         syncLiveActivity(summary)
+        refreshAnomalies()
+    }
+
+    /// Telemetry findings, refreshed while a print is running.
+    ///
+    /// Throttled to once a minute rather than following the summary frame: the
+    /// checks behind it need tens of layers before they say anything, so
+    /// polling on every frame would be a request per second for a value that
+    /// cannot have changed.
+    private func refreshAnomalies() {
+        guard printer.snapshot.isActive else { return }
+        let now = Date()
+        guard now.timeIntervalSince(lastAnomalyRefresh) > 60 else { return }
+        lastAnomalyRefresh = now
+        Task { await calibration.refreshAnomalies() }
     }
 
     /// Keeps the lock screen / Dynamic Island in step with the print. The

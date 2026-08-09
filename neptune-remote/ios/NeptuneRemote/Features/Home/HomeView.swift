@@ -7,6 +7,7 @@ struct HomeView: View {
     @EnvironmentObject private var printer: PrinterStore
     @EnvironmentObject private var files: FilesStore
     @EnvironmentObject private var alerts: AlertStore
+    @EnvironmentObject private var calibration: CalibrationStore
 
     @State private var showingPowerOffWarning = false
     @State private var showingPreheatSheet = false
@@ -34,6 +35,13 @@ struct HomeView: View {
                 // Anything that needs attention, worst first. Empty when the
                 // printer is fine, so stale warnings clear themselves.
                 ConditionList()
+
+                // What the telemetry says, which the camera and Klipper both
+                // miss: a clog forming as a slow drift in layer time, the
+                // extruder slipping, a heater losing its grip. Placed here
+                // because a clog is only actionable while the print is still
+                // running - on a settings page it would be a post-mortem.
+                AnomalyList()
 
                 PowerCard(
                     power: printer.power,
