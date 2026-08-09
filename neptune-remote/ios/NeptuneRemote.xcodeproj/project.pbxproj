@@ -73,6 +73,7 @@
 		A75F726275E9D379775415A6 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Theme.swift"; sourceTree = "<group>"; };
 		F043F5846C70B972509C1D0B /* ControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ControlView.swift"; sourceTree = "<group>"; };
 		26EFEB7B000562E879446D60 /* JogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "JogView.swift"; sourceTree = "<group>"; };
+		5B9106E6CF90BB69B03C5FAF /* LightsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LightsCard.swift"; sourceTree = "<group>"; };
 		31E1916008A5AB3CD8292B22 /* SpeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SpeedView.swift"; sourceTree = "<group>"; };
 		A029323C43B5B009E85C0BDD /* TemperatureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemperatureView.swift"; sourceTree = "<group>"; };
 		734E56CB6785876E464569E4 /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TerminalView.swift"; sourceTree = "<group>"; };
@@ -324,6 +325,7 @@
 			children = (
 				F043F5846C70B972509C1D0B /* ControlView.swift */,
 				26EFEB7B000562E879446D60 /* JogView.swift */,
+				5B9106E6CF90BB69B03C5FAF /* LightsCard.swift */,
 				31E1916008A5AB3CD8292B22 /* SpeedView.swift */,
 				A029323C43B5B009E85C0BDD /* TemperatureView.swift */,
 				734E56CB6785876E464569E4 /* TerminalView.swift */,
@@ -636,6 +638,7 @@
 		35FCB473A4886F280BCAC397 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75F726275E9D379775415A6 /* Theme.swift */; };
 		2DF7C0DD8BBF48D7AFB1E93F /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F043F5846C70B972509C1D0B /* ControlView.swift */; };
 		64E80F250A3F563C6F57F8EB /* JogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26EFEB7B000562E879446D60 /* JogView.swift */; };
+		6843D0D32B5C5FB0D8C6ED93 /* LightsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B9106E6CF90BB69B03C5FAF /* LightsCard.swift */; };
 		AB39CC34093D1148D92F0664 /* SpeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31E1916008A5AB3CD8292B22 /* SpeedView.swift */; };
 		0CABF05B700BE4A1557D4F0F /* TemperatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029323C43B5B009E85C0BDD /* TemperatureView.swift */; };
 		1AF02B0B705AB3D11668494A /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734E56CB6785876E464569E4 /* TerminalView.swift */; };
@@ -778,6 +781,7 @@
 				35FCB473A4886F280BCAC397 /* Theme.swift in Sources */,
 				2DF7C0DD8BBF48D7AFB1E93F /* ControlView.swift in Sources */,
 				64E80F250A3F563C6F57F8EB /* JogView.swift in Sources */,
+				6843D0D32B5C5FB0D8C6ED93 /* LightsCard.swift in Sources */,
 				AB39CC34093D1148D92F0664 /* SpeedView.swift in Sources */,
 				0CABF05B700BE4A1557D4F0F /* TemperatureView.swift in Sources */,
 				1AF02B0B705AB3D11668494A /* TerminalView.swift in Sources */,

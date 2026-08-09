@@ -55,6 +55,11 @@ are marked **UNVERIFIED G-CODE**.
 * Live printer state over Moonraker REST + WebSocket.
 * Jog, home, extrude, temperatures with presets, speed/flow/fan factors,
   velocity limits, and a full G-code terminal (Advanced Mode).
+* Lighting, when the printer has any: a `[neopixel]`, a `[led]`, or an
+  `[output_pin]` whose name says light. On, off, brightness on a PWM pin, colour
+  on an RGB strip. No light in `printer.cfg` means no switch — an unnamed output
+  pin is never toggled on a guess, because the same section also drives beepers,
+  lasers and mains relays.
 * Safety checklist before a remote print starts.
 * Emergency stop, always one tap away.
 

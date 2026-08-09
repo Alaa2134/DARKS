@@ -1115,6 +1115,17 @@
 "fan.not_controllable" = "%@ يتحكم فيها كليبر ولا يمكن ضبطها من هنا";
 "fan.section" = "المراوح";
 "fan.read_only" = "يديرها كليبر";
+
+"light.section" = "الإضاءة";
+"light.brightness" = "السطوع";
+"light.colour" = "اللون";
+"light.unknown" = "الحالة غير معروفة";
+"light.not_dimmable" = "البن ده إما مفتوح أو مقفول - مفيهوش pwm يعني مينفعش تخفّت النور";
+"light.no_colour" = "%@ قناة واحدة بس، مفيش لون تظبطه";
+"light.dimmable" = "بيتخفّت";
+"light.on_off" = "فتح / قفل";
+"light.none" = "مفيش أي لمبة في printer.cfg";
+"light.none.hint" = "التطبيق بيتحكم بس في الإضاءة اللي الطابعة نفسها بتقول عليها: [neopixel] أو [led] أو [output_pin] اسمه فيه كلمة نور. ضيف واحدة في printer.cfg وشغّل FIRMWARE_RESTART والمفتاح هيظهر هنا لوحده.";
 "control.axis_unknown" = "لم يتم العثور على حدود حركة لـ %@ في printer.cfg";
 "control.axis_not_homed" = "%@ لم يتم تصفيره";
 "control.axis_at_limit" = "%@ عند حده المضبوط بالفعل (%.1f إلى %.1f مم)";

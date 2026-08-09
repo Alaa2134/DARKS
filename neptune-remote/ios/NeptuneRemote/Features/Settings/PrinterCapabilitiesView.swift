@@ -26,6 +26,7 @@ struct PrinterCapabilitiesView: View {
                 axesSection
                 heatersSection
                 fansSection
+                lightsSection
                 sensorsSection
                 filamentSection
                 probeSection
@@ -153,6 +154,40 @@ struct PrinterCapabilitiesView: View {
                 }
             } header: {
                 Text(localized: "fan.section")
+            }
+        }
+    }
+
+    /// Unlike the other sections this one still appears when it is empty.
+    ///
+    /// "Where is the light switch?" has an answer - there is no light in this
+    /// printer.cfg - and a section that silently vanishes does not give it. The
+    /// hint says what to add to get one.
+    private var lightsSection: some View {
+        Section {
+            if capabilities.lights.isEmpty {
+                Text(localized: "light.none")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(capabilities.lights) { light in
+                    HStack {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(light.displayName)
+                            Text(light.object).font(.caption2).monospaced().foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text(localized: light.isDimmable ? "light.dimmable" : "light.on_off")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        } header: {
+            Text(localized: "light.section")
+        } footer: {
+            if capabilities.lights.isEmpty {
+                Text(localized: "light.none.hint")
             }
         }
     }

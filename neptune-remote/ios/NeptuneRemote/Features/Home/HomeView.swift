@@ -73,6 +73,10 @@ struct HomeView: View {
                     onCancel: { Task { await printer.cancelPrint() } }
                 )
 
+                // Only appears on a printer that actually has a light in its
+                // config; there is nothing to switch otherwise.
+                LightsCard()
+
                 MachineStateCard(snapshot: snapshot)
                 CameraPreviewCard()
                 ConnectionCard(

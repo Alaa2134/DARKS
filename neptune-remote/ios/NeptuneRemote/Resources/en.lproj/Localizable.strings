@@ -1115,6 +1115,17 @@
 "fan.not_controllable" = "%@ is driven by Klipper and cannot be set from here";
 "fan.section" = "Fans";
 "fan.read_only" = "Managed by Klipper";
+
+"light.section" = "Lighting";
+"light.brightness" = "Brightness";
+"light.colour" = "Colour";
+"light.unknown" = "state unknown";
+"light.not_dimmable" = "This pin is on or off - it has no pwm, so it cannot be dimmed";
+"light.no_colour" = "%@ has a single channel, so it has no colour to set";
+"light.dimmable" = "dimmable";
+"light.on_off" = "on / off";
+"light.none" = "No light was found in printer.cfg";
+"light.none.hint" = "The app only switches lights the printer reports: a [neopixel], a [led], or an [output_pin] whose name says light. Add one to printer.cfg, run FIRMWARE_RESTART, and the switch appears here on its own.";
 "control.axis_unknown" = "No travel limits were found for %@ in printer.cfg";
 "control.axis_not_homed" = "%@ is not homed";
 "control.axis_at_limit" = "%@ is already at its configured limit (%.1f to %.1f mm)";

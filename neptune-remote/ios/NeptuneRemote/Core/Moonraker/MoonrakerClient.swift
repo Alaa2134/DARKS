@@ -236,6 +236,31 @@ actor MoonrakerClient {
         ).result.status
     }
 
+    /// Raw status for objects that have no Swift type.
+    ///
+    /// `queryObjects` decodes the fixed set the dashboard renders. Anything
+    /// discovered at runtime - an LED chain, an output pin - cannot be modelled
+    /// in advance for the same reason printer.cfg cannot, so it is read as it
+    /// came and interpreted by whoever knows what it is.
+    func queryStatus(objects: [String]) async throws -> [String: ConfigValue] {
+        guard !objects.isEmpty else { return [:] }
+        struct Payload: Decodable {
+            let status: [String: ConfigValue]
+            enum CodingKeys: String, CodingKey { case status }
+            init(from decoder: Decoder) throws {
+                let container = try decoder.container(keyedBy: CodingKeys.self)
+                status = try container.decodeIfPresent(
+                    [String: ConfigValue].self, forKey: .status
+                ) ?? [:]
+            }
+        }
+        let query = objects.map { URLQueryItem(name: $0, value: nil) }
+        return try await http.decode(
+            MoonrakerEnvelope<Payload>.self,
+            from: try request("printer/objects/query", query: query)
+        ).result.status
+    }
+
     /// Full snapshot: server info + objects, tolerant of a disconnected Klipper.
     func snapshot() async throws -> PrinterSnapshot {
         let info = try await serverInfo()

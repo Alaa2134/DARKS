@@ -109,6 +109,118 @@ struct PrinterCapabilities: Equatable {
         }
     }
 
+    // MARK: - Lights
+
+    /// A light this printer actually has.
+    ///
+    /// Klipper has no "light" concept - it has pins and it has LED chains, and
+    /// what they are wired to is only known to whoever wired them. So the two
+    /// halves of this are discovered very differently:
+    ///
+    /// * `led` / `neopixel` / `dotstar` / `pca9533` / `pca9632` are LED drivers
+    ///   by definition. If one exists, it is a light.
+    /// * `[output_pin]` is a bare pin. The same section drives beepers, lasers,
+    ///   relays and mains-switching SSRs, and toggling one of those because the
+    ///   app decided it looked like a lamp would be the exact kind of guess this
+    ///   whole type exists to prevent. So an output pin is offered as a light
+    ///   only when its own name says so, and the object name is shown next to
+    ///   the switch so it is obvious which pin is about to move.
+    struct LightSpec: Equatable, Identifiable {
+        /// Klipper object name exactly as it must be addressed, e.g.
+        /// `output_pin caselight`, `neopixel toolhead`.
+        let object: String
+        /// Section kind: output_pin / led / neopixel / dotstar / pca9533 / pca9632.
+        let kind: String
+        /// The part after the kind. Always present - every one of these is a
+        /// named section.
+        let name: String
+        /// Whether it can sit between off and on. A PWM pin and every addressable
+        /// LED can; a plain digital pin cannot, and giving that one a brightness
+        /// slider would be a lie the hardware then rounds to on or off.
+        let isDimmable: Bool
+        /// Klipper's `scale` for an output pin. With `scale: 255` the user's own
+        /// macros write VALUE in 0-255, and sending 0.5 to that pin would look
+        /// like a failure rather than half brightness.
+        let scale: Double
+        /// Separate red/green/blue channels, so a colour is meaningful.
+        let hasColour: Bool
+        /// A dedicated white channel. Only set when the config actually says so
+        /// (`color_order` containing W, or a configured `white_pin`): driving
+        /// WHITE on a strip that has no white channel turns the light *off*.
+        let hasWhite: Bool
+
+        var id: String { object }
+
+        /// SET_LED addresses these; SET_PIN addresses an output pin.
+        var isAddressable: Bool { kind != "output_pin" }
+
+        var displayName: String {
+            name.replacingOccurrences(of: "_", with: " ")
+        }
+
+        /// White light at the given level, 0...1.
+        ///
+        /// `SYNC=0` on the LED form is deliberate. SET_LED defaults to syncing
+        /// with the movement queue, so during a print the light would not change
+        /// until the queued moves had run - which for a lamp reads as the button
+        /// not working.
+        func command(brightness: Double) -> String {
+            let level = min(max(brightness, 0), 1)
+            guard isAddressable else {
+                let value = isDimmable ? level : (level > 0 ? 1 : 0)
+                return String(format: "SET_PIN PIN=%@ VALUE=%.3f", name, value * scale)
+            }
+            if hasWhite {
+                return String(
+                    format: "SET_LED LED=%@ RED=0 GREEN=0 BLUE=0 WHITE=%.3f SYNC=0", name, level
+                )
+            }
+            return String(
+                format: "SET_LED LED=%@ RED=%.3f GREEN=%.3f BLUE=%.3f SYNC=0",
+                name, level, level, level
+            )
+        }
+
+        /// A specific colour, or nil when this light has no colour to set.
+        func command(red: Double, green: Double, blue: Double) -> String? {
+            guard isAddressable, hasColour else { return nil }
+            let clamp = { (value: Double) in min(max(value, 0), 1) }
+            return String(
+                format: "SET_LED LED=%@ RED=%.3f GREEN=%.3f BLUE=%.3f SYNC=0",
+                name, clamp(red), clamp(green), clamp(blue)
+            )
+        }
+
+        /// How bright Klipper says this light currently is, 0...1.
+        ///
+        /// Returns nil when the object reported nothing recognisable, which the
+        /// UI shows as unknown rather than as off - a switch that claims "off"
+        /// about a lamp that is on is worse than one that admits it does not
+        /// know yet.
+        func brightness(fromStatus status: [String: ConfigValue]) -> Double? {
+            guard isAddressable else {
+                // Klipper divides by `scale` before storing, so `value` is
+                // already 0...1 no matter what the user's macros write.
+                return status.double("value").map { min(max($0, 0), 1) }
+            }
+            guard let first = status.value("color_data")?.arrayValue?.first else { return nil }
+            let channels: [Double]
+            if let list = first.numberList {
+                channels = list
+            } else if let entry = first.objectValue {
+                // Some Klipper builds report each LED as a named channel map
+                // instead of a 4-tuple.
+                channels = ["R", "G", "B", "W"].compactMap {
+                    entry.double($0) ?? entry.double($0.lowercased())
+                }
+            } else {
+                return nil
+            }
+            guard let brightest = channels.max() else { return nil }
+            return min(max(brightest, 0), 1)
+        }
+    }
+
     // MARK: - Sensors
 
     struct SensorSpec: Equatable, Identifiable {
@@ -210,6 +322,7 @@ struct PrinterCapabilities: Equatable {
 
     var heaters: [HeaterSpec] = []
     var fans: [FanSpec] = []
+    var lights: [LightSpec] = []
     var temperatureSensors: [SensorSpec] = []
     var filamentSensors: [FilamentSensorSpec] = []
 
@@ -255,6 +368,8 @@ struct PrinterCapabilities: Equatable {
     var primaryExtruder: HeaterSpec? { extruders.first { $0.object == "extruder" } ?? extruders.first }
 
     var controllableFans: [FanSpec] { fans.filter(\.isControllable) }
+
+    var hasLights: Bool { !lights.isEmpty }
 
     func has(_ object: String) -> Bool {
         objects.contains { $0 == object || $0.hasPrefix("\(object) ") }

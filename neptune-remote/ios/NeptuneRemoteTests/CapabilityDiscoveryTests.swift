@@ -184,6 +184,132 @@ final class CapabilityDiscoveryTests: XCTestCase {
         XCTAssertNil(managed?.speedCommand(percent: 100), "must not invent a command")
     }
 
+    // MARK: - Lights
+
+    /// The stock machine has no light, and discovery must say so rather than
+    /// offering a switch for something that does not exist.
+    func testNoLightIsFoundWhenTheConfigHasNone() {
+        let capabilities = build()
+        XCTAssertTrue(capabilities.lights.isEmpty)
+        XCTAssertFalse(capabilities.hasLights)
+    }
+
+    /// An `[output_pin]` is a bare pin: the same section drives beepers, lasers
+    /// and mains relays. Only a pin whose own name says "light" is offered, and
+    /// the rest are left alone - switching one on a hunch is the failure this
+    /// guards against.
+    func testOnlyLightNamedOutputPinsAreOfferedAsLights() {
+        let capabilities = CapabilityDiscovery.build(
+            settings: decode("""
+            {
+              "output_pin caselight": { "pwm": true, "scale": 255 },
+              "output_pin beeper": { "pwm": true },
+              "output_pin chamber_fan": { "pwm": true },
+              "output_pin laser": { "pwm": false }
+            }
+            """),
+            objects: [
+                "output_pin caselight", "output_pin beeper",
+                "output_pin chamber_fan", "output_pin laser"
+            ]
+        )
+        XCTAssertEqual(capabilities.lights.map(\.object), ["output_pin caselight"])
+    }
+
+    /// Klipper divides a written VALUE by `scale`, so a pin configured in 0-255
+    /// has to be commanded in 0-255. Sending 1.0 to it would be barely on.
+    func testOutputPinCommandRespectsScaleAndPWM() throws {
+        let capabilities = CapabilityDiscovery.build(
+            settings: decode("""
+            {
+              "output_pin caselight": { "pwm": true, "scale": 255 },
+              "output_pin led_strip": { "pwm": false }
+            }
+            """),
+            objects: ["output_pin caselight", "output_pin led_strip"]
+        )
+        let dimmable = try XCTUnwrap(capabilities.lights.first { $0.name == "caselight" })
+        XCTAssertTrue(dimmable.isDimmable)
+        XCTAssertEqual(dimmable.command(brightness: 1), "SET_PIN PIN=caselight VALUE=255.000")
+        XCTAssertEqual(dimmable.command(brightness: 0.5), "SET_PIN PIN=caselight VALUE=127.500")
+        XCTAssertEqual(dimmable.command(brightness: 0), "SET_PIN PIN=caselight VALUE=0.000")
+
+        // No pwm means the pin has two states, and a half-way request has to
+        // become one of them rather than being sent as a fraction.
+        let plain = try XCTUnwrap(capabilities.lights.first { $0.name == "led_strip" })
+        XCTAssertFalse(plain.isDimmable)
+        XCTAssertEqual(plain.command(brightness: 0.4), "SET_PIN PIN=led_strip VALUE=1.000")
+        XCTAssertEqual(plain.command(brightness: 0), "SET_PIN PIN=led_strip VALUE=0.000")
+    }
+
+    /// A white channel is only used when the config proves there is one.
+    /// Driving WHITE on a three-channel strip turns the light off.
+    func testWhiteChannelIsOnlyUsedWhenConfigured() throws {
+        let capabilities = CapabilityDiscovery.build(
+            settings: decode("""
+            {
+              "neopixel chamber": { "color_order": "GRBW", "chain_count": 12 },
+              "neopixel toolhead": { "chain_count": 3 },
+              "led bar": { "red_pin": "PA1", "green_pin": "PA2", "blue_pin": "PA3" }
+            }
+            """),
+            objects: ["neopixel chamber", "neopixel toolhead", "led bar"]
+        )
+        let rgbw = try XCTUnwrap(capabilities.lights.first { $0.name == "chamber" })
+        XCTAssertTrue(rgbw.hasWhite)
+        XCTAssertEqual(
+            rgbw.command(brightness: 1),
+            "SET_LED LED=chamber RED=0 GREEN=0 BLUE=0 WHITE=1.000 SYNC=0"
+        )
+
+        // No color_order at all: Klipper's default is GRB, so colour but no
+        // white - and the command has to fall back to equal RGB.
+        let rgb = try XCTUnwrap(capabilities.lights.first { $0.name == "toolhead" })
+        XCTAssertFalse(rgb.hasWhite)
+        XCTAssertTrue(rgb.hasColour)
+        XCTAssertEqual(
+            rgb.command(brightness: 0.5),
+            "SET_LED LED=toolhead RED=0.500 GREEN=0.500 BLUE=0.500 SYNC=0"
+        )
+
+        // A [led] is whichever pins were wired; this one has no white_pin.
+        let wired = try XCTUnwrap(capabilities.lights.first { $0.name == "bar" })
+        XCTAssertTrue(wired.hasColour)
+        XCTAssertFalse(wired.hasWhite)
+    }
+
+    /// A single-channel pin has no colour, and must refuse rather than quietly
+    /// reinterpreting a colour as a brightness.
+    func testColourIsRefusedOnASingleChannelLight() throws {
+        let capabilities = CapabilityDiscovery.build(
+            settings: decode(#"{"output_pin caselight": {"pwm": true}}"#),
+            objects: ["output_pin caselight"]
+        )
+        let light = try XCTUnwrap(capabilities.lights.first)
+        XCTAssertNil(light.command(red: 1, green: 0, blue: 0))
+    }
+
+    /// Reading state back: an output pin reports `value`, an LED reports
+    /// `color_data`, and anything unrecognised is nil - unknown, not off.
+    func testBrightnessIsReadFromTheStatusObject() throws {
+        let pin = PrinterCapabilities.LightSpec(
+            object: "output_pin caselight", kind: "output_pin", name: "caselight",
+            isDimmable: true, scale: 255, hasColour: false, hasWhite: false
+        )
+        // Klipper stores the pin value already divided by scale, so it is 0...1
+        // here even though commands are written in 0-255.
+        XCTAssertEqual(pin.brightness(fromStatus: decode(#"{"value": 0.6}"#)), 0.6)
+        XCTAssertNil(pin.brightness(fromStatus: decode("{}")))
+
+        let strip = PrinterCapabilities.LightSpec(
+            object: "neopixel chamber", kind: "neopixel", name: "chamber",
+            isDimmable: true, scale: 1, hasColour: true, hasWhite: true
+        )
+        let status = decode(#"{"color_data": [[0.0, 0.0, 0.0, 0.8], [0.0, 0.0, 0.0, 0.8]]}"#)
+        XCTAssertEqual(strip.brightness(fromStatus: status), 0.8)
+        XCTAssertNil(strip.brightness(fromStatus: decode(#"{"color_data": []}"#)))
+    }
+
     // MARK: - Probe, mesh, shaper
 
     /// The probe is whichever section exists. Assuming BLTouch is exactly the

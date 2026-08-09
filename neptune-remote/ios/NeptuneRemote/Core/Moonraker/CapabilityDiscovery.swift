@@ -22,6 +22,17 @@ enum CapabilityDiscovery {
 
     static let accelerometerKinds = ["adxl345", "lis2dw", "lis3dh", "mpu9250", "icm20948"]
 
+    /// Sections that are LED drivers by definition - if one is configured, it
+    /// is driving light and nothing else.
+    static let ledKinds = ["led", "neopixel", "dotstar", "pca9533", "pca9632"]
+
+    /// What an `[output_pin]` has to be called before the app will offer to
+    /// switch it as a light. The same section drives beepers, lasers, relays and
+    /// mains SSRs; nothing in the config distinguishes them, so the only honest
+    /// signal is the name the user chose. Deliberately narrow: "chamber" and
+    /// "case" are not here, because `output_pin chamber_fan` is a real thing.
+    static let lightNameHints = ["led", "light", "lamp", "lumin", "illum", "glow"]
+
     // MARK: - Entry point
 
     static func build(
@@ -42,6 +53,7 @@ enum CapabilityDiscovery {
         capabilities.safeZHome = safeZHome(from: settings)
         capabilities.heaters = heaters(from: settings, objects: objects)
         capabilities.fans = fans(from: settings, objects: objects)
+        capabilities.lights = lights(from: settings, objects: objects)
         capabilities.temperatureSensors = sensors(from: settings, objects: objects)
         capabilities.filamentSensors = filamentSensors(from: settings, objects: objects)
         capabilities.bedMesh = bedMesh(from: settings, objects: objects, profiles: meshProfiles)
@@ -168,6 +180,83 @@ enum CapabilityDiscovery {
             if ($0.kind == "fan") != ($1.kind == "fan") { return $0.kind == "fan" }
             return $0.object.localizedCaseInsensitiveCompare($1.object) == .orderedAscending
         }
+    }
+
+    // MARK: - Lights
+
+    /// Every light this machine has, and nothing else.
+    ///
+    /// LED drivers are taken as they come. Output pins are taken only when their
+    /// name says "light", because the app must never switch an unknown pin on a
+    /// hunch - see `LightSpec` for why that matters.
+    static func lights(
+        from settings: [String: ConfigValue],
+        objects: [String]
+    ) -> [PrinterCapabilities.LightSpec] {
+        var result: [PrinterCapabilities.LightSpec] = []
+        for object in objects {
+            let (kind, name) = split(object)
+            guard let name, !name.isEmpty else { continue }
+            let section = settings.section(object) ?? settings.section("\(kind) \(name)") ?? [:]
+
+            if ledKinds.contains(kind) {
+                // Klipper's own defaults: neopixel is GRB, so colour without a
+                // white channel unless the config says otherwise. A `[led]` is
+                // whichever pins were actually wired.
+                let order = (section.string("color_order") ?? "")
+                    .split(whereSeparator: { $0 == "," || $0 == " " })
+                    .first
+                    .map { $0.uppercased() } ?? ""
+                let hasColour: Bool
+                let hasWhite: Bool
+                if kind == "led" {
+                    hasColour = section.value("red_pin") != nil
+                        && section.value("green_pin") != nil
+                        && section.value("blue_pin") != nil
+                    hasWhite = section.value("white_pin") != nil
+                } else if order.isEmpty {
+                    hasColour = true
+                    hasWhite = false
+                } else {
+                    hasColour = order.contains("R") && order.contains("G") && order.contains("B")
+                    hasWhite = order.contains("W")
+                }
+                result.append(
+                    PrinterCapabilities.LightSpec(
+                        object: object,
+                        kind: kind,
+                        name: name,
+                        isDimmable: true,
+                        scale: 1,
+                        hasColour: hasColour,
+                        hasWhite: hasWhite
+                    )
+                )
+                continue
+            }
+
+            guard kind == "output_pin", isLightName(name) else { continue }
+            result.append(
+                PrinterCapabilities.LightSpec(
+                    object: object,
+                    kind: kind,
+                    name: name,
+                    isDimmable: section.bool("pwm") ?? false,
+                    // Klipper's default when the option is absent.
+                    scale: section.double("scale") ?? 1,
+                    hasColour: false,
+                    hasWhite: false
+                )
+            )
+        }
+        return result.sorted {
+            $0.object.localizedCaseInsensitiveCompare($1.object) == .orderedAscending
+        }
+    }
+
+    static func isLightName(_ name: String) -> Bool {
+        let lowered = name.lowercased()
+        return lightNameHints.contains { lowered.contains($0) }
     }
 
     // MARK: - Sensors

@@ -29,6 +29,11 @@ final class PrinterStore: ObservableObject {
     @Published private(set) var capabilities = PrinterCapabilities()
     @Published private(set) var capabilityError: APIError?
     private var capabilityTask: Task<Void, Never>?
+
+    /// Brightness per discovered light, 0...1, keyed by Klipper object name.
+    /// A light missing from here has not answered yet - which the switch shows
+    /// as unknown rather than claiming it is off.
+    @Published private(set) var lightLevels: [String: Double] = [:]
     /// Set when Moonraker or the backend rejected our credentials. Tracked
     /// separately from "not connected" because the fix is different: the user
     /// has to correct an API key, not chase a network.
@@ -628,6 +633,63 @@ final class PrinterStore: ObservableObject {
         return await send(gcode: command)
     }
 
+    // MARK: - Lights
+
+    /// Turns a discovered light up or down, 0...1.
+    ///
+    /// The value is applied locally first so the switch answers immediately, and
+    /// then confirmed from the printer: if Klipper rejected the command, the
+    /// re-read puts the control back where the hardware actually is instead of
+    /// leaving the UI showing a light that never came on.
+    @discardableResult
+    func setLight(_ light: PrinterCapabilities.LightSpec, brightness: Double) async -> Bool {
+        let level = min(max(brightness, 0), 1)
+        lightLevels[light.object] = light.isDimmable ? level : (level > 0 ? 1 : 0)
+        Haptics.impact(.light)
+        let ok = await send(gcode: light.command(brightness: level))
+        await refreshLights()
+        return ok
+    }
+
+    /// Sets a colour on a light that has colour channels. Refuses otherwise
+    /// rather than sending RED/GREEN/BLUE to a single-channel pin.
+    @discardableResult
+    func setLight(
+        _ light: PrinterCapabilities.LightSpec,
+        red: Double,
+        green: Double,
+        blue: Double
+    ) async -> Bool {
+        guard let command = light.command(red: red, green: green, blue: blue) else {
+            lastError = .unsafeOperation([L.t("light.no_colour", light.displayName)])
+            return false
+        }
+        lightLevels[light.object] = max(max(red, green), blue)
+        Haptics.impact(.light)
+        let ok = await send(gcode: command)
+        await refreshLights()
+        return ok
+    }
+
+    /// Reads the current level of every discovered light.
+    ///
+    /// Lights are polled rather than streamed: they are subscribed to along with
+    /// everything else, but the socket payload is decoded into a fixed set of
+    /// dashboard objects, and a lamp does not need sub-second latency.
+    func refreshLights() async {
+        let lights = capabilities.lights
+        guard !lights.isEmpty, !settings.demoMode else { return }
+        guard let status = try? await moonraker.queryStatus(objects: lights.map(\.object)) else {
+            return
+        }
+        for light in lights {
+            guard let section = status.section(light.object),
+                  let level = light.brightness(fromStatus: section)
+            else { continue }
+            lightLevels[light.object] = level
+        }
+    }
+
     // MARK: - Macros
 
     /// Runs a macro Klipper reported. Nothing is invented: the name came from
@@ -1048,6 +1110,10 @@ final class PrinterStore: ObservableObject {
                 capabilities = discovered
                 // The set of objects worth subscribing to changed with it.
                 await resubscribe()
+                lightLevels = lightLevels.filter { key, _ in
+                    discovered.lights.contains { $0.object == key }
+                }
+                await refreshLights()
             } else {
                 capabilities.homedAxes = discovered.homedAxes
             }
@@ -1071,6 +1137,7 @@ final class PrinterStore: ObservableObject {
         names.formUnion(capabilities.temperatureSensors.map(\.object))
         names.formUnion(capabilities.filamentSensors.map(\.object))
         names.formUnion(capabilities.heaters.map(\.object))
+        names.formUnion(capabilities.lights.map(\.object))
         if capabilities.hasBedMesh { names.insert("bed_mesh") }
         if capabilities.hasExcludeObject { names.insert("exclude_object") }
         if capabilities.hasPauseResume { names.insert("pause_resume") }
