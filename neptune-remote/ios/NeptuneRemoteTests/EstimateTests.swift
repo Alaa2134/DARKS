@@ -31,8 +31,11 @@ final class EstimateTests: XCTestCase {
         method: String = "slicer_calibrated",
         confidence: Double = 0.8
     ) throws -> PrintEstimate {
-        try decode(PrintEstimate.self, """
-        {"remaining_seconds": \(remaining.map(String.init) ?? "null"),
+        // Interpolated rather than `String.init`: that initialiser has enough
+        // overloads that the compiler cannot pick one inside a string literal.
+        let remainingJSON: String = remaining.map { "\($0)" } ?? "null"
+        return try decode(PrintEstimate.self, """
+        {"remaining_seconds": \(remainingJSON),
          "total_seconds": 17000, "method": "\(method)",
          "method_ar": "من تقدير السلايسر، معايَر على طابعتك",
          "method_en": "Slicer estimate, calibrated to this printer",
