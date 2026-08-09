@@ -2,21 +2,136 @@
 
 from __future__ import annotations
 
-from typing import List
+from typing import Any, Dict, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 
 from ..deps import get_state
 from ..schemas import OKResponse, SliceJob, SliceJobSummary, SliceRequest
 from ..security import require_token
+from ..slicer import modes as print_modes
 from ..state import AppState
 
 router = APIRouter(dependencies=[Depends(require_token)])
 
 
+@router.get("/slice/modes")
+async def slice_modes(
+    printer_profile: str = Query("neptune3plus_0.4"),
+    filament_profile: str = Query("pla"),
+    state: AppState = Depends(get_state),
+) -> Dict[str, Any]:
+    """Every print mode, resolved against this printer and this material.
+
+    A mode is an intent - draft, strong, fine detail - not a fixed set of
+    numbers. What it becomes depends on the nozzle, on how fast the material
+    can melt, and on the machine's own limits, so the same mode is genuinely
+    different settings on PLA and on PETG. Anything that had to be clamped
+    comes back with both numbers and the reason, because a mode called "fast"
+    that the printer then silently slows down is worse than no mode at all.
+    """
+    printer = state.profiles.get("printer", printer_profile)
+    filament = state.profiles.get("filament", filament_profile)
+
+    # The live config is what Klipper actually enforces; the slicer's printer
+    # profile is only a description of it and can drift out of date.
+    config = await state.refresh_live_config()
+    max_accel = config.max_accel() if config else None
+    max_velocity = config.max_velocity() if config else None
+
+    modes = []
+    for spec_id in print_modes.MODES:
+        base = print_modes.MODES[spec_id].base_profile
+        print_profile = state.profiles.get("print", base)
+        resolved = print_modes.resolve(
+            spec_id,
+            printer_values=printer.values if printer else None,
+            filament_values=filament.values if filament else None,
+            print_values=print_profile.values if print_profile else None,
+            max_accel=max_accel,
+            max_velocity=max_velocity,
+        )
+        if resolved is not None:
+            modes.append(resolved)
+
+    print_modes.annotate_comparison(modes)
+
+    return {
+        "modes": [mode.to_dict() for mode in modes],
+        "printer_profile": printer_profile,
+        "filament_profile": filament_profile,
+        "limits_from_config": config is not None,
+        "max_accel": max_accel,
+        "max_velocity": max_velocity,
+    }
+
+
+def _apply_mode(request: SliceRequest, state: AppState) -> SliceRequest:
+    """Fill in the settings a named mode implies.
+
+    Explicit fields win. The mode decides what the caller did not, so a phone
+    can send `{"model_id": ..., "mode": "strong"}` and still override one value
+    without having to restate the other eleven.
+
+    The live config is not consulted here: this path runs on every slice and
+    reading printer.cfg costs a Moonraker round trip. The profile limits are
+    close enough for the settings themselves, and /slice/modes - which the user
+    is looking at when they choose - does use the live values.
+    """
+    printer = state.profiles.get("printer", request.printer_profile)
+    filament = state.profiles.get("filament", request.filament_profile)
+    spec = print_modes.MODES.get(request.mode or "")
+    if spec is None:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Unknown print mode '{request.mode}' "
+                f"(available: {', '.join(print_modes.MODES)})"
+            ),
+        )
+
+    print_profile = state.profiles.get("print", spec.base_profile)
+    resolved = print_modes.resolve(
+        request.mode,
+        printer_values=printer.values if printer else None,
+        filament_values=filament.values if filament else None,
+        print_values=print_profile.values if print_profile else None,
+    )
+    if resolved is None:
+        return request
+
+    updated = request.model_copy()
+    if updated.print_profile == "standard":
+        # Only when the caller left it at the default - an explicitly chosen
+        # profile is a decision the mode must not overwrite.
+        updated.print_profile = resolved.base_profile
+    for field, value in resolved.overrides().items():
+        if field == "print_profile":
+            continue
+        if getattr(updated, field, None) is None:
+            setattr(updated, field, value)
+
+    speeds = dict(resolved.speed_overrides())
+    speeds.update(updated.speed_profile_overrides)
+    updated.speed_profile_overrides = speeds
+    return updated
+
+
 @router.post("/slice", response_model=SliceJob, status_code=202)
 async def start_slice(request: SliceRequest, state: AppState = Depends(get_state)) -> SliceJob:
+    # Checked first: a misspelled mode is the caller's mistake and has nothing
+    # to do with whether a slicer is installed, so it should not be reported as
+    # a 503 about PrusaSlicer.
+    if request.mode and request.mode not in print_modes.MODES:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Unknown print mode '{request.mode}' "
+                f"(available: {', '.join(print_modes.MODES)})"
+            ),
+        )
+
     # Verify rather than just look for the file. An installed slicer that
     # cannot start - a missing system locale is the usual cause on a fresh
     # Raspberry Pi OS image - would otherwise be accepted here and fail deep
@@ -31,6 +146,9 @@ async def start_slice(request: SliceRequest, state: AppState = Depends(get_state
                 + " Run raspberry-pi/install.sh or install prusa-slicer manually."
             ),
         )
+    if request.mode:
+        request = _apply_mode(request, state)
+
     for kind, profile_id in (
         ("printer", request.printer_profile),
         ("filament", request.filament_profile),

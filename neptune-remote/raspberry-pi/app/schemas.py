@@ -236,6 +236,14 @@ class SliceRequest(BaseModel):
     filament_profile: str = "pla"
     print_profile: str = "standard"
 
+    #: A print mode - draft | fast | balanced | quality | strong | miniature.
+    #:
+    #: Naming one fills in the layer height, perimeters, infill, speeds and
+    #: acceleration, resolved against this nozzle, this material's melt rate
+    #: and the machine's own limits. Any field the caller also sets explicitly
+    #: wins, so a mode is a starting point rather than a cage.
+    mode: Optional[str] = None
+
     layer_height: Optional[float] = None
     first_layer_height: Optional[float] = None
     nozzle_diameter: Optional[float] = None
