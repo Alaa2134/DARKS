@@ -308,14 +308,25 @@ struct HistoryRow: View {
         switch entry.result {
         case "completed": return Theme.printing
         case "cancelled": return Theme.paused
-        case "error": return Theme.danger
+        case "error", "interrupted": return Theme.danger
         default: return Theme.idle
+        }
+    }
+
+    /// "interrupted" is a print the backend closed on startup after finding it
+    /// still marked in progress - the power went out and nothing ever wrote a
+    /// finish event. A bolt reads better than a generic failure cross.
+    private var resultIcon: String {
+        switch entry.result {
+        case "completed": return "checkmark.seal.fill"
+        case "interrupted": return "bolt.slash.fill"
+        default: return "xmark.seal.fill"
         }
     }
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: entry.result == "completed" ? "checkmark.seal.fill" : "xmark.seal.fill")
+            Image(systemName: resultIcon)
                 .foregroundStyle(resultColor)
                 .font(.title3)
                 .frame(width: 30)

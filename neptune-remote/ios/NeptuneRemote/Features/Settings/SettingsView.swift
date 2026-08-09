@@ -4,6 +4,7 @@ struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var printer: PrinterStore
     @EnvironmentObject private var notifications: NotificationManager
+    @EnvironmentObject private var alerts: AlertStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var showingResetConfirm = false
@@ -284,6 +285,19 @@ struct SettingsView: View {
 
     private var notificationsSection: some View {
         Section {
+            // Out-of-house alerting gets its own screen and its own line here,
+            // because "notifications are on" in this app has meant local
+            // notifications - which need the app running, and so are worth
+            // nothing when the phone is in a pocket somewhere else.
+            NavigationLink(destination: AlertSettingsView()) {
+                LabeledContent(L.t("alerts.title")) {
+                    Text(L.t(alerts.isReachableWhenClosed
+                             ? "alerts.reachable.short.yes"
+                             : "alerts.reachable.short.no"))
+                        .foregroundStyle(alerts.isReachableWhenClosed ? Theme.printing : Theme.danger)
+                }
+            }
+
             Toggle(L.t("settings.notifications"), isOn: $settings.notificationsEnabled)
             if settings.notificationsEnabled {
                 Toggle(L.t("settings.notify_state_changes"), isOn: $settings.notifyPrintStateChanges)

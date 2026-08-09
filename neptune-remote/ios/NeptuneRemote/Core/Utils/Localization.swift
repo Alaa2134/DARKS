@@ -78,6 +78,21 @@ enum L {
         guard !arguments.isEmpty else { return format }
         return String(format: format, locale: Locale.current, arguments: arguments)
     }
+
+    /// Whether the UI is currently Arabic.
+    ///
+    /// Used only for text the *backend* sends pre-translated - outage advice,
+    /// Klipper explanations - where there is no key to look up, just an `ar`
+    /// and an `en` field to choose between. Everything with a string key should
+    /// go through `L.t` instead.
+    static var isArabic: Bool {
+        switch LocalizationManager.shared.language {
+        case .arabic: return true
+        case .english: return false
+        case .system:
+            return Locale.preferredLanguages.first?.hasPrefix("ar") ?? false
+        }
+    }
 }
 
 extension Text {

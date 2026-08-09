@@ -107,6 +107,68 @@ final class PrinterConditionTests: XCTestCase {
         XCTAssertFalse(conditions.contains(where: \.isError))
     }
 
+    // MARK: - Filament
+
+    private func runoutSensor(kind: String) -> BackendFilamentSensor {
+        let json = """
+        {"name": "filament_sensor", "kind": "\(kind)", "enabled": true, "filament_detected": false}
+        """
+        // swiftlint:disable:next force_try
+        return try! JSONDecoder().decode(BackendFilamentSensor.self, from: Data(json.utf8))
+    }
+
+    func testARunoutIsReportedAsItselfNotAsAPause() throws {
+        // Klipper's pause_on_runout produces a PAUSE, so without reading the
+        // sensor the user sees the same card as when they tapped pause.
+        var value = input(print: .paused, printing: true)
+        value.filamentRunoutSensor = runoutSensor(kind: "switch")
+
+        let conditions = PrinterConditionEvaluator.conditions(for: value)
+        XCTAssertEqual(conditions.first?.cause, .filamentRunout)
+        XCTAssertEqual(conditions.first?.severity, .actionRequired)
+    }
+
+    func testARunoutDoesNotAlsoRaiseAPauseCard() {
+        // One condition, one card - the pause is the consequence, not a
+        // second thing that happened.
+        var value = input(print: .paused, printing: true)
+        value.filamentRunoutSensor = runoutSensor(kind: "switch")
+
+        let conditions = PrinterConditionEvaluator.conditions(for: value)
+        XCTAssertFalse(conditions.contains { $0.cause == .printPaused })
+    }
+
+    func testASwitchSensorIsNotDescribedAsCatchingAJam() throws {
+        var value = input(print: .paused, printing: true)
+        value.filamentRunoutSensor = runoutSensor(kind: "switch")
+        let switchCondition = try XCTUnwrap(
+            PrinterConditionEvaluator.conditions(for: value).first
+        )
+        XCTAssertEqual(switchCondition.bodyKey, "condition.filament_runout.switch")
+
+        value.filamentRunoutSensor = runoutSensor(kind: "motion")
+        let motionCondition = try XCTUnwrap(
+            PrinterConditionEvaluator.conditions(for: value).first
+        )
+        XCTAssertEqual(motionCondition.bodyKey, "condition.filament_runout.motion")
+    }
+
+    func testAPrinterWithNoSensorStillReportsAPlainPause() {
+        // No sensor is not the same as "there is filament", so the pause card
+        // has to stay for machines that cannot tell.
+        let conditions = PrinterConditionEvaluator.conditions(
+            for: input(print: .paused, printing: true)
+        )
+        XCTAssertEqual(conditions.first?.cause, .printPaused)
+    }
+
+    func testARunoutIsNotAnError() {
+        // It needs a person, but nothing is broken - red would be wrong.
+        var value = input(print: .paused, printing: true)
+        value.filamentRunoutSensor = runoutSensor(kind: "switch")
+        XCTAssertFalse(PrinterConditionEvaluator.conditions(for: value).contains(where: \.isError))
+    }
+
     func testGenuineShutdownIsAnError() throws {
         let conditions = PrinterConditionEvaluator.conditions(
             for: input(

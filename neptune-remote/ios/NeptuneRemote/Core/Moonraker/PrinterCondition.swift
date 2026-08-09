@@ -68,6 +68,7 @@ struct PrinterCondition: Identifiable, Equatable {
         case notHomed
         case printPaused
         case printCancelled
+        case filamentRunout
         case unknownMessage
     }
 
@@ -113,6 +114,10 @@ enum PrinterConditionEvaluator {
         /// Z stepper must not be told to home Z.
         var configuredAxes: [String] = ["x", "y", "z"]
         var connected: Bool = true
+        /// The filament sensor currently reporting no filament, if any.
+        /// Nil on a printer with no sensor - which is not the same as "there is
+        /// filament", and is why this is optional rather than a Bool.
+        var filamentRunoutSensor: BackendFilamentSensor?
     }
 
     /// Message fragments that mean "an axis has not been homed".
@@ -224,8 +229,33 @@ enum PrinterConditionEvaluator {
             )
         }
 
-        // 4. Normal print states, informational only.
-        if input.printState == .paused {
+        // 4. Filament, read from the sensor object rather than from the pause.
+        //
+        //    Klipper's pause_on_runout turns a runout into a PAUSE, so the
+        //    pause alone cannot tell you whether the filament ran out or
+        //    somebody tapped the button. Checked before the paused condition
+        //    below so the more specific of the two wins the dedupe.
+        if let sensor = input.filamentRunoutSensor {
+            result.append(
+                PrinterCondition(
+                    cause: .filamentRunout,
+                    severity: .actionRequired,
+                    titleKey: "condition.filament_runout.title",
+                    // A switch sensor sees absence only. Claiming it caught a
+                    // jam would describe a safety net this printer does not
+                    // have installed.
+                    bodyKey: sensor.detectsJams
+                        ? "condition.filament_runout.motion"
+                        : "condition.filament_runout.switch",
+                    rawMessage: nil,
+                    remedy: .none,
+                    axes: ""
+                )
+            )
+        }
+
+        // 5. Normal print states, informational only.
+        if input.printState == .paused, input.filamentRunoutSensor == nil {
             result.append(
                 PrinterCondition(
                     cause: .printPaused,

@@ -1184,3 +1184,94 @@
 "condition.home.not_connected" = "غير متصل بالطابعة";
 "condition.home_first.title" = "يجب عمل Home للمحاور أولاً";
 "condition.home_first.body" = "يجب أن تعرف المحاور مكانها قبل بدء الطباعة.";
+
+/* MARK: - Alerts that arrive when the app is closed */
+"alerts.title" = "الإشعارات وانقطاع الكهرباء";
+"alerts.enabled" = "تفعيل الإشعارات الخارجية";
+
+"alerts.section.reachability" = "هل هيوصلني إشعار وأنا بره؟";
+"alerts.section.reachability.footer" = "إشعارات التطبيق نفسها بتشتغل بس والتطبيق مفتوح. عشان يوصلك حاجة والموبايل في جيبك، لازم الراسبيري يبعت لخدمة زي ntfy أو Telegram.";
+"alerts.reachable.yes" = "أيوه، الإشعارات هتوصلك والتطبيق مقفول";
+"alerts.reachable.no" = "لأ، مش هيوصلك حاجة والتطبيق مقفول";
+"alerts.reachable.short.yes" = "شغالة";
+"alerts.reachable.short.no" = "مش متظبطة";
+
+"alerts.section.channels" = "قنوات الإرسال";
+"alerts.section.channels.footer" = "المفاتيح والتوكن كلها متخزنة في config.yaml على الراسبيري باي، ومش بتوصل للموبايل خالص.";
+"alerts.channels.none" = "مفيش أي قناة متظبطة على الراسبيري.";
+"alerts.channel.sent" = "%d رسالة";
+"alerts.test.send" = "ابعت رسالة تجربة";
+"alerts.test.sent" = "الرسالة اتبعتت - شوف موبايلك";
+"alerts.test.failed" = "الرسالة موصلتش";
+
+"alerts.section.events" = "الأحداث اللي تبعت إشعار";
+"alerts.section.events.footer" = "اللي عليها علامة تحذير بتعدّي وضع الهدوء وحد الرسائل، لأنها الأحداث اللي محتاجة حد يتصرف.";
+
+"alerts.section.quiet_hours" = "وضع الهدوء";
+"alerts.section.quiet_hours.footer" = "في الساعات دي مش هيوصلك غير المهم فقط: انقطاع الكهرباء، خلوص الفيلامنت، أخطاء Klipper، وتوقف الطباعة.";
+"alerts.quiet_hours" = "تفعيل وضع الهدوء";
+"alerts.quiet_hours.start" = "من";
+"alerts.quiet_hours.end" = "لحد";
+
+"alerts.section.heartbeat" = "نبضة المراقبة";
+"alerts.section.heartbeat.footer" = "لو الكهرباء فصلت عن الراسبيري نفسه، مفيش حاجة عليه تقدر تبعتلك. الحل إن الراسبيري يبعت نبضة لخدمة برة كل شوية، والخدمة دي هي اللي تنبهك لما النبضات تقف.";
+"alerts.heartbeat.on" = "النبضة شغالة";
+"alerts.heartbeat.off" = "النبضة مش متظبطة";
+"alerts.heartbeat.test" = "جرب النبضة دلوقتي";
+
+"alerts.section.local" = "إشعارات التطبيق";
+"alerts.section.local.footer" = "دي بتظهر بس والتطبيق شغال. مش بديل عن اللي فوق.";
+"alerts.local.power" = "انقطاع الكهرباء وخلوص الفيلامنت";
+"alerts.local.progress" = "أول طبقة ونص الطباعة";
+
+"alerts.section.outages" = "سجل الانقطاعات";
+"alerts.section.outages.footer" = "الكهرباء بتتعرف من اختفاء منفذ اللوحة على USB: لو الكهرباء فصلت المنفذ بيختفي، ولو Klipper وقف لسبب تاني المنفذ بيفضل موجود.";
+"alerts.outage.none" = "مفيش أي انقطاع اتسجل.";
+"alerts.outage.reached" = "وصلت لـ %@";
+"alerts.outage.mcu" = "منفذ اللوحة";
+"alerts.outage.mcu.present" = "موجود";
+"alerts.outage.mcu.absent" = "مش موجود";
+"alerts.outage.no_serial" = "مفيش [mcu] serial في printer.cfg، فمش هينفع نفرّق بين انقطاع الكهرباء ووقوف Klipper.";
+"alerts.outage.acknowledge" = "تمام، شفتها";
+"alerts.outage.generic" = "الطباعة اتقطعت";
+"alerts.outage.layer" = "الطبقة";
+"alerts.outage.progress" = "التقدم";
+"alerts.outage.height" = "الارتفاع";
+
+"alerts.setup.open" = "ظبّط الإشعارات";
+"alerts.setup.title" = "تظبيط الإشعارات";
+"alerts.setup.intro" = "التطبيق ده مثبّت بدون توقيع Apple، يعني مش ممكن يستقبل إشعارات Apple الحقيقية. بدل كده الراسبيري باي هو اللي بيبعت لخدمة موجودة على موبايلك أصلاً. النتيجة واحدة: إشعار بيوصلك والتطبيق مقفول تمامًا.";
+"alerts.setup.config_path" = "ملف الإعدادات على الراسبيري";
+"alerts.setup.ntfy" = "ntfy - أسرع طريقة";
+"alerts.setup.ntfy.footer" = "اسم الـ topic هو كلمة السر: أي حد يعرفه يقدر يقرا إشعاراتك. اختار اسم طويل وعشوائي.";
+"alerts.setup.ntfy.step1" = "نزّل تطبيق ntfy من الـ App Store.";
+"alerts.setup.ntfy.step2" = "اختار اسم topic طويل وعشوائي، مثلاً neptune-a7f3c1d9e2، واشترك بيه في التطبيق.";
+"alerts.setup.ntfy.step3" = "افتح config.yaml على الراسبيري، وتحت notifications.ntfy حط enabled: true والـ topic بتاعك.";
+"alerts.setup.ntfy.step4" = "شغّل الخدمة تاني: sudo systemctl restart neptune-remote";
+"alerts.setup.ntfy.step5" = "ارجع هنا واضغط \"ابعت رسالة تجربة\" - لازم موبايلك يرن.";
+"alerts.setup.heartbeat" = "النبضة - للحالة اللي الراسبيري نفسه بيفصل فيها";
+"alerts.setup.heartbeat.footer" = "النبضة بتقول \"الراسبيري عايش\" وبس. مش بتقول حاجة عن الطابعة.";
+"alerts.setup.heartbeat.step1" = "اعمل حساب مجاني على healthchecks.io واعمل check جديد.";
+"alerts.setup.heartbeat.step2" = "انسخ الـ ping URL بتاعه.";
+"alerts.setup.heartbeat.step3" = "حطه في config.yaml تحت notifications.heartbeat.url وخلي enabled: true.";
+"alerts.setup.heartbeat.step4" = "خلي مدة الـ check أكبر شوية من interval_seconds، وحط grace period مناسبة.";
+"alerts.setup.limits.title" = "حاجات لازم تعرفها";
+"alerts.setup.limits" = "Klipper مفيهوش استئناف بعد انقطاع الكهرباء. لو الكهرباء فصلت أثناء الطباعة، الطبعة راحت - والقطعة هتفضل لازقة على السرير. شيلها قبل أي أمر تحريك، لأن أول G28 بينزل النوزل في نص السرير.";
+
+/* Notification titles for the new events */
+"notification.first_layer_complete.title" = "أول طبقة خلصت";
+"notification.print_halfway.title" = "الطباعة وصلت النص";
+"notification.filament_runout.title" = "الفيلامنت خلص";
+"notification.power_lost.title" = "انقطعت الكهرباء عن الطابعة";
+"notification.power_restored.title" = "الكهرباء رجعت";
+"notification.print_interrupted.title" = "الطباعة اتقطعت";
+"notification.safety_blocked.title" = "أمر اتمنع لأسباب أمان";
+"notification.ai_pause_failed.title" = "مقدرتش أوقف الطباعة";
+"notification.auto_power_off_failed.title" = "فشل فصل الكهرباء الأوتوماتيكي";
+"notification.test.title" = "تجربة إشعارات";
+
+"history.result.interrupted" = "اتقطعت";
+
+"condition.filament_runout.title" = "الفيلامنت خلص";
+"condition.filament_runout.switch" = "حساس الفيلامنت مش شايف خيط، والطباعة اتوقفت أوتوماتيك. ركّب بكرة جديدة وادفع الخيط لحد ما الحساس يحس بيه، وبعدين كمّل الطباعة.";
+"condition.filament_runout.motion" = "حساس الحركة بيقول إن الفيلامنت واقف - يا إما خلص يا إما حصل انحشار. اتأكد من البكرة ومن الإكسترودر قبل ما تكمّل.";

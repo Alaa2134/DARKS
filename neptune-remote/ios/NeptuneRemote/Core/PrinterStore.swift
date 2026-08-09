@@ -963,6 +963,7 @@ final class PrinterStore: ObservableObject {
         input.printState = snapshot.state
         input.isPrinting = snapshot.isActive
         input.connected = moonrakerConnected
+        input.filamentRunoutSensor = snapshot.filamentRunoutSensor
         // Only ask about axes this printer actually has.
         if !capabilities.axisLimits.isEmpty {
             input.configuredAxes = capabilities.axisLimits.keys.sorted()

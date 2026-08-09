@@ -42,7 +42,22 @@ struct PrinterSnapshot: Equatable {
     var lastUpdate: Date = .distantPast
     var errorMessage: String?
 
+    /// Filament sensors this machine reports, keyed by short name. Empty on a
+    /// printer that has none - never assumed to exist.
+    var filamentSensors: [String: BackendFilamentSensor] = [:]
+
     // MARK: - Derived
+
+    /// A sensor that is switched on and currently seeing no filament.
+    ///
+    /// Klipper's `pause_on_runout` turns this into a PAUSE, which on its own is
+    /// indistinguishable from someone tapping pause - so the sensor state is
+    /// what the UI reads, not the pause.
+    var filamentRunoutSensor: BackendFilamentSensor? {
+        filamentSensors.values.first { $0.enabled && !$0.filamentDetected }
+    }
+
+    var hasFilamentRunout: Bool { filamentRunoutSensor != nil }
 
     var isPrinting: Bool { state == .printing }
     var isPaused: Bool { state == .paused }

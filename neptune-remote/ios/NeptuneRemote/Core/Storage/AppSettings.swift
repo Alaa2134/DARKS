@@ -88,6 +88,11 @@ final class AppSettings: ObservableObject {
     @Published var notifyQueueReady: Bool { didSet { persist(notifyQueueReady, .notifyQueue) } }
     @Published var notifyMaintenanceDue: Bool { didSet { persist(notifyMaintenanceDue, .notifyMaintenance) } }
     @Published var notifyFilamentLow: Bool { didSet { persist(notifyFilamentLow, .notifyFilament) } }
+    /// Power cuts, interrupted prints and filament runout - on by default,
+    /// because these are the ones you are away from the house for.
+    @Published var notifyPowerAndRunout: Bool { didSet { persist(notifyPowerAndRunout, .notifyPower) } }
+    /// First layer done, halfway there. Off by default: pleasant, not urgent.
+    @Published var notifyProgressMilestones: Bool { didSet { persist(notifyProgressMilestones, .notifyProgress) } }
 
     // MARK: - Modes
 
@@ -182,6 +187,8 @@ final class AppSettings: ObservableObject {
         notifyQueueReady = bool(.notifyQueue, true)
         notifyMaintenanceDue = bool(.notifyMaintenance, true)
         notifyFilamentLow = bool(.notifyFilament, true)
+        notifyPowerAndRunout = bool(.notifyPower, true)
+        notifyProgressMilestones = bool(.notifyProgress, false)
 
         demoMode = bool(.demoMode, false)
         advancedMode = bool(.advancedMode, false)
@@ -288,6 +295,7 @@ final class AppSettings: ObservableObject {
         case notifications, notifyFinished, notifyFailed, notifyKlipper
         case notifyDisconnected, notifyTarget, notifyStateChanges
         case notifyVision, notifyQueue, notifyMaintenance, notifyFilament
+        case notifyPower, notifyProgress
         case demoMode, advancedMode, developerMode, setupComplete
         case temperaturePresets, gcodeFavourites, gcodeHistory, slicePresets
         case jogStep, jogFeedrate, extrudeLength, extrudeSpeed

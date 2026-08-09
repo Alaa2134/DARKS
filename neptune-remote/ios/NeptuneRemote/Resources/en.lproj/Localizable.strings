@@ -1184,3 +1184,94 @@
 "condition.home.not_connected" = "Not connected to the printer";
 "condition.home_first.title" = "Home the printer first";
 "condition.home_first.body" = "The axes have to know where they are before a print can start.";
+
+/* MARK: - Alerts that arrive when the app is closed */
+"alerts.title" = "Alerts & power loss";
+"alerts.enabled" = "Enable out-of-house alerts";
+
+"alerts.section.reachability" = "Will anything reach me when I'm out?";
+"alerts.section.reachability.footer" = "The app's own notifications only work while the app is running. To reach a phone in a pocket, the Pi has to push to a service like ntfy or Telegram.";
+"alerts.reachable.yes" = "Yes - alerts arrive with the app closed";
+"alerts.reachable.no" = "No - nothing reaches you with the app closed";
+"alerts.reachable.short.yes" = "Working";
+"alerts.reachable.short.no" = "Not set up";
+
+"alerts.section.channels" = "Delivery channels";
+"alerts.section.channels.footer" = "Keys and tokens live in config.yaml on the Raspberry Pi and never travel to the phone.";
+"alerts.channels.none" = "No channel is configured on the Pi.";
+"alerts.channel.sent" = "%d sent";
+"alerts.test.send" = "Send a test message";
+"alerts.test.sent" = "Sent - check your phone";
+"alerts.test.failed" = "The message did not get through";
+
+"alerts.section.events" = "Events that notify";
+"alerts.section.events.footer" = "The ones marked with a warning bypass quiet hours and the rate limit, because they are the ones that need a human.";
+
+"alerts.section.quiet_hours" = "Quiet hours";
+"alerts.section.quiet_hours.footer" = "During these hours only the urgent ones get through: power loss, filament runout, Klipper errors and an interrupted print.";
+"alerts.quiet_hours" = "Enable quiet hours";
+"alerts.quiet_hours.start" = "From";
+"alerts.quiet_hours.end" = "Until";
+
+"alerts.section.heartbeat" = "Heartbeat";
+"alerts.section.heartbeat.footer" = "If the power cut takes the Raspberry Pi with it, nothing on the Pi can tell you. So it pings an outside service on a schedule, and that service raises the alarm when the pings stop.";
+"alerts.heartbeat.on" = "Heartbeat is running";
+"alerts.heartbeat.off" = "No heartbeat configured";
+"alerts.heartbeat.test" = "Ping now";
+
+"alerts.section.local" = "In-app notifications";
+"alerts.section.local.footer" = "These only appear while the app is running. Not a substitute for the above.";
+"alerts.local.power" = "Power loss and filament runout";
+"alerts.local.progress" = "First layer and halfway";
+
+"alerts.section.outages" = "Interruption log";
+"alerts.section.outages.footer" = "A power cut is detected from the MCU's USB device disappearing: kill mains and the device goes, while a Klipper error unplugs nothing.";
+"alerts.outage.none" = "No interruptions recorded.";
+"alerts.outage.reached" = "Reached %@";
+"alerts.outage.mcu" = "MCU device";
+"alerts.outage.mcu.present" = "Attached";
+"alerts.outage.mcu.absent" = "Missing";
+"alerts.outage.no_serial" = "No [mcu] serial in printer.cfg, so a power cut cannot be told apart from a Klipper shutdown.";
+"alerts.outage.acknowledge" = "Got it";
+"alerts.outage.generic" = "A print was interrupted";
+"alerts.outage.layer" = "Layer";
+"alerts.outage.progress" = "Progress";
+"alerts.outage.height" = "Height";
+
+"alerts.setup.open" = "Set up alerts";
+"alerts.setup.title" = "Setting up alerts";
+"alerts.setup.intro" = "This app is installed unsigned, so it can never receive real Apple push notifications. Instead the Raspberry Pi pushes to a service your phone already subscribes to. The result is the same: an alert that arrives with this app fully closed.";
+"alerts.setup.config_path" = "Config file on the Pi";
+"alerts.setup.ntfy" = "ntfy - the quickest route";
+"alerts.setup.ntfy.footer" = "The topic name is the password: anyone who knows it can read your notifications. Make it long and random.";
+"alerts.setup.ntfy.step1" = "Install the ntfy app from the App Store.";
+"alerts.setup.ntfy.step2" = "Pick a long random topic, e.g. neptune-a7f3c1d9e2, and subscribe to it in the app.";
+"alerts.setup.ntfy.step3" = "Open config.yaml on the Pi and set notifications.ntfy.enabled: true with your topic.";
+"alerts.setup.ntfy.step4" = "Restart the service: sudo systemctl restart neptune-remote";
+"alerts.setup.ntfy.step5" = "Come back here and tap \"Send a test message\" - your phone should buzz.";
+"alerts.setup.heartbeat" = "Heartbeat - for when the Pi itself loses power";
+"alerts.setup.heartbeat.footer" = "The heartbeat says \"the Pi is alive\" and nothing else. It says nothing about the printer.";
+"alerts.setup.heartbeat.step1" = "Create a free healthchecks.io account and add a new check.";
+"alerts.setup.heartbeat.step2" = "Copy its ping URL.";
+"alerts.setup.heartbeat.step3" = "Put it in config.yaml under notifications.heartbeat.url and set enabled: true.";
+"alerts.setup.heartbeat.step4" = "Set the check's period slightly above interval_seconds, with a sensible grace period.";
+"alerts.setup.limits.title" = "What you should know";
+"alerts.setup.limits" = "Klipper has no power-loss recovery. If the mains goes during a print, that print is gone - and the part is still stuck to the bed. Clear it before any movement command, because the first G28 lowers the nozzle in the middle of the bed.";
+
+/* Notification titles for the new events */
+"notification.first_layer_complete.title" = "First layer complete";
+"notification.print_halfway.title" = "Print is halfway";
+"notification.filament_runout.title" = "Filament ran out";
+"notification.power_lost.title" = "Printer lost power";
+"notification.power_restored.title" = "Power is back";
+"notification.print_interrupted.title" = "Print was interrupted";
+"notification.safety_blocked.title" = "A command was blocked for safety";
+"notification.ai_pause_failed.title" = "Could not pause the print";
+"notification.auto_power_off_failed.title" = "Automatic power off failed";
+"notification.test.title" = "Test notification";
+
+"history.result.interrupted" = "Interrupted";
+
+"condition.filament_runout.title" = "Filament ran out";
+"condition.filament_runout.switch" = "The filament sensor sees no filament and the print paused automatically. Load a new spool and feed it until the sensor detects it, then resume.";
+"condition.filament_runout.motion" = "The motion sensor says the filament has stopped moving - it either ran out or jammed. Check the spool and the extruder before resuming.";

@@ -6,6 +6,7 @@ struct HomeView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var printer: PrinterStore
     @EnvironmentObject private var files: FilesStore
+    @EnvironmentObject private var alerts: AlertStore
 
     @State private var showingPowerOffWarning = false
     @State private var showingPreheatSheet = false
@@ -17,6 +18,16 @@ struct HomeView: View {
             LazyVStack(spacing: Theme.spacing) {
                 if settings.demoMode { demoBanner }
                 if let error = printer.lastError { errorBanner(error) }
+
+                // Above the printer state on purpose. If a print died while
+                // nobody was home, that is the first thing to know - and it
+                // outranks a state card that will happily read "standby",
+                // because from Klipper's point of view nothing is wrong now.
+                if let outage = alerts.unacknowledgedOutage {
+                    OutageCard(record: outage) {
+                        Task { await alerts.acknowledge(outage) }
+                    }
+                }
 
                 PrinterStateCard(snapshot: snapshot, printerName: settings.printerName)
 

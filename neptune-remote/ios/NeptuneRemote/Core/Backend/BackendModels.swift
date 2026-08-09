@@ -388,9 +388,48 @@ struct HistoryResponse: Decodable, Equatable {
 // MARK: - Backend printer status (used in Demo/fallback paths)
 
 struct BackendTemperature: Decodable, Equatable {
-    let actual: Double
-    let target: Double
-    let power: Double
+    var actual: Double = 0
+    var target: Double = 0
+    var power: Double = 0
+
+    init(actual: Double = 0, target: Double = 0, power: Double = 0) {
+        self.actual = actual
+        self.target = target
+        self.power = power
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        actual = try container.decodeIfPresent(Double.self, forKey: .actual) ?? 0
+        target = try container.decodeIfPresent(Double.self, forKey: .target) ?? 0
+        power = try container.decodeIfPresent(Double.self, forKey: .power) ?? 0
+    }
+}
+
+/// One Klipper filament sensor as the backend sees it.
+struct BackendFilamentSensor: Decodable, Equatable {
+    var name: String = ""
+    /// `switch` sees the filament is gone; `motion` also sees it stop moving.
+    /// The distinction is not cosmetic - a switch cannot detect a jam, and
+    /// presenting it as if it could promises a safety net that is not there.
+    var kind: String = "switch"
+    var enabled: Bool = true
+    var filamentDetected: Bool = true
+
+    var detectsJams: Bool { kind == "motion" }
+
+    enum CodingKeys: String, CodingKey {
+        case name, kind, enabled
+        case filamentDetected = "filament_detected"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        kind = try container.decodeIfPresent(String.self, forKey: .kind) ?? "switch"
+        enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? true
+        filamentDetected = try container.decodeIfPresent(Bool.self, forKey: .filamentDetected) ?? true
+    }
 }
 
 struct BackendPrinterStatus: Decodable, Equatable {
@@ -416,6 +455,9 @@ struct BackendPrinterStatus: Decodable, Equatable {
     let speedFactor: Double
     let extrudeFactor: Double
     let fanSpeed: Double
+    /// Klipper filament sensors, keyed by short name. Discovered per machine -
+    /// a printer with no sensor simply reports none.
+    let filamentSensors: [String: BackendFilamentSensor]
     let error: String?
 
     enum CodingKeys: String, CodingKey {
@@ -434,6 +476,44 @@ struct BackendPrinterStatus: Decodable, Equatable {
         case speedFactor = "speed_factor"
         case extrudeFactor = "extrude_factor"
         case fanSpeed = "fan_speed"
+        case filamentSensors = "filament_sensors"
+    }
+
+    /// Decoded field by field with defaults, rather than by the synthesised
+    /// initialiser.
+    ///
+    /// The synthesised one requires every key to be present, so a backend one
+    /// version behind - missing a field the app has just learned about - fails
+    /// to decode the *whole* status and blanks the dashboard. A missing
+    /// `filament_sensors` should cost you the filament row, not the printer.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        online = try container.decodeIfPresent(Bool.self, forKey: .online) ?? false
+        klippyState = try container.decodeIfPresent(String.self, forKey: .klippyState) ?? "unknown"
+        klippyMessage = try container.decodeIfPresent(String.self, forKey: .klippyMessage) ?? ""
+        state = try container.decodeIfPresent(String.self, forKey: .state) ?? "unknown"
+        stateMessage = try container.decodeIfPresent(String.self, forKey: .stateMessage) ?? ""
+        filename = try container.decodeIfPresent(String.self, forKey: .filename) ?? ""
+        progress = try container.decodeIfPresent(Double.self, forKey: .progress) ?? 0
+        printDuration = try container.decodeIfPresent(Double.self, forKey: .printDuration) ?? 0
+        totalDuration = try container.decodeIfPresent(Double.self, forKey: .totalDuration) ?? 0
+        estimatedTimeLeft = try container.decodeIfPresent(Double.self, forKey: .estimatedTimeLeft)
+        filamentUsedMM = try container.decodeIfPresent(Double.self, forKey: .filamentUsedMM) ?? 0
+        currentLayer = try container.decodeIfPresent(Int.self, forKey: .currentLayer)
+        totalLayer = try container.decodeIfPresent(Int.self, forKey: .totalLayer)
+        nozzle = try container.decodeIfPresent(BackendTemperature.self, forKey: .nozzle) ?? BackendTemperature()
+        bed = try container.decodeIfPresent(BackendTemperature.self, forKey: .bed) ?? BackendTemperature()
+        position = try container.decodeIfPresent([Double].self, forKey: .position) ?? [0, 0, 0]
+        gcodePosition = try container.decodeIfPresent([Double].self, forKey: .gcodePosition) ?? [0, 0, 0]
+        homedAxes = try container.decodeIfPresent(String.self, forKey: .homedAxes) ?? ""
+        speed = try container.decodeIfPresent(Double.self, forKey: .speed) ?? 0
+        speedFactor = try container.decodeIfPresent(Double.self, forKey: .speedFactor) ?? 1
+        extrudeFactor = try container.decodeIfPresent(Double.self, forKey: .extrudeFactor) ?? 1
+        fanSpeed = try container.decodeIfPresent(Double.self, forKey: .fanSpeed) ?? 0
+        filamentSensors = try container.decodeIfPresent(
+            [String: BackendFilamentSensor].self, forKey: .filamentSensors
+        ) ?? [:]
+        error = try container.decodeIfPresent(String.self, forKey: .error)
     }
 
     var snapshot: PrinterSnapshot {
@@ -463,6 +543,7 @@ struct BackendPrinterStatus: Decodable, Equatable {
         value.speedFactor = speedFactor
         value.extrudeFactor = extrudeFactor
         value.fanSpeed = fanSpeed
+        value.filamentSensors = filamentSensors
         value.errorMessage = error
         value.lastUpdate = Date()
         return value

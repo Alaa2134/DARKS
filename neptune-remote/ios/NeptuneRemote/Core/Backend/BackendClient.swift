@@ -124,6 +124,59 @@ actor BackendClient {
         ).events
     }
 
+    // MARK: - Alerts
+
+    func alertStatus() async throws -> AlertStatus {
+        try await http.decode(AlertStatus.self, from: try request("alerts/status", timeout: 15))
+    }
+
+    func alertPreferences() async throws -> AlertPreferences {
+        try await http.decode(
+            AlertPreferencesResponse.self, from: try request("alerts/preferences")
+        ).preferences
+    }
+
+    func updateAlertPreferences(_ preferences: AlertPreferences) async throws -> AlertPreferences {
+        try await http.decode(
+            AlertPreferencesResponse.self,
+            from: try request(
+                "alerts/preferences",
+                method: "PUT",
+                body: try await jsonBody(preferences)
+            )
+        ).preferences
+    }
+
+    /// Sends a real message through every configured channel, bypassing quiet
+    /// hours and the rate limit - a test a filter could swallow would report
+    /// success for something nobody received.
+    func sendAlertTest() async throws -> AlertTestResult {
+        try await http.decode(
+            AlertTestResult.self,
+            from: try request("alerts/test", method: "POST", timeout: 40)
+        )
+    }
+
+    func testHeartbeat() async throws -> HeartbeatStatus {
+        try await http.decode(
+            HeartbeatStatus.self,
+            from: try request("alerts/heartbeat/test", method: "POST", timeout: 30)
+        )
+    }
+
+    func outageStatus() async throws -> OutageStatus {
+        try await http.decode(OutageStatus.self, from: try request("alerts/outage"))
+    }
+
+    func acknowledgeOutage(_ id: String) async throws -> OutageStatus {
+        struct Payload: Decodable { let outage: OutageStatus }
+        let encoded = id.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? id
+        return try await http.decode(
+            Payload.self,
+            from: try request("alerts/outage/\(encoded)/acknowledge", method: "POST")
+        ).outage
+    }
+
     // MARK: - Power
 
     func powerStatus() async throws -> BackendPowerStatus {

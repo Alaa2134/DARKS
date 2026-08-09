@@ -16,6 +16,7 @@ final class AppEnvironment: ObservableObject {
     let inventory: InventoryStore
     let support: SupportStore
     let doctor: DoctorStore
+    let alerts: AlertStore
     let liveActivity: LiveActivityController
 
     /// Vision events already turned into a notification, so a repeated summary
@@ -41,6 +42,7 @@ final class AppEnvironment: ObservableObject {
         inventory = InventoryStore(settings: settings, printer: printer)
         support = SupportStore(settings: settings, printer: printer)
         doctor = DoctorStore(settings: settings, printer: printer)
+        alerts = AlertStore(settings: settings, printer: printer)
         liveActivity = LiveActivityController()
 
         printer.onSliceProgress = { [weak self] progress in
@@ -141,6 +143,10 @@ final class AppEnvironment: ObservableObject {
             }
         }
         Task { await refreshEcosystem() }
+        // Loaded at launch rather than when the settings screen opens: the
+        // outage card has to be able to appear on Home, and "was I even
+        // reachable while I was out" is not a question you go looking for.
+        Task { await alerts.load() }
     }
 
     /// Pulls the library / media / inventory state the summary frame does not
@@ -165,6 +171,9 @@ final class AppEnvironment: ObservableObject {
                 await printer.refreshSummary()
                 await media.loadVisionEvents()
                 announceVisionEvents()
+                // Coming back to the app is exactly when a power cut that
+                // happened while it was closed needs to surface.
+                await alerts.refreshOutage()
             }
         case .background:
             // Keep the widget snapshot fresh, then let the sockets idle out.
