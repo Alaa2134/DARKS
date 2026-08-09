@@ -398,6 +398,13 @@ struct BackendTemperature: Decodable, Equatable {
         self.power = power
     }
 
+    // Written out rather than synthesised: declaring an initialiser of our own
+    // stops Swift generating the Decodable conformance, and CodingKeys comes
+    // with that conformance.
+    enum CodingKeys: String, CodingKey {
+        case actual, target, power
+    }
+
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         actual = try container.decodeIfPresent(Double.self, forKey: .actual) ?? 0

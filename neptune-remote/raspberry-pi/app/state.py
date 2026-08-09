@@ -621,8 +621,15 @@ class AppState:
             return
 
         record = None
-        with contextlib.suppress(Exception):
+        try:
             record = self.outage.reconcile_on_start()
+        except Exception:
+            # Suppressed so a bad snapshot cannot stop the backend starting,
+            # but logged loudly: a silent failure here means the one thing this
+            # whole path exists for - telling someone their print died while
+            # they were out - just does not happen, and nothing says so.
+            log.exception("Could not reconcile the interrupted print")
+            return
         if record is None:
             return
 
@@ -634,10 +641,15 @@ class AppState:
             record.snapshot.filename if record.snapshot else "",
         )
 
-        # Close the history row so the print does not sit "in progress" forever.
+        # Close the history row so the print does not sit "in progress" forever
+        # and skew every total after it.
         if self.history is not None and record.snapshot:
-            with contextlib.suppress(Exception):
-                self.history.close_open_entries(result="interrupted")
+            try:
+                closed = self.history.close_open_entries(result="interrupted")
+                if closed:
+                    log.info("Closed %d interrupted print(s) in the history", closed)
+            except Exception:
+                log.exception("Could not close the interrupted print in the history")
 
     async def _handle_layer_change(self, status: PrinterStatusResponse) -> None:
         layer = status.current_layer or 0
