@@ -40,6 +40,7 @@ SUBDIRECTORIES = (
     "database",
     "backups",
     "cache",
+    "state",
 )
 
 
@@ -104,6 +105,16 @@ class StorageLayout:
     @property
     def cache(self) -> Path:
         return self.root / "cache"
+
+    @property
+    def state(self) -> Path:
+        """Small files that have to survive an unexpected reboot.
+
+        Written with fsync rather than through SQLite: the point of these is to
+        still be readable after the power was pulled mid-write, which is
+        exactly the case where a WAL-mode database can lose its last commit.
+        """
+        return self.root / "state"
 
     # ---------------------------------------------------------------- helpers
     def dated_video_dir(self, when: datetime | None = None) -> Path:

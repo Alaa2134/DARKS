@@ -220,6 +220,130 @@ class VisionConfig(BaseModel):
     change_threshold: float = 0.28
 
 
+class NtfyConfig(BaseModel):
+    """https://ntfy.sh - free, no account, and it has an iOS app.
+
+    The topic name *is* the credential: anyone who knows it can read your
+    notifications. Use a long random one.
+    """
+
+    enabled: bool = False
+    server: str = "https://ntfy.sh"
+    topic: str = ""
+    # Only needed for a self-hosted server with auth, or ntfy.sh reserved topics.
+    token: str = ""
+    username: str = ""
+    password: str = ""
+
+
+class TelegramConfig(BaseModel):
+    enabled: bool = False
+    bot_token: str = ""
+    chat_id: str = ""
+
+
+class NotifyWebhookConfig(BaseModel):
+    """Anything else: Home Assistant, Discord, Slack, IFTTT, your own script."""
+
+    enabled: bool = False
+    url: str = ""
+    method: str = "POST"
+    headers: Dict[str, str] = Field(default_factory=dict)
+    # JSON body template. {title} {message} {kind} {priority} are substituted.
+    body_template: str = ""
+
+
+class HeartbeatConfig(BaseModel):
+    """A dead man's switch.
+
+    When the Raspberry Pi itself loses power, nothing running on it can send
+    you anything - that is the whole problem with local alerting. The fix is to
+    invert it: ping an outside service on a schedule and let *that* service
+    shout when the pings stop. Works with healthchecks.io, Uptime Kuma,
+    cron-job.org, or any URL that expects to be hit regularly.
+    """
+
+    enabled: bool = False
+    url: str = ""
+    interval_seconds: int = 300
+    method: str = "GET"
+    timeout_seconds: float = 10.0
+    # Appended to the URL when something is wrong, which is what
+    # healthchecks.io expects for an explicit failure signal.
+    fail_suffix: str = "/fail"
+
+
+class QuietHoursConfig(BaseModel):
+    """Hours in which only genuinely urgent things are allowed through."""
+
+    enabled: bool = False
+    start_hour: int = 23
+    end_hour: int = 8
+    # Kinds that ignore quiet hours entirely. Emptied deliberately at your own
+    # risk: these are the ones that mean "the printer needs a human".
+    always: List[str] = Field(
+        default_factory=lambda: [
+            "power_lost",
+            "print_interrupted",
+            "klipper_error",
+            "filament_runout",
+            "vision_alert",
+            "ai_pause_failed",
+            "print_failed",
+        ]
+    )
+
+
+class NotificationsConfig(BaseModel):
+    enabled: bool = True
+    # ar | en - which language the pushed text is written in.
+    language: str = "ar"
+    # Event kinds that are allowed to notify. Empty means "the built-in
+    # default set", which is everything except the chatty ones.
+    events: List[str] = Field(default_factory=list)
+    # Kinds that never notify, applied after `events`.
+    muted: List[str] = Field(default_factory=list)
+    # min | low | default | high | urgent
+    min_priority: str = "low"
+    # The same message repeated inside this window is sent once.
+    dedupe_seconds: float = 120.0
+    max_per_hour: int = 40
+    retries: int = 2
+    timeout_seconds: float = 15.0
+
+    quiet_hours: QuietHoursConfig = Field(default_factory=QuietHoursConfig)
+    ntfy: NtfyConfig = Field(default_factory=NtfyConfig)
+    telegram: TelegramConfig = Field(default_factory=TelegramConfig)
+    webhook: NotifyWebhookConfig = Field(default_factory=NotifyWebhookConfig)
+    heartbeat: HeartbeatConfig = Field(default_factory=HeartbeatConfig)
+
+    @property
+    def any_channel_configured(self) -> bool:
+        return bool(
+            (self.ntfy.enabled and self.ntfy.topic)
+            or (self.telegram.enabled and self.telegram.bot_token and self.telegram.chat_id)
+            or (self.webhook.enabled and self.webhook.url)
+        )
+
+
+class OutageConfig(BaseModel):
+    """Telling a power cut apart from a Klipper crash, and surviving both."""
+
+    enabled: bool = True
+    # The MCU serial device. Left empty it is read from [mcu] in printer.cfg,
+    # which is where the truth actually lives.
+    serial_path: str = ""
+    # How often the in-flight print is written to disk. Everything since the
+    # last write is what you lose when the power goes; every write costs an
+    # fsync, so this trades SD-card wear against precision.
+    snapshot_interval_seconds: float = 20.0
+    notify_on_restore: bool = True
+    # Cut mains to the printer once the Pi is back and we know a print died.
+    # Off by default: it is an action, and actions on someone else's printer
+    # should be asked for.
+    power_off_after_outage: bool = False
+
+
 class StorageConfig(BaseModel):
     """Root of everything Neptune Remote writes."""
 
@@ -248,6 +372,8 @@ class AppConfig(BaseModel):
     recording: RecordingConfig = Field(default_factory=RecordingConfig)
     timelapse: TimelapseConfig = Field(default_factory=TimelapseConfig)
     vision: VisionConfig = Field(default_factory=VisionConfig)
+    notifications: NotificationsConfig = Field(default_factory=NotificationsConfig)
+    outage: OutageConfig = Field(default_factory=OutageConfig)
 
     source_path: Optional[str] = None
 
@@ -297,6 +423,21 @@ ENV_OVERRIDES: Dict[str, str] = {
     "NEPTUNE_VISION_MODE": "vision.mode",
     "NEPTUNE_VISION_PROVIDER": "vision.provider",
     "NEPTUNE_VISION_MODEL": "vision.model_path",
+    # Notification secrets belong in the environment or a git-ignored
+    # config.yaml, never in config.example.yaml.
+    "NEPTUNE_NOTIFY_ENABLED": "notifications.enabled",
+    "NEPTUNE_NOTIFY_LANGUAGE": "notifications.language",
+    "NEPTUNE_NTFY_ENABLED": "notifications.ntfy.enabled",
+    "NEPTUNE_NTFY_SERVER": "notifications.ntfy.server",
+    "NEPTUNE_NTFY_TOPIC": "notifications.ntfy.topic",
+    "NEPTUNE_NTFY_TOKEN": "notifications.ntfy.token",
+    "NEPTUNE_TELEGRAM_ENABLED": "notifications.telegram.enabled",
+    "NEPTUNE_TELEGRAM_BOT_TOKEN": "notifications.telegram.bot_token",
+    "NEPTUNE_TELEGRAM_CHAT_ID": "notifications.telegram.chat_id",
+    "NEPTUNE_NOTIFY_WEBHOOK_URL": "notifications.webhook.url",
+    "NEPTUNE_HEARTBEAT_URL": "notifications.heartbeat.url",
+    "NEPTUNE_HEARTBEAT_ENABLED": "notifications.heartbeat.enabled",
+    "NEPTUNE_OUTAGE_SERIAL": "outage.serial_path",
 }
 
 _BOOL_TRUE = {"1", "true", "yes", "on", "y"}

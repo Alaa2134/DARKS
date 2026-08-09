@@ -45,7 +45,16 @@ from .slicer.golden import GoldenProfileStore
 from .maintenance.store import MaintenanceStore
 from .moonraker import MoonrakerClient, MoonrakerError
 from .paths import StorageLayout
-from .power import PowerError, PowerProvider, PowerState, build_power_provider, evaluate_power_off
+from .notify import HeartbeatPinger, NotificationService
+from .power import (
+    OutageWatcher,
+    PowerError,
+    PowerProvider,
+    PowerState,
+    build_power_provider,
+    evaluate_power_off,
+    snapshot_from_status,
+)
 from .printer_state import fetch_status
 from .printqueue.store import PrintQueueStore
 from .products.store import ProductStore
@@ -141,6 +150,21 @@ class AppState:
         self.testz_total_down: float = 0.0
         self._last_status_at: float = 0.0
 
+        # ---- alerting -----------------------------------------------------
+        # The WebSocket only reaches a phone with the app open in the
+        # foreground. Everything that matters when nobody is home goes out
+        # through these instead.
+        self.notifications = NotificationService(config.notifications, db=self.db)
+        self.heartbeat = HeartbeatPinger(config.notifications.heartbeat)
+        self.outage = OutageWatcher(
+            self.layout.state,
+            serial_path=config.outage.serial_path,
+            snapshot_interval=config.outage.snapshot_interval_seconds,
+        )
+        #: Set once printer.cfg has been read, so [mcu] serial is discovered
+        #: rather than assumed.
+        self._outage_serial_resolved = bool(config.outage.serial_path)
+
         # ---- media --------------------------------------------------------
         self.camera = CameraService(config.camera, self.layout)
         self.videos = VideoStore(self.db, self.layout)
@@ -174,6 +198,7 @@ class AppState:
         self._notified_halfway = False
         self._notified_first_layer = False
         self._print_started_at: Optional[float] = None
+        self._extra_objects_ready = False
 
         self._tasks: List[asyncio.Task[Any]] = []
         self._stopping = asyncio.Event()
@@ -181,11 +206,19 @@ class AppState:
     # ------------------------------------------------------------- lifecycle
     async def start(self) -> None:
         self._stopping.clear()
+
+        # Before anything else: did we come back from something that killed us
+        # mid-print? This is the only chance to notice, because the evidence is
+        # a file that the next print would overwrite.
+        await self._reconcile_interrupted_print()
+
         self._tasks = [
             asyncio.create_task(self._printer_loop(), name="printer-loop"),
             asyncio.create_task(self._power_loop(), name="power-loop"),
             asyncio.create_task(self._system_loop(), name="system-loop"),
         ]
+        if self.heartbeat.enabled:
+            self._tasks.append(asyncio.create_task(self.heartbeat.run(), name="heartbeat"))
         log.info(
             "Neptune Remote started (moonraker=%s power=%s slicer=%s camera=%s vision=%s)",
             self.config.moonraker.base_url,
@@ -213,6 +246,15 @@ class AppState:
         with contextlib.suppress(Exception):
             await self.camera.aclose()
 
+        # A clean stop means nothing was interrupted. Deleting the snapshot is
+        # what makes its presence on the next boot meaningful.
+        with contextlib.suppress(Exception):
+            self.outage.clear()
+        with contextlib.suppress(Exception):
+            await self.notifications.aclose()
+        with contextlib.suppress(Exception):
+            await self.heartbeat.aclose()
+
         await self.moonraker.aclose()
         await self.power.aclose()
         if self.history is not None:
@@ -237,6 +279,19 @@ class AppState:
     async def _emit_event(self, kind: str, title: str, message: str = "", filename: str = "") -> None:
         event = self._record_event(kind, title, message, filename)
         await self.hub.broadcast("event", event.model_dump())
+
+        # Same event, second delivery path. The broadcast above reaches an open
+        # app; this one reaches a phone in a pocket on another network, which
+        # is the only one that matters when something goes wrong at 3am.
+        # A notification failure must never disturb the printer loop.
+        with contextlib.suppress(Exception):
+            await self.notifications.dispatch_event(
+                kind,
+                title=title,
+                message=message,
+                filename=filename,
+                timestamp=event.timestamp,
+            )
 
     # ------------------------------------------------------------ slice jobs
     async def _on_slice_progress(self, job: SliceJob) -> None:
@@ -308,6 +363,7 @@ class AppState:
     async def _printer_loop(self) -> None:
         while not self._stopping.is_set():
             try:
+                await self._ensure_extra_objects()
                 status = await fetch_status(self.moonraker)
                 await self._handle_status(status)
             except asyncio.CancelledError:
@@ -337,13 +393,27 @@ class AppState:
                 )
         self._previous_online = status.online
 
+        # ---- power loss, told apart from a Klipper crash --------------------
+        detection = await self._check_outage(status)
+
         # ---- klipper errors ------------------------------------------------
         klippy = status.klippy_state
         if klippy != self._previous_klippy and klippy in {"shutdown", "error"}:
-            raw = status.klippy_message or status.state_message or klippy
-            translated = translate_error(raw)
-            await self._emit_event("klipper_error", translated.title_en or "Klipper error", raw)
+            already_reported = detection is not None and detection.cause in {
+                "printer_power",
+                "mcu_lost",
+            }
+            if not already_reported:
+                raw = status.klippy_message or status.state_message or klippy
+                translated = translate_error(raw)
+                await self._emit_event("klipper_error", translated.title_en or "Klipper error", raw)
         self._previous_klippy = klippy
+
+        # ---- mirror the running print to disk -------------------------------
+        self._track_inflight_print(status)
+
+        # ---- filament ------------------------------------------------------
+        await self._check_filament(previous, status)
 
         # ---- print lifecycle -----------------------------------------------
         state = status.state
@@ -372,8 +442,219 @@ class AppState:
         # ---- automatic power off --------------------------------------------
         await self._check_auto_power_off(status)
 
+    async def _ensure_extra_objects(self) -> None:
+        """Ask Klipper once what else it has worth polling.
+
+        Deferred to the loop rather than done at construction because Klipper
+        is frequently not up yet when the backend starts, and retried until it
+        answers - a printer that gains a filament sensor after a config change
+        is picked up on the next Klipper restart.
+        """
+        if self._extra_objects_ready:
+            return
+        if not self.last_status.online or self.last_status.klippy_state != "ready":
+            return
+        with contextlib.suppress(Exception):
+            discovered = await self.moonraker.discover_extra_objects()
+            self._extra_objects_ready = True
+            if discovered:
+                log.info("Also polling: %s", ", ".join(discovered))
+
+    # ------------------------------------------------------------- filament
+    async def _check_filament(
+        self, previous: PrinterStatusResponse, status: PrinterStatusResponse
+    ) -> None:
+        """Report a runout as itself, not as a generic pause.
+
+        Klipper's `pause_on_runout: True` calls PAUSE, so without this the only
+        thing anyone sees is "print paused" - which is also what a person
+        pressing pause produces. The sensor state is read from the printer
+        objects; the pause is the consequence, not the evidence.
+        """
+        for name, sensor in status.filament_sensors.items():
+            if not sensor.enabled:
+                continue
+            was = previous.filament_sensors.get(name)
+            if was is None or was.filament_detected == sensor.filament_detected:
+                continue
+            if sensor.filament_detected:
+                continue
+
+            # A switch cannot see a jam - only that the filament is gone. Say
+            # exactly which of the two this printer can actually detect rather
+            # than implying a safety net that is not installed.
+            detail = (
+                "الفيلامنت خلص أو اتقطع، والطباعة اتوقفت أوتوماتيك."
+                if sensor.kind == "switch"
+                else "الفيلامنت وقف عن الحركة (خلص أو حصل انحشار)."
+            )
+            await self._emit_event("filament_runout", "Filament runout", detail, status.filename)
+
+    # ------------------------------------------------------------- outages
+    async def _resolve_outage_serial(self) -> None:
+        """Learn the MCU device path from printer.cfg rather than assuming it.
+
+        Without it every Klipper shutdown looks the same, so the watcher
+        deliberately refuses to guess a cause - see OutageWatcher.serial_present.
+        """
+        if self._outage_serial_resolved:
+            return
+        config = self.live_config
+        if config is None:
+            with contextlib.suppress(Exception):
+                config = await self.refresh_live_config()
+        if config is None:
+            return
+
+        section = config.section("mcu")
+        serial = (section.get("serial") if section else "") or ""
+        self._outage_serial_resolved = True
+        if serial:
+            self.outage.serial_path = serial.strip()
+            log.info("Outage detection is watching %s", self.outage.serial_path)
+        else:
+            # A CAN-bus or network MCU has no serial device to watch. Say so
+            # once instead of silently reporting every shutdown as a power cut.
+            log.info(
+                "No [mcu] serial: in printer.cfg - power loss cannot be told "
+                "apart from a Klipper shutdown on this machine."
+            )
+
+    async def _check_outage(self, status: PrinterStatusResponse):
+        if not self.config.outage.enabled:
+            return None
+
+        await self._resolve_outage_serial()
+
+        detection = self.outage.classify(
+            klippy_state=status.klippy_state,
+            klippy_message=status.klippy_message or status.state_message,
+            online=status.online,
+        )
+
+        if detection is None:
+            if self.outage.in_outage:
+                record = self.outage.close_outage()
+                if self.config.outage.notify_on_restore and record is not None:
+                    await self._emit_event(
+                        "power_restored",
+                        "Power is back",
+                        record.advice_ar(),
+                        record.snapshot.filename if record.snapshot else "",
+                    )
+                    await self._maybe_power_off_after_outage(record)
+            return None
+
+        if not detection.is_outage or self.outage.in_outage:
+            return detection
+
+        snapshot = self.outage.live_snapshot if self._was_printing(status) else None
+        record = self.outage.open_outage(detection, snapshot)
+
+        kind = "power_lost" if detection.cause == "printer_power" else "print_interrupted"
+        if not record.was_printing and detection.cause != "printer_power":
+            # Klipper stopped with nothing running. Real, but not an emergency.
+            kind = "klipper_error"
+
+        await self._emit_event(
+            kind,
+            detection.cause.replace("_", " ").title(),
+            f"{detection.detail}\n{record.advice_ar()}".strip(),
+            record.snapshot.filename if record.snapshot else "",
+        )
+
+        # Tell the external watchdog too: if the outage also takes the Pi down
+        # a moment later, this is the last thing that gets out.
+        if record.was_printing:
+            with contextlib.suppress(Exception):
+                await self.heartbeat.ping(failing=True, body=record.detail)
+
+        return detection
+
+    def _was_printing(self, status: PrinterStatusResponse) -> bool:
+        """Was a print running immediately before this?
+
+        Read from the tracked snapshot, not from the current status: by the
+        time Klipper reports a shutdown it has already forgotten the job.
+        """
+        if self.outage.live_snapshot is not None:
+            return True
+        return status.state in {"printing", "paused"}
+
+    async def _maybe_power_off_after_outage(self, record) -> None:
+        """Optionally cut mains once we know the print is dead.
+
+        Off by default. Turning someone's printer off is an action, and the
+        printer coming back to an idle, powered, un-homed state is not itself
+        dangerous - Klipper starts with the heaters off.
+        """
+        if not self.config.outage.power_off_after_outage or not record.was_printing:
+            return
+        try:
+            await self.power.turn_off()
+            await self._emit_event(
+                "auto_power_off", "Printer powered off after the outage", record.detail
+            )
+        except PowerError as exc:
+            await self._emit_event(
+                "auto_power_off_failed", "Could not power off after the outage", exc.message
+            )
+
+    def _track_inflight_print(self, status: PrinterStatusResponse) -> None:
+        """Keep the on-disk mirror of the running print current."""
+        if not self.config.outage.enabled:
+            return
+        if status.state not in {"printing", "paused"}:
+            return
+        with contextlib.suppress(Exception):
+            self.outage.track(
+                snapshot_from_status(
+                    status,
+                    started_at=self._print_started_at or 0.0,
+                    item_id=self.current_item_id,
+                )
+            )
+
+    async def _reconcile_interrupted_print(self) -> None:
+        """Startup: find out whether we died in the middle of something."""
+        if not self.config.outage.enabled:
+            return
+
+        record = None
+        with contextlib.suppress(Exception):
+            record = self.outage.reconcile_on_start()
+        if record is None:
+            return
+
+        log.warning("Recovered an interrupted print: %s", record.detail)
+        await self._emit_event(
+            "print_interrupted" if record.cause == "pi_power" else "klipper_error",
+            "A print was interrupted",
+            f"{record.detail}\n{record.advice_ar()}".strip(),
+            record.snapshot.filename if record.snapshot else "",
+        )
+
+        # Close the history row so the print does not sit "in progress" forever.
+        if self.history is not None and record.snapshot:
+            with contextlib.suppress(Exception):
+                self.history.close_open_entries(result="interrupted")
+
     async def _handle_layer_change(self, status: PrinterStatusResponse) -> None:
         layer = status.current_layer or 0
+
+        # Forced write: a layer boundary is the most useful moment to know
+        # about after the fact, and it is the number a person actually asks
+        # for - "how far did it get?"
+        if self.config.outage.enabled:
+            with contextlib.suppress(Exception):
+                self.outage.track(
+                    snapshot_from_status(
+                        status,
+                        started_at=self._print_started_at or 0.0,
+                        item_id=self.current_item_id,
+                    ),
+                    force=True,
+                )
 
         if layer == 2 and not self._notified_first_layer:
             self._notified_first_layer = True
@@ -422,6 +703,11 @@ class AppState:
 
     async def _finish_print(self, status: PrinterStatusResponse, *, result: str) -> None:
         filename = status.filename
+
+        # We watched this print end, so nothing was lost to an outage. Removing
+        # the mirror is what keeps a leftover file on the next boot meaningful.
+        with contextlib.suppress(Exception):
+            self.outage.clear()
 
         if result == "completed":
             await self._emit_event("print_finished", "Print finished", filename, filename)

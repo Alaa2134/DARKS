@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from .moonraker import MoonrakerClient, MoonrakerError, progress_from_status
-from .schemas import PrinterStatusResponse, TemperatureBlock
+from .schemas import FilamentSensorState, PrinterStatusResponse, TemperatureBlock
 
 # Klipper print_stats.state values, plus our own "unknown".
 KNOWN_STATES = {"standby", "printing", "paused", "complete", "cancelled", "error", "unknown"}
@@ -84,6 +84,7 @@ def build_status(
     current_layer, total_layer = layer_info(status)
 
     klippy_message = str(webhooks.get("state_message") or server_info.get("klippy_message") or "")
+    filament_sensors = filament_sensor_states(status)
 
     return PrinterStatusResponse(
         online=True,
@@ -108,6 +109,7 @@ def build_status(
         speed_factor=float(gcode_move.get("speed_factor") or 1.0),
         extrude_factor=float(gcode_move.get("extrude_factor") or 1.0),
         fan_speed=float(fan.get("speed") or 0.0),
+        filament_sensors=filament_sensors,
         error=error,
         raw={
             "print_stats": print_stats,
@@ -117,6 +119,35 @@ def build_status(
             "webhooks": webhooks,
         },
     )
+
+
+def filament_sensor_states(status: Dict[str, Any]) -> Dict[str, FilamentSensorState]:
+    """Every filament sensor this machine reported, by short name.
+
+    Both Klipper sensor types publish the same two fields, so switch and motion
+    sensors are read identically - but the *kind* is kept, because a switch can
+    only tell you the filament is gone while a motion sensor can also tell you
+    it has stopped moving. Reporting a switch as if it could catch a jam would
+    be promising a safety net that is not there.
+    """
+    sensors: Dict[str, FilamentSensorState] = {}
+    for key, value in status.items():
+        if not isinstance(value, dict):
+            continue
+        if key.startswith("filament_switch_sensor "):
+            kind = "switch"
+        elif key.startswith("filament_motion_sensor "):
+            kind = "motion"
+        else:
+            continue
+        name = key.split(" ", 1)[1]
+        sensors[name] = FilamentSensorState(
+            name=name,
+            kind=kind,
+            enabled=bool(value.get("enabled", True)),
+            filament_detected=bool(value.get("filament_detected", True)),
+        )
+    return sensors
 
 
 async def fetch_status(client: MoonrakerClient) -> PrinterStatusResponse:

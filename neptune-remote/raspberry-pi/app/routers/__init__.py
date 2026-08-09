@@ -1,4 +1,5 @@
 from . import (
+    alerts,
     core,
     files,
     history,
@@ -14,6 +15,6 @@ from . import (
 )
 
 __all__ = [
-    "core", "files", "history", "inventory", "library", "media",
+    "alerts", "core", "files", "history", "inventory", "library", "media",
     "power", "printer", "slicing", "support", "vision", "websocket",
 ]

@@ -72,6 +72,31 @@ class TemperatureBlock(BaseModel):
     power: float = 0.0
 
 
+class NotificationPreferencesRequest(BaseModel):
+    """The half of the notification settings the phone may change.
+
+    Every field is optional so the app can send just the toggle the user
+    touched; anything omitted keeps its current value.
+    """
+
+    enabled: Optional[bool] = None
+    events: Optional[List[str]] = None
+    min_priority: Optional[str] = None
+    quiet_hours_enabled: Optional[bool] = None
+    quiet_start_hour: Optional[int] = Field(default=None, ge=0, le=23)
+    quiet_end_hour: Optional[int] = Field(default=None, ge=0, le=23)
+
+
+class FilamentSensorState(BaseModel):
+    """One Klipper filament sensor as it is right now."""
+
+    name: str
+    # switch | motion - a switch sees absence, a motion sensor also sees a jam.
+    kind: str = "switch"
+    enabled: bool = True
+    filament_detected: bool = True
+
+
 class PrinterStatusResponse(BaseModel):
     online: bool = False
     klippy_state: str = "unknown"  # ready | startup | shutdown | error | unknown
@@ -95,6 +120,7 @@ class PrinterStatusResponse(BaseModel):
     speed_factor: float = 1.0
     extrude_factor: float = 1.0
     fan_speed: float = 0.0
+    filament_sensors: Dict[str, FilamentSensorState] = Field(default_factory=dict)
     thumbnail_path: Optional[str] = None
     error: Optional[str] = None
     raw: Dict[str, Any] = Field(default_factory=dict)

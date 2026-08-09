@@ -46,6 +46,9 @@ class MoonrakerClient:
     def __init__(self, config: MoonrakerConfig) -> None:
         self.config = config
         self._client: Optional[httpx.AsyncClient] = None
+        #: Objects beyond DEFAULT_OBJECTS that this specific printer exposes,
+        #: discovered at runtime rather than hardcoded per model.
+        self.extra_objects: List[str] = []
 
     # ----------------------------------------------------------------- setup
     @property
@@ -150,7 +153,39 @@ class MoonrakerClient:
         return {}
 
     async def query_status(self) -> Dict[str, Any]:
-        return await self.query_objects(DEFAULT_OBJECTS)
+        """The dashboard set, plus whatever this particular machine also has.
+
+        ``extra_objects`` is filled in by :meth:`discover_extra_objects` from
+        the printer's own object list. Asking for an object Klipper does not
+        have makes Moonraker reject the *whole* query, so nothing is ever added
+        here speculatively.
+        """
+        objects = dict(DEFAULT_OBJECTS)
+        for name in self.extra_objects:
+            objects.setdefault(name, None)
+        return await self.query_objects(objects)
+
+    async def discover_extra_objects(self) -> List[str]:
+        """Find the per-machine objects worth polling - filament sensors first.
+
+        A filament switch is the difference between "the print paused" and "the
+        print paused because the filament ran out", which is the difference
+        between a notification someone can act on and one they cannot.
+        """
+        try:
+            available = await self.list_objects()
+        except MoonrakerError:
+            return list(self.extra_objects)
+
+        wanted = [
+            name
+            for name in available
+            if name.startswith("filament_switch_sensor ")
+            or name.startswith("filament_motion_sensor ")
+            or name == "pause_resume"
+        ]
+        self.extra_objects = sorted(wanted)
+        return self.extra_objects
 
     # ---------------------------------------------------------- print control
     async def run_gcode(self, script: str) -> Any:

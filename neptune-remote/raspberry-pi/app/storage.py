@@ -260,6 +260,39 @@ class HistoryDB:
             ).fetchone()
         return _row_to_entry(row) if row else None
 
+    def close_open_entries(self, *, result: str = "interrupted", note: str = "") -> int:
+        """Finish every row still marked in_progress. Returns how many.
+
+        Called on startup after an unclean shutdown: a print that was running
+        when the power went out never gets its own finish event, so without
+        this it stays "in progress" in the history forever and every later
+        total is wrong.
+        """
+        finish = time.time()
+        with self._lock:
+            rows = self._conn.execute(
+                "SELECT id, start_time FROM print_history WHERE result = 'in_progress'"
+            ).fetchall()
+            for row in rows:
+                self._conn.execute(
+                    """
+                    UPDATE print_history
+                       SET finish_time = ?, duration = ?, result = ?,
+                           note = CASE WHEN ? = '' THEN note ELSE ? END
+                     WHERE id = ?
+                    """,
+                    (
+                        finish,
+                        max(0.0, finish - float(row["start_time"])),
+                        result,
+                        note,
+                        note,
+                        row["id"],
+                    ),
+                )
+            self._conn.commit()
+        return len(rows)
+
     def prune(self, max_entries: int) -> None:
         if max_entries <= 0:
             return

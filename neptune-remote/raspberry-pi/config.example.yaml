@@ -192,3 +192,102 @@ vision:
   roi: null
   edge_growth_threshold: 1.55
   change_threshold: 0.28
+
+# ---------------------------------------------------------------------------
+# Notifications
+#
+# These are the ONLY alerts that reach you while the app is closed. The app's
+# own WebSocket needs the app open and in the foreground, which is exactly not
+# the case when you are out of the house and the printer needs you.
+#
+# ntfy is the shortest path to a locked iPhone: free, no account, no Apple
+# developer programme. Pick a long random topic - the topic name IS the
+# password, anyone who guesses it reads your notifications.
+#
+#   1. install the "ntfy" app from the App Store
+#   2. subscribe it to the same topic you write below
+#   3. curl -d "hello" https://ntfy.sh/<your-topic>   (should buzz your phone)
+#
+# Never put these tokens in config.example.yaml or any file you commit.
+# ---------------------------------------------------------------------------
+notifications:
+  enabled: true
+  language: "ar"            # ar | en
+
+  # Empty = the built-in default set (everything except progress chatter).
+  # Run GET /api/alerts/preferences to see every available kind.
+  events: []
+  # The Pi owner's veto: these never notify, whatever the app asks for.
+  muted: []
+
+  min_priority: "low"       # min | low | default | high | urgent
+  dedupe_seconds: 120       # the same message inside this window is sent once
+  max_per_hour: 40
+  retries: 2
+
+  # Urgent events - power loss, filament runout, Klipper errors - ignore quiet
+  # hours entirely. That is deliberate: they are the ones that need a human.
+  quiet_hours:
+    enabled: false
+    start_hour: 23
+    end_hour: 8
+
+  ntfy:
+    enabled: false
+    server: "https://ntfy.sh"
+    topic: ""               # e.g. "neptune-a7f3c1d9e2" - make it unguessable
+    token: ""               # only for a private/self-hosted server
+
+  telegram:
+    enabled: false
+    bot_token: ""           # from @BotFather
+    chat_id: ""             # from https://api.telegram.org/bot<TOKEN>/getUpdates
+
+  webhook:
+    enabled: false
+    url: ""
+    method: "POST"
+    headers: {}
+    body_template: ""       # {title} {message} {kind} {priority} {filename}
+
+  # The dead man's switch.
+  #
+  # Everything above runs ON the Pi, so when the Pi loses power none of it can
+  # tell you anything. This inverts the signal: the Pi pings an outside URL on
+  # a schedule, and that service shouts when the pings STOP.
+  #
+  # Free option: https://healthchecks.io -> new check -> copy its ping URL.
+  # Set its period slightly above interval_seconds and give it a grace period.
+  #
+  # This says "the Pi is alive", nothing about the printer. Do not conflate.
+  heartbeat:
+    enabled: false
+    url: ""
+    interval_seconds: 300
+    method: "GET"
+    fail_suffix: "/fail"
+
+# ---------------------------------------------------------------------------
+# Power loss detection
+#
+# A Klipper shutdown and a power cut look identical in Moonraker's state, so
+# they are told apart by the MCU's USB device: cut mains to the printer and the
+# /dev/serial/by-id/... symlink disappears within a second. A Klipper error
+# unplugs nothing, so the device is still there.
+#
+# serial_path is read from [mcu] in your printer.cfg when left empty. Set it
+# only if your MCU is not on USB (CAN bus, network) or auto-detection fails.
+#
+# While a print runs, its filename/layer/height are mirrored to a small fsync'd
+# file. If the outage also kills the Pi, that file is what lets the backend say
+# on the next boot exactly what died and at which layer.
+# ---------------------------------------------------------------------------
+outage:
+  enabled: true
+  serial_path: ""
+  snapshot_interval_seconds: 20
+  notify_on_restore: true
+  # Cut mains once the Pi is back and a print is known dead. Off by default:
+  # Klipper starts with the heaters off, so a powered idle printer is not
+  # itself dangerous, and turning someone's printer off should be asked for.
+  power_off_after_outage: false
