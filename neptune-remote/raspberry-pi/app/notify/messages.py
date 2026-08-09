@@ -147,6 +147,13 @@ TEMPLATES: Dict[str, Template] = {
         tags=("rotating_light",),
         critical=True,
     ),
+    "anomaly": Template(
+        ar="الطابعة بتتصرف بشكل غير طبيعي",
+        en="The printer is behaving abnormally",
+        priority=Priority.HIGH,
+        tags=("chart_with_upwards_trend", "warning"),
+        critical=True,
+    ),
     "safety_blocked": Template(
         ar="أمر اتمنع لأسباب أمان",
         en="A command was blocked for safety",

@@ -46,6 +46,7 @@ final class NotificationManager: ObservableObject {
         case powerRestored = "power_restored"
         case printInterrupted = "print_interrupted"
         case safetyBlocked = "safety_blocked"
+        case anomaly = "anomaly"
 
         var titleKey: String { "notification.\(rawValue).title" }
 
@@ -58,7 +59,7 @@ final class NotificationManager: ObservableObject {
         var soundIsCritical: Bool {
             switch self {
             case .klipperError, .printFailed, .visionAlert, .aiPauseFailed,
-                 .filamentRunout, .powerLost, .printInterrupted:
+                 .filamentRunout, .powerLost, .printInterrupted, .anomaly:
                 return true
             default:
                 return false
@@ -138,6 +139,8 @@ final class NotificationManager: ObservableObject {
             return settings.notifyFilamentLow
         case .powerLost, .powerRestored, .printInterrupted, .filamentRunout:
             return settings.notifyPowerAndRunout
+        case .anomaly:
+            return settings.notifyVisionAlerts
         // Not switchable. Each one means the machine tried to protect itself
         // and either did or could not, and a silent version of that is worse
         // than no version.

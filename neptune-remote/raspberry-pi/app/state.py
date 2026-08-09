@@ -45,6 +45,7 @@ from .slicer.golden import GoldenProfileStore
 from .maintenance.store import MaintenanceStore
 from .moonraker import MoonrakerClient, MoonrakerError
 from .paths import StorageLayout
+from .anomaly import AnomalyDetector
 from .estimate import PrintTimeEstimator, learn_calibration, slicer_seconds_from_metadata
 from .notify import HeartbeatPinger, NotificationService
 from .power import (
@@ -164,6 +165,10 @@ class AppState:
         # during the warm-up and is wrong in both directions for the first
         # third of every print.
         self.estimator = PrintTimeEstimator()
+        # Watches the telemetry that is already streaming for the things a
+        # camera cannot see: a clog forming, the extruder slipping, a heater
+        # losing its grip. Findings only - it never pauses anything.
+        self.anomalies = AnomalyDetector()
         #: Metadata already fetched, keyed by filename, so the same file is not
         #: re-requested from Moonraker on every poll.
         self._metadata_cache: Dict[str, Dict[str, Any]] = {}
@@ -217,6 +222,9 @@ class AppState:
         self._notified_first_layer = False
         self._print_started_at: Optional[float] = None
         self._extra_objects_ready = False
+        #: finding id -> the severity it was last announced at, so a condition
+        #: that persists for hundreds of polls is reported once.
+        self._announced_anomalies: Dict[str, str] = {}
 
         self._tasks: List[asyncio.Task[Any]] = []
         self._stopping = asyncio.Event()
@@ -470,17 +478,20 @@ class AppState:
         if status.state not in {"printing", "paused"} or not status.filename:
             if self.estimator.filename:
                 self.estimator.reset()
+                self.anomalies.reset()
+                self._announced_anomalies.clear()
             return
 
         if status.filename != self.estimator.filename:
             metadata = await self._gcode_metadata(status.filename)
+            filament_total = _optional_float((metadata or {}).get("filament_total"))
             self.estimator.begin(
                 status.filename,
                 slicer_seconds_from_metadata(metadata),
-                filament_total_mm=_optional_float(
-                    (metadata or {}).get("filament_total")
-                ),
+                filament_total_mm=filament_total,
             )
+            self.anomalies.begin(status.filename, filament_total)
+            self._announced_anomalies.clear()
             self._refresh_calibration()
 
         # A paused print is not progressing, so folding in samples would make
@@ -502,6 +513,45 @@ class AppState:
         # number exactly where the honest answer is "I do not know yet".
         status.estimated_time_left = estimate.remaining_seconds
         status.estimate = estimate.to_dict()
+
+        await self._observe_anomalies(status)
+
+    async def _observe_anomalies(self, status: PrinterStatusResponse) -> None:
+        """Fold this poll into the anomaly watcher and announce new findings."""
+        try:
+            self.anomalies.observe(
+                layer=status.current_layer,
+                print_duration=status.print_duration,
+                filament_used_mm=status.filament_used_mm,
+                nozzle_actual=status.nozzle.actual,
+                nozzle_target=status.nozzle.target,
+                bed_actual=status.bed.actual,
+                bed_target=status.bed.target,
+            )
+            findings = self.anomalies.evaluate(
+                progress=status.progress, filament_used_mm=status.filament_used_mm
+            )
+        except Exception:  # noqa: BLE001 - analysis must never stop the loop
+            log.debug("Anomaly evaluation failed", exc_info=True)
+            return
+
+        for finding in findings:
+            if finding.severity.value not in {"warning", "urgent"}:
+                continue
+            # Announced once per print, and again only if it gets worse. These
+            # are computed every second on a condition that persists for
+            # hundreds of polls; without this it would be the same alert over
+            # and over until nobody read any of them.
+            previous = self._announced_anomalies.get(finding.id)
+            if previous == finding.severity.value:
+                continue
+            self._announced_anomalies[finding.id] = finding.severity.value
+            await self._emit_event(
+                "anomaly",
+                finding.title_en,
+                f"{finding.detail_ar}\n{finding.suggestion_ar}".strip(),
+                status.filename,
+            )
 
     async def _gcode_metadata(self, filename: str) -> Optional[Dict[str, Any]]:
         """The slicer's own numbers for this file, fetched once and cached."""

@@ -62,6 +62,18 @@ async def printer_status(state: AppState = Depends(get_state)) -> PrinterStatusR
     return status
 
 
+@router.get("/printer/anomalies")
+async def printer_anomalies(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """What the telemetry says is going wrong, with the numbers behind it.
+
+    Separate from the camera monitor on purpose: this catches the things a
+    lens cannot see - a clog forming as a slow drift in layer time, the
+    extruder quietly slipping, a heater losing its grip - and it reports the
+    arithmetic so a wrong finding can be argued with rather than shrugged at.
+    """
+    return state.anomalies.status()
+
+
 @router.get("/printer/objects")
 async def printer_objects(state: AppState = Depends(get_state)) -> Dict[str, List[str]]:
     try:

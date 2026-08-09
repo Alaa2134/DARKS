@@ -1281,3 +1281,5 @@
 "estimate.calibration.learned" = "Your prints take %@ of what the slicer predicts (%d prints)";
 "estimate.calibration.learning" = "Still learning — needs %d completed prints";
 "estimate.source.file" = "Estimating from file progress only — this G-code carries no filament total, which is a more accurate signal when present.";
+
+"notification.anomaly.title" = "The printer is behaving abnormally";

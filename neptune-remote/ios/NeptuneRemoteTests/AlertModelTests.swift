@@ -167,7 +167,7 @@ final class AlertModelTests: XCTestCase {
         // These are the kinds app/notify/messages.py can emit. A kind the app
         // cannot decode is a notification that silently never appears.
         let backendKinds = [
-            "ai_pause_failed", "auto_power_off", "auto_power_off_failed",
+            "ai_pause_failed", "anomaly", "auto_power_off", "auto_power_off_failed",
             "connected", "disconnected", "filament_runout",
             "first_layer_complete", "klipper_error", "power_lost",
             "power_restored", "print_failed", "print_finished",
