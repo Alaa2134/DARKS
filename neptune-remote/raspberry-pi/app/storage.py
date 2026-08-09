@@ -161,6 +161,12 @@ MIGRATIONS = (
     # with the measured duration it is one calibration sample: how wrong the
     # slicer is on this specific machine.
     ("estimated_seconds", "ALTER TABLE print_history ADD COLUMN estimated_seconds REAL"),
+    # What the print was made of and how. Read from the G-code metadata at
+    # print start, so success rates can be attributed to a material and a
+    # profile rather than to a filename.
+    ("filament_type", "ALTER TABLE print_history ADD COLUMN filament_type TEXT"),
+    ("print_profile", "ALTER TABLE print_history ADD COLUMN print_profile TEXT"),
+    ("layer_height", "ALTER TABLE print_history ADD COLUMN layer_height REAL"),
 )
 
 
@@ -197,6 +203,9 @@ class HistoryDB:
         start_time: Optional[float] = None,
         estimated_filament_mm: Optional[float] = None,
         estimated_seconds: Optional[float] = None,
+        filament_type: Optional[str] = None,
+        print_profile: Optional[str] = None,
+        layer_height: Optional[float] = None,
         nozzle_temp: Optional[float] = None,
         bed_temp: Optional[float] = None,
         speed_profile: Optional[str] = None,
@@ -207,15 +216,19 @@ class HistoryDB:
                 """
                 INSERT INTO print_history
                     (filename, start_time, result, estimated_filament_mm,
-                     estimated_seconds, nozzle_temp, bed_temp, speed_profile,
+                     estimated_seconds, filament_type, print_profile,
+                     layer_height, nozzle_temp, bed_temp, speed_profile,
                      thumbnail_path)
-                VALUES (?, ?, 'in_progress', ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, 'in_progress', ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     filename,
                     start_time if start_time is not None else time.time(),
                     estimated_filament_mm,
                     estimated_seconds,
+                    filament_type,
+                    print_profile,
+                    layer_height,
                     nozzle_temp,
                     bed_temp,
                     speed_profile,
@@ -409,6 +422,9 @@ def _row_to_entry(row: sqlite3.Row) -> HistoryEntry:
         filament_used_mm=data["filament_used_mm"],
         estimated_filament_mm=data["estimated_filament_mm"],
         estimated_seconds=data.get("estimated_seconds"),
+        filament_type=data.get("filament_type"),
+        print_profile=data.get("print_profile"),
+        layer_height=data.get("layer_height"),
         nozzle_temp=data["nozzle_temp"],
         bed_temp=data["bed_temp"],
         speed_profile=data["speed_profile"],

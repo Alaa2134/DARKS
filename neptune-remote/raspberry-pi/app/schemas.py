@@ -349,6 +349,11 @@ class HistoryEntry(BaseModel):
     #: What the slicer predicted for this file. With `duration` it forms one
     #: calibration sample: how wrong the slicer is on this machine.
     estimated_seconds: Optional[float] = None
+    #: Read from the G-code metadata at print start, so results can be
+    #: attributed to a material and a profile rather than to a filename.
+    filament_type: Optional[str] = None
+    print_profile: Optional[str] = None
+    layer_height: Optional[float] = None
     nozzle_temp: Optional[float] = None
     bed_temp: Optional[float] = None
     speed_profile: Optional[str] = None

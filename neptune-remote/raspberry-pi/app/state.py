@@ -47,6 +47,7 @@ from .moonraker import MoonrakerClient, MoonrakerError
 from .paths import StorageLayout
 from .anomaly import AnomalyDetector
 from .estimate import PrintTimeEstimator, learn_calibration, slicer_seconds_from_metadata
+from .learning import Outcome, report
 from .notify import HeartbeatPinger, NotificationService
 from .power import (
     OutageWatcher,
@@ -1023,6 +1024,25 @@ class AppState:
             self._bed_target_pending = False
 
     # -------------------------------------------------------------- history
+    def learning_report(self) -> Dict[str, Any]:
+        """What this printer's own history says about what works."""
+        if self.history is None:
+            return report([])
+        entries = self.history.list(limit=500)
+        return report(
+            [
+                Outcome(
+                    result=entry.result,
+                    duration=entry.duration,
+                    estimated_seconds=entry.estimated_seconds,
+                    filament_type=entry.filament_type,
+                    print_profile=entry.print_profile,
+                    layer_height=entry.layer_height,
+                )
+                for entry in entries
+            ]
+        )
+
     def _ensure_history_entry(self, status: PrinterStatusResponse) -> None:
         if self.history is None or not status.filename:
             return
@@ -1039,9 +1059,26 @@ class AppState:
             # with the measured duration when the print ends, it becomes one
             # calibration sample for the estimator.
             estimated_seconds=self.estimator.slicer_seconds,
+            # From the G-code metadata, so a result can be attributed to a
+            # material and a profile instead of to a filename.
+            **self._print_descriptors(status.filename),
             nozzle_temp=status.nozzle.target or status.nozzle.actual,
             bed_temp=status.bed.target or status.bed.actual,
         )
+
+    def _print_descriptors(self, filename: str) -> Dict[str, Any]:
+        """Material, profile and layer height for this file, if known.
+
+        Read from the cached metadata rather than re-fetched: this runs on the
+        transition into printing, and a Moonraker round trip there would delay
+        the history row for no benefit.
+        """
+        metadata = self._metadata_cache.get(filename) or {}
+        return {
+            "filament_type": (metadata.get("filament_type") or "").strip() or None,
+            "print_profile": (metadata.get("slicer") or "").strip() or None,
+            "layer_height": _optional_float(metadata.get("layer_height")),
+        }
 
     def _close_history_entry(
         self,
