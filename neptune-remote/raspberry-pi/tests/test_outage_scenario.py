@@ -241,6 +241,72 @@ async def test_a_service_restart_does_not_send_someone_home_from_work(app_state,
 
 
 @pytest.mark.asyncio
+async def test_restarting_the_backend_mid_print_is_not_an_interruption(app_state, monkeypatch):
+    """The everyday case: `systemctl restart neptune-remote` while printing.
+
+    Klipper and Moonraker are separate services, so the print never noticed.
+    Reporting it as an interruption would push a false alarm to a phone and -
+    worse - close the history row of a print that is still running.
+    """
+    state, _ = app_state
+    spy = Spy()
+    state.notifications.channels = [spy]
+
+    status = printing()
+    state._ensure_history_entry(status)
+    await state._handle_status(status)
+    spy.sent.clear()
+    assert state.outage.snapshot_file.exists()
+
+    # The process comes back and the printer says it never stopped.
+    monkeypatch.setattr("app.state.fetch_status", _answering(printing(layer=430)))
+    state.outage._live = None
+    before = len(state.outage.records)
+    await state._reconcile_interrupted_print()
+
+    assert spy.kinds == [], "nothing was interrupted, so nothing is worth a push"
+    assert len(state.outage.records) == before
+    assert state.history.active_entry() is not None, "the print is still running"
+    # The stale snapshot is dropped; the printer loop writes a fresh one on its
+    # next poll, so a real outage after this is still caught.
+    assert not state.outage.snapshot_file.exists()
+
+
+@pytest.mark.asyncio
+async def test_the_same_file_printing_again_is_still_a_lost_print(app_state, monkeypatch):
+    """The trap in the check above.
+
+    "Same filename, still printing" is not enough: somebody may have restarted
+    the same file after finding the printer dead. Filament used only ever goes
+    up within one print, so a lower figure means this is a different run - and
+    the print we were watching really was lost.
+    """
+    state, _ = app_state
+    spy = Spy()
+    state.notifications.channels = [spy]
+
+    await state._handle_status(printing())
+    spy.sent.clear()
+
+    restarted = printing()
+    restarted.filament_used_mm = 40.0  # a few layers into a fresh run
+    monkeypatch.setattr("app.state.fetch_status", _answering(restarted))
+    monkeypatch.setattr("app.power.outage.boot_time", lambda now=None: 1.0)
+    state.outage._live = None
+    await state._reconcile_interrupted_print()
+
+    assert state.outage.last_record is not None
+    assert state.outage.last_record.cause == "service_restart"
+
+
+def _answering(status: PrinterStatusResponse):
+    async def fetch(_client):
+        return status
+
+    return fetch
+
+
+@pytest.mark.asyncio
 async def test_a_print_that_finished_normally_leaves_nothing_to_recover(app_state):
     state, serial = app_state
 

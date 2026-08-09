@@ -372,6 +372,23 @@ class OutageWatcher:
     def live_snapshot(self) -> Optional[PrintSnapshot]:
         return self._live
 
+    def pending_snapshot(self) -> Optional[PrintSnapshot]:
+        """The snapshot left on disk by a process that never exited, read
+        without consuming it.
+
+        `reconcile_on_start` both reads this file and files an outage record
+        from it. Deciding whether there *was* an outage needs the first half on
+        its own - you cannot ask the printer "is this print still yours?" after
+        the answer has already been written down as a failure.
+        """
+        data = read_json(self.snapshot_file, None)
+        if not isinstance(data, dict):
+            return None
+        try:
+            return PrintSnapshot.from_dict(data)
+        except (TypeError, ValueError):
+            return None
+
     # --------------------------------------------------------------- outages
     def open_outage(self, detection: Detection, snapshot: Optional[PrintSnapshot]) -> OutageRecord:
         record = OutageRecord(

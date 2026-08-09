@@ -762,9 +762,56 @@ class AppState:
                 )
             )
 
+    async def _print_survived_our_restart(self) -> bool:
+        """Is the print we left behind still running on the printer?
+
+        The leftover snapshot means *this process* died mid-print. It does not
+        mean the print did. Klipper and Moonraker are separate services, so a
+        `systemctl restart neptune-remote` - to pick up a camera setting, say -
+        leaves the print running untouched, and reporting that as "your print
+        was interrupted" is a false alarm that also closes the history row of a
+        print that is still going.
+
+        So the printer is asked before anything is written down. Only what it
+        answers counts: unreachable, idle, or printing something else all mean
+        we cannot claim the print survived, and the normal reconciliation runs.
+        """
+        pending = self.outage.pending_snapshot()
+        if pending is None or not pending.filename:
+            return False
+        try:
+            status = await fetch_status(self.moonraker)
+        except Exception:
+            log.exception("Could not ask the printer whether the print survived")
+            return False
+        if not status.online or status.state not in {"printing", "paused"}:
+            return False
+        if (status.filename or "") != pending.filename:
+            return False
+        # Same file, but less filament through the extruder than we had already
+        # watched go through it: this is a *second* print of that file, which
+        # means the first one did end without us - exactly the case the outage
+        # record exists for. Filament is used because it only ever goes up
+        # within a print, unlike progress on a file that was restarted.
+        if status.filament_used_mm + 1.0 < pending.filament_used_mm:
+            return False
+
+        log.info(
+            "The backend restarted while %s was printing; the print is still "
+            "running, so this was not an interruption",
+            pending.filename,
+        )
+        # Drop the stale snapshot: the printer loop rewrites it on its next
+        # poll, so a real outage after this point is still caught.
+        self.outage.clear()
+        return True
+
     async def _reconcile_interrupted_print(self) -> None:
         """Startup: find out whether we died in the middle of something."""
         if not self.config.outage.enabled:
+            return
+
+        if await self._print_survived_our_restart():
             return
 
         record = None
