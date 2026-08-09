@@ -88,11 +88,16 @@ struct CameraView: View {
                     switch settings.cameraKind {
                     case .mjpeg:
                         if let image = stream.image {
-                            Image(uiImage: image)
-                                .resizable()
-                                .scaledToFit()
-                                .rotationEffect(.degrees(Double(settings.cameraRotation)))
-                                .scaleEffect(x: settings.cameraMirrored ? -1 : 1, y: 1)
+                            // Zoom wraps rotation and mirroring, so pinching
+                            // magnifies what you are looking at rather than the
+                            // frame before it was turned the right way up.
+                            ZoomableView {
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .scaledToFit()
+                                    .rotationEffect(.degrees(Double(settings.cameraRotation)))
+                                    .scaleEffect(x: settings.cameraMirrored ? -1 : 1, y: 1)
+                            }
                         } else {
                             connectingView
                         }
@@ -151,6 +156,12 @@ struct CameraView: View {
             )
             InfoRow(titleKey: "camera.kind", value: L.t(settings.cameraKind.localizationKey))
             InfoRow(titleKey: "camera.frames", value: "\(stream.framesReceived)")
+            if settings.cameraKind == .mjpeg {
+                Text(localized: "camera.zoom.hint")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .card()
     }
@@ -297,10 +308,14 @@ struct CameraFullscreenView: View {
             Color.black.ignoresSafeArea()
 
             if kind == .mjpeg, let image = stream.image {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .ignoresSafeArea()
+                // The screen you actually watch a first layer on, so this is
+                // where zoom earns its keep.
+                ZoomableView {
+                    Image(uiImage: image)
+                        .resizable()
+                        .scaledToFit()
+                }
+                .ignoresSafeArea()
             } else if let url, kind != .mjpeg {
                 CameraWebView(url: url).ignoresSafeArea()
             } else {

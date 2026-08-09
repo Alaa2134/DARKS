@@ -246,6 +246,8 @@
 "camera.status" = "البث";
 "camera.connection" = "الاتصال";
 "camera.frames" = "عدد الإطارات";
+"camera.zoom.hint" = "قرّص بإصبعين للتكبير، اسحب للتحريك، دوس مرتين للرجوع. ده زوم رقمي - بيكبّر البكسلات اللي عندك، مش بيجيب تفاصيل زيادة.";
+"camera.zoom.reset" = "إلغاء التكبير";
 "camera.kind" = "نوع الكاميرا";
 "camera.kind.mjpeg" = "بث MJPEG";
 "camera.kind.snapshot" = "لقطات متتابعة";

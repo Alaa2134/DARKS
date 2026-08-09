@@ -246,6 +246,8 @@
 "camera.status" = "Stream";
 "camera.connection" = "Connection";
 "camera.frames" = "Frames received";
+"camera.zoom.hint" = "Pinch to zoom, drag to move, double-tap to reset. This is digital zoom - it magnifies the pixels you have, it does not add detail.";
+"camera.zoom.reset" = "Reset zoom";
 "camera.kind" = "Camera type";
 "camera.kind.mjpeg" = "MJPEG stream";
 "camera.kind.snapshot" = "Snapshot polling";
