@@ -209,6 +209,9 @@ struct SliceRequestPayload: Encodable, Equatable {
     var printerProfile: String = "neptune3plus_0.4"
     var filamentProfile: String = "pla"
     var printProfile: String = "standard"
+    /// draft | fast | balanced | quality | strong | miniature. Naming one fills
+    /// in everything below that the caller leaves nil.
+    var mode: String?
 
     var layerHeight: Double?
     var firstLayerHeight: Double?
@@ -241,6 +244,7 @@ struct SliceRequestPayload: Encodable, Equatable {
         case printerProfile = "printer_profile"
         case filamentProfile = "filament_profile"
         case printProfile = "print_profile"
+        case mode
         case layerHeight = "layer_height"
         case firstLayerHeight = "first_layer_height"
         case nozzleDiameter = "nozzle_diameter"

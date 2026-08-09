@@ -17,6 +17,7 @@ final class AppEnvironment: ObservableObject {
     let support: SupportStore
     let doctor: DoctorStore
     let alerts: AlertStore
+    let calibration: CalibrationStore
     let liveActivity: LiveActivityController
 
     /// Vision events already turned into a notification, so a repeated summary
@@ -43,6 +44,7 @@ final class AppEnvironment: ObservableObject {
         support = SupportStore(settings: settings, printer: printer)
         doctor = DoctorStore(settings: settings, printer: printer)
         alerts = AlertStore(settings: settings, printer: printer)
+        calibration = CalibrationStore(settings: settings, printer: printer)
         liveActivity = LiveActivityController()
 
         printer.onSliceProgress = { [weak self] progress in

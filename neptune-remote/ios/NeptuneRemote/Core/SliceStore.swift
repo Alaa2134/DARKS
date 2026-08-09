@@ -19,6 +19,11 @@ final class SliceStore: ObservableObject {
     @Published var printerProfile = "neptune3plus_0.4"
     @Published var filamentProfile = "pla"
     @Published var printProfile = "standard"
+    /// A print mode, when one was chosen. The backend expands it into layer
+    /// height, walls, infill, speeds and acceleration - resolved against this
+    /// nozzle and this material - so the app sends one word instead of eleven
+    /// fields, and any field set explicitly still wins.
+    @Published var mode: String?
     @Published var layerHeight: Double = 0.2
     @Published var infill: Int = 20
     @Published var perimeters: Int = 3
@@ -102,6 +107,7 @@ final class SliceStore: ObservableObject {
     var request: SliceRequestPayload? {
         guard let model = selectedModel else { return nil }
         var payload = SliceRequestPayload(modelID: model.id)
+        payload.mode = mode
         payload.printerProfile = printerProfile
         payload.filamentProfile = filamentProfile
         payload.printProfile = printProfile

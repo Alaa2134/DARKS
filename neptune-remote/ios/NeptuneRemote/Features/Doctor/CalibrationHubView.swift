@@ -42,6 +42,31 @@ struct CalibrationHubView: View {
                 if options.isEmpty {
                     ProgressView().padding(.vertical, 60)
                 }
+
+                // Everything above is about the bed. These are about what the
+                // plastic looks like - flow, pressure advance, temperature -
+                // which nothing in this app measured before.
+                NavigationLink {
+                    CalibrationPrintsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "ruler")
+                            .foregroundStyle(Theme.accent)
+                            .frame(width: 26)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(localized: "calibration.prints.title")
+                                .font(.subheadline.weight(.medium))
+                            Text(localized: "calibration.prints.subtitle")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.forward").font(.caption).foregroundStyle(.secondary)
+                    }
+                    .card()
+                }
+                .buttonStyle(.plain)
             }
             .padding(Theme.spacing)
         }

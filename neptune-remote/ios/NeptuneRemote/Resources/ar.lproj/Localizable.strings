@@ -1283,3 +1283,89 @@
 "estimate.source.file" = "التقدير شغال على نسبة الملف بس — الجي كود ده مفهوش كمية الفيلامنت، والتقدير بيبقى أدق لما تكون موجودة.";
 
 "notification.anomaly.title" = "الطابعة بتتصرف بشكل غير طبيعي";
+
+/* MARK: - Print modes */
+"mode.title" = "وضع الطباعة";
+"mode.material" = "الخامة";
+"mode.material.hint" = "نفس الوضع بيطلع أرقام مختلفة حسب الخامة — سرعة سيحان البلاستيك بتفرق كتير.";
+"mode.limits.live" = "الحدود مقروءة من printer.cfg (تسارع %d)";
+"mode.layer" = "الطبقة";
+"mode.speed" = "السرعة";
+"mode.walls" = "الجدران";
+"mode.infill" = "التعبئة";
+"mode.time.same" = "نفس الوقت";
+"mode.time.faster" = "أسرع %d٪";
+"mode.time.longer" = "أطول %@×";
+"mode.clamped" = "اتعدّل %d إعداد عشان حدود الطابعة";
+"mode.empty" = "مفيش أوضاع";
+"mode.empty.hint" = "اتأكد إن الراسبيري متصل.";
+"mode.draft" = "مسودة";
+"mode.fast" = "سريع";
+"mode.balanced" = "متوازن";
+"mode.quality" = "جودة عالية";
+"mode.strong" = "متين";
+"mode.miniature" = "تفاصيل دقيقة";
+"slicer.mode" = "وضع الطباعة";
+"slicer.mode.none" = "مخصص";
+
+/* MARK: - Calibration prints */
+"calibration.prints.title" = "معايرة الإكستروجن";
+"calibration.prints.subtitle" = "التدفق، Pressure Advance، الحرارة، الـ Retraction";
+"calibration.section.temps" = "حرارة الاختبار";
+"calibration.section.temps.footer" = "دي الحرارة اللي هتتطبع بيها قطعة الاختبار. خليها زي اللي بتطبع بيها عادةً.";
+"calibration.nozzle_temp" = "النوزل";
+"calibration.bed_temp" = "السرير";
+"calibration.section.tests" = "اختبارات المعايرة";
+"calibration.section.tests.footer" = "الجي كود بيتولّد من printer.cfg بتاعك — المقاسات والحدود وقطر النوزل والفيلامنت. مفيش سلايسر في النص.";
+"calibration.section.first_layer" = "الطبقة الأولى";
+"calibration.section.first_layer.footer" = "اطبع الباترن، صوّره بالكاميرا، والتطبيق يقيس ويقولك تعدّل Z بكام.";
+"calibration.first_layer.open" = "افحص الطبقة الأولى";
+"calibration.minutes" = "حوالي %d دقيقة";
+"calibration.steps" = "الخطوات";
+"calibration.gcode" = "الجي كود";
+"calibration.gcode.footer" = "ابعت الملف لنفسك أو ارفعه على الطابعة من شاشة الملفات.";
+"calibration.share" = "شارك الجي كود";
+"calibration.flow.title" = "احسب التدفق";
+"calibration.flow.footer" = "قيس سمك الجدار في ٤ أماكن وخد المتوسط. القراءة اللي بعيدة أوي عن المتوقع هترفض — دي غالبًا قياس غلط مش تدفق.";
+"calibration.flow.expected" = "السمك المتوقع";
+"calibration.flow.measured" = "السمك المقاس";
+"calibration.flow.compute" = "احسب";
+"calibration.flow.result" = "معامل التدفق الجديد: %@";
+"calibration.pa.title" = "احسب Pressure Advance";
+"calibration.pa.footer" = "قيس ارتفاع أنضف جزء في البرج من تحت.";
+"calibration.pa.height" = "الارتفاع (مم)";
+"calibration.pa.compute" = "احسب";
+"calibration.pa.result" = "القيمة: %@";
+"calibration.pa.command" = "أمر التجربة الفورية";
+"calibration.pa.manual" = "التثبيت في printer.cfg بإيدك — التطبيق مش بيكتب في الملف ده لوحده.";
+
+/* MARK: - First layer camera check */
+"first_layer.title" = "فحص الطبقة الأولى";
+"first_layer.how" = "اطبع باترن الطبقة الأولى الأول وسيبه على السرير، وبعدين اضغط قيس. الكاميرا هتقيس عرض الخطوط وتحسب الفرق في Z بالمم.";
+"first_layer.measure" = "قيس دلوقتي";
+"first_layer.measure.footer" = "محتاج كاميرا متظبطة وإضاءة كويسة، والصورة من فوق قدر الإمكان.";
+"first_layer.result" = "النتيجة";
+"first_layer.apply" = "طبّق التعديل (%@ مم)";
+"first_layer.applied" = "اتطبّق";
+"first_layer.applied.hint" = "ده تعديل مؤقت للجلسة دي. عشان يثبت، اعمل Z_OFFSET_APPLY_PROBE وبعدها SAVE_CONFIG.";
+"first_layer.confidence" = "الثقة في القياس %d٪";
+"first_layer.unreadable.footer" = "مفيش رقم هيتطبق. الرقم الغلط هنا معناه النوزل يتحفر في السرير، فمش هخمّن.";
+"first_layer.measurements" = "القياسات";
+"first_layer.measurements.footer" = "دي الأرقام اللي الحساب اتعمل منها، عشان تقدر تراجعها بنفسك.";
+"first_layer.measured_width" = "عرض الخط المقاس";
+"first_layer.expected_width" = "العرض المتوقع";
+"first_layer.lines" = "عدد الخطوط";
+"first_layer.contrast" = "وضوح الخطوط";
+"first_layer.drift" = "انحراف المسافات";
+
+/* MARK: - Insights */
+"insights.title" = "اللي اتعلمته من طبعاتك";
+"insights.section.findings" = "الخلاصة";
+"insights.section.findings.footer" = "مفيش أي نسبة بتتقال قبل %d طبعات بنفس التركيبة. أقل من كده مش رقم، ده تخمين.";
+"insights.section.combinations" = "التركيبات";
+"insights.section.duration" = "دقة تقدير الوقت";
+"insights.section.duration.footer" = "الفرق بين الوقت الفعلي وتقدير السلايسر، لكل خامة.";
+"insights.duration.ratio" = "أطول %d٪";
+"insights.not_enough" = "عينة صغيرة";
+"insights.counts" = "%d نجحت من %d";
+"insights.early" = "%d فشل بدري";

@@ -232,6 +232,23 @@ struct SliceView: View {
             picker(titleKey: "slicer.print_profile", selection: $slicing.printProfile,
                    options: slicing.profiles.prints)
 
+            // A mode is a shortcut for the eleven fields below, resolved
+            // against this nozzle and this material. Placed with the profiles
+            // because it overrides them.
+            NavigationLink {
+                PrintModeView(selection: $slicing.mode)
+            } label: {
+                HStack {
+                    Text(localized: "slicer.mode")
+                    Spacer()
+                    Text(slicing.mode.map { L.t("mode.\($0)") } ?? L.t("slicer.mode.none"))
+                        .foregroundStyle(.secondary)
+                    Image(systemName: "chevron.forward").font(.caption).foregroundStyle(.tertiary)
+                }
+                .font(.subheadline)
+            }
+            .buttonStyle(.plain)
+
             Button(L.t("slicer.load_profile_defaults")) {
                 slicing.applyProfileDefaults()
                 Haptics.selection()

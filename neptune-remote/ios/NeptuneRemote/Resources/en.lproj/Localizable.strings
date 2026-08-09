@@ -1283,3 +1283,89 @@
 "estimate.source.file" = "Estimating from file progress only — this G-code carries no filament total, which is a more accurate signal when present.";
 
 "notification.anomaly.title" = "The printer is behaving abnormally";
+
+/* MARK: - Print modes */
+"mode.title" = "Print mode";
+"mode.material" = "Material";
+"mode.material.hint" = "The same mode resolves to different numbers per material — how fast the plastic melts changes everything.";
+"mode.limits.live" = "Limits read from printer.cfg (accel %d)";
+"mode.layer" = "Layer";
+"mode.speed" = "Speed";
+"mode.walls" = "Walls";
+"mode.infill" = "Infill";
+"mode.time.same" = "Same time";
+"mode.time.faster" = "%d%% faster";
+"mode.time.longer" = "%@× longer";
+"mode.clamped" = "%d settings capped by the printer's limits";
+"mode.empty" = "No modes";
+"mode.empty.hint" = "Check the Raspberry Pi is reachable.";
+"mode.draft" = "Draft";
+"mode.fast" = "Fast";
+"mode.balanced" = "Balanced";
+"mode.quality" = "Quality";
+"mode.strong" = "Strong";
+"mode.miniature" = "Fine detail";
+"slicer.mode" = "Print mode";
+"slicer.mode.none" = "Custom";
+
+/* MARK: - Calibration prints */
+"calibration.prints.title" = "Extrusion calibration";
+"calibration.prints.subtitle" = "Flow, pressure advance, temperature, retraction";
+"calibration.section.temps" = "Test temperatures";
+"calibration.section.temps.footer" = "What the test piece prints at. Use whatever you normally print with.";
+"calibration.nozzle_temp" = "Nozzle";
+"calibration.bed_temp" = "Bed";
+"calibration.section.tests" = "Calibration tests";
+"calibration.section.tests.footer" = "The G-code is generated from your printer.cfg — bed size, travel limits, nozzle and filament diameter. No slicer involved.";
+"calibration.section.first_layer" = "First layer";
+"calibration.section.first_layer.footer" = "Print the patch, photograph it, and the app measures it and tells you the Z correction.";
+"calibration.first_layer.open" = "Check the first layer";
+"calibration.minutes" = "about %d min";
+"calibration.steps" = "Steps";
+"calibration.gcode" = "G-code";
+"calibration.gcode.footer" = "Share it to yourself, or upload it from the Files screen.";
+"calibration.share" = "Share the G-code";
+"calibration.flow.title" = "Compute flow";
+"calibration.flow.footer" = "Measure the wall in four places and average. A reading far from expected is refused — that is a mismeasurement, not flow.";
+"calibration.flow.expected" = "Expected thickness";
+"calibration.flow.measured" = "Measured thickness";
+"calibration.flow.compute" = "Compute";
+"calibration.flow.result" = "New flow multiplier: %@";
+"calibration.pa.title" = "Compute pressure advance";
+"calibration.pa.footer" = "Measure the height of the cleanest band from the bottom.";
+"calibration.pa.height" = "Height (mm)";
+"calibration.pa.compute" = "Compute";
+"calibration.pa.result" = "Value: %@";
+"calibration.pa.command" = "Try it immediately";
+"calibration.pa.manual" = "Add it to printer.cfg yourself — this app never writes that file on its own.";
+
+/* MARK: - First layer camera check */
+"first_layer.title" = "First layer check";
+"first_layer.how" = "Print the first-layer patch and leave it on the bed, then tap measure. The camera measures the line width and computes the Z error in millimetres.";
+"first_layer.measure" = "Measure now";
+"first_layer.measure.footer" = "Needs a working camera, decent light, and a view as close to top-down as you can get.";
+"first_layer.result" = "Result";
+"first_layer.apply" = "Apply the correction (%@ mm)";
+"first_layer.applied" = "Applied";
+"first_layer.applied.hint" = "This is a session offset. To make it permanent, run Z_OFFSET_APPLY_PROBE then SAVE_CONFIG.";
+"first_layer.confidence" = "Measurement confidence %d%%";
+"first_layer.unreadable.footer" = "Nothing will be applied. A wrong number here drives the nozzle into the bed, so it does not guess.";
+"first_layer.measurements" = "Measurements";
+"first_layer.measurements.footer" = "The numbers the result was computed from, so you can check it yourself.";
+"first_layer.measured_width" = "Measured line width";
+"first_layer.expected_width" = "Expected width";
+"first_layer.lines" = "Lines found";
+"first_layer.contrast" = "Line contrast";
+"first_layer.drift" = "Spacing drift";
+
+/* MARK: - Insights */
+"insights.title" = "What your prints have taught it";
+"insights.section.findings" = "Findings";
+"insights.section.findings.footer" = "No percentage is stated below %d prints of the same combination. Less than that is not a number, it is a guess.";
+"insights.section.combinations" = "Combinations";
+"insights.section.duration" = "Time estimate accuracy";
+"insights.section.duration.footer" = "How far the actual duration runs from the slicer's estimate, per material.";
+"insights.duration.ratio" = "%d%% longer";
+"insights.not_enough" = "Small sample";
+"insights.counts" = "%d of %d succeeded";
+"insights.early" = "%d failed early";

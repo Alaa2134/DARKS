@@ -124,6 +124,79 @@ actor BackendClient {
         ).events
     }
 
+    // MARK: - Print modes and calibration
+
+    func printModes(printerProfile: String, filamentProfile: String) async throws -> PrintModeList {
+        try await http.decode(
+            PrintModeList.self,
+            from: try request("slice/modes", query: [
+                URLQueryItem(name: "printer_profile", value: printerProfile),
+                URLQueryItem(name: "filament_profile", value: filamentProfile),
+            ], timeout: 20)
+        )
+    }
+
+    func calibrationTests() async throws -> [CalibrationTestSummary] {
+        struct Payload: Decodable { let tests: [CalibrationTestSummary] }
+        return try await http.decode(
+            Payload.self, from: try request("calibration/tests", timeout: 20)
+        ).tests
+    }
+
+    func calibrationTest(
+        _ id: String, nozzleTemp: Double, bedTemp: Double
+    ) async throws -> CalibrationTest {
+        try await http.decode(
+            CalibrationTest.self,
+            from: try request("calibration/tests/\(id)", query: [
+                URLQueryItem(name: "nozzle_temp", value: String(format: "%.0f", nozzleTemp)),
+                URLQueryItem(name: "bed_temp", value: String(format: "%.0f", bedTemp)),
+            ], timeout: 30)
+        )
+    }
+
+    func flowResult(measured: Double, expected: Double, currentFlow: Double) async throws -> FlowResult {
+        try await http.decode(
+            FlowResult.self,
+            from: try request("calibration/flow/result", method: "POST", query: [
+                URLQueryItem(name: "measured_mm", value: String(format: "%.4f", measured)),
+                URLQueryItem(name: "expected_mm", value: String(format: "%.4f", expected)),
+                URLQueryItem(name: "current_flow", value: String(format: "%.4f", currentFlow)),
+            ])
+        )
+    }
+
+    func pressureAdvanceResult(
+        heightMM: Double, start: Double, step: Double, layerHeight: Double
+    ) async throws -> PressureAdvanceResult {
+        try await http.decode(
+            PressureAdvanceResult.self,
+            from: try request("calibration/pressure_advance/result", method: "POST", query: [
+                URLQueryItem(name: "height_mm", value: String(format: "%.3f", heightMM)),
+                URLQueryItem(name: "start", value: String(format: "%.4f", start)),
+                URLQueryItem(name: "step", value: String(format: "%.4f", step)),
+                URLQueryItem(name: "layer_height", value: String(format: "%.3f", layerHeight)),
+            ])
+        )
+    }
+
+    /// Photographs the printed patch and measures it. Slow: it takes a
+    /// snapshot, so the timeout allows for a camera waking up.
+    func inspectFirstLayer() async throws -> FirstLayerReading {
+        try await http.decode(
+            FirstLayerReading.self,
+            from: try request("calibration/first_layer/inspect", method: "POST", timeout: 45)
+        )
+    }
+
+    func learningReport() async throws -> LearningReport {
+        try await http.decode(LearningReport.self, from: try request("history/learning", timeout: 20))
+    }
+
+    func anomalies() async throws -> AnomalyStatus {
+        try await http.decode(AnomalyStatus.self, from: try request("printer/anomalies"))
+    }
+
     // MARK: - Alerts
 
     func alertStatus() async throws -> AlertStatus {

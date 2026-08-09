@@ -19,10 +19,12 @@
 		6CEA0AD651D7C313796AC9DE /* BackendClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackendClient.swift"; sourceTree = "<group>"; };
 		BE4C55DD07C4576E8140411E /* BackendModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackendModels.swift"; sourceTree = "<group>"; };
 		581A7D12DF25723234730553 /* BackendSocket.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackendSocket.swift"; sourceTree = "<group>"; };
+		C39BBA8704B43B8436A5B92C /* CalibrationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CalibrationModels.swift"; sourceTree = "<group>"; };
 		BC19D9D720C5C3F35615BF13 /* DoctorModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorModels.swift"; sourceTree = "<group>"; };
 		2CA97FA8493069881829D8C0 /* InventoryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryModels.swift"; sourceTree = "<group>"; };
 		E7CABC317661C4D8BD371CC6 /* LibraryModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryModels.swift"; sourceTree = "<group>"; };
 		885AA9377D85C2DB0D56C617 /* MediaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaModels.swift"; sourceTree = "<group>"; };
+		2757068E70BAB749710A66D6 /* CalibrationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CalibrationStore.swift"; sourceTree = "<group>"; };
 		80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoCapabilities.swift"; sourceTree = "<group>"; };
 		2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoSimulator.swift"; sourceTree = "<group>"; };
 		3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorStore.swift"; sourceTree = "<group>"; };
@@ -74,12 +76,15 @@
 		A029323C43B5B009E85C0BDD /* TemperatureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TemperatureView.swift"; sourceTree = "<group>"; };
 		734E56CB6785876E464569E4 /* TerminalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TerminalView.swift"; sourceTree = "<group>"; };
 		AFE9E8ED89B7588E7B61B071 /* CalibrationHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CalibrationHubView.swift"; sourceTree = "<group>"; };
+		66E60A1157E53157C3F3A55A /* CalibrationPrintsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CalibrationPrintsView.swift"; sourceTree = "<group>"; };
+		524E58E5FC427583409EC2D9 /* FirstLayerCheckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FirstLayerCheckView.swift"; sourceTree = "<group>"; };
 		EA228AAAD34C613804980625 /* FixMyPrinterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FixMyPrinterView.swift"; sourceTree = "<group>"; };
 		15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GCodeInspectorView.swift"; sourceTree = "<group>"; };
 		A542E2A4CD878A6C9B34661E /* WorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkflowView.swift"; sourceTree = "<group>"; };
 		706AC3C3C3FDDDD172CC63B1 /* FilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FilesView.swift"; sourceTree = "<group>"; };
 		28A66B8EC5BB6C14F4353868 /* GCodeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GCodeDetailView.swift"; sourceTree = "<group>"; };
 		9F9651B521F5A5AE601D1612 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HistoryView.swift"; sourceTree = "<group>"; };
+		3C66CD5FBAFCDA256B4B82DB /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InsightsView.swift"; sourceTree = "<group>"; };
 		6AAA1E0262EDD51D61EA1D86 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeView.swift"; sourceTree = "<group>"; };
 		992A56811E70180AAE10E4AB /* PrintingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintingView.swift"; sourceTree = "<group>"; };
 		C5079CAB0E7D13307F87A279 /* SimpleHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SimpleHomeView.swift"; sourceTree = "<group>"; };
@@ -102,6 +107,7 @@
 		6ED649326E044B4DEB8848C9 /* SetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetupWizardView.swift"; sourceTree = "<group>"; };
 		1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeshLoader.swift"; sourceTree = "<group>"; };
 		686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelViewer3D.swift"; sourceTree = "<group>"; };
+		3BBBFBC77375184B1869E813 /* PrintModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintModeView.swift"; sourceTree = "<group>"; };
 		0F08420DFDF39810CB872AFA /* SliceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SliceView.swift"; sourceTree = "<group>"; };
 		341334713B5FC5B6FE17E517 /* ZipArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ZipArchive.swift"; sourceTree = "<group>"; };
 		6AA34175B573B8DAF41D58A5 /* DiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DiagnosticsView.swift"; sourceTree = "<group>"; };
@@ -177,6 +183,7 @@
 				6CEA0AD651D7C313796AC9DE /* BackendClient.swift */,
 				BE4C55DD07C4576E8140411E /* BackendModels.swift */,
 				581A7D12DF25723234730553 /* BackendSocket.swift */,
+				C39BBA8704B43B8436A5B92C /* CalibrationModels.swift */,
 				BC19D9D720C5C3F35615BF13 /* DoctorModels.swift */,
 				2CA97FA8493069881829D8C0 /* InventoryModels.swift */,
 				E7CABC317661C4D8BD371CC6 /* LibraryModels.swift */,
@@ -272,6 +279,7 @@
 				4AED555BF454DA10905CE8EB /* Storage */,
 				89A01642DB718592E5A6A80C /* Utils */,
 				026D397BFF969A1B77D7F8EF /* AlertStore.swift */,
+				2757068E70BAB749710A66D6 /* CalibrationStore.swift */,
 				3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */,
 				F67931E07DCE8C21A0F43132 /* FilesStore.swift */,
 				D01F291E6D8602E08E8B256A /* HistoryStore.swift */,
@@ -325,6 +333,8 @@
 			isa = PBXGroup;
 			children = (
 				AFE9E8ED89B7588E7B61B071 /* CalibrationHubView.swift */,
+				66E60A1157E53157C3F3A55A /* CalibrationPrintsView.swift */,
+				524E58E5FC427583409EC2D9 /* FirstLayerCheckView.swift */,
 				EA228AAAD34C613804980625 /* FixMyPrinterView.swift */,
 				15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */,
 				A542E2A4CD878A6C9B34661E /* WorkflowView.swift */,
@@ -345,6 +355,7 @@
 			isa = PBXGroup;
 			children = (
 				9F9651B521F5A5AE601D1612 /* HistoryView.swift */,
+				3C66CD5FBAFCDA256B4B82DB /* InsightsView.swift */,
 			);
 			path = "History";
 			sourceTree = "<group>";
@@ -416,6 +427,7 @@
 			children = (
 				1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */,
 				686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */,
+				3BBBFBC77375184B1869E813 /* PrintModeView.swift */,
 				0F08420DFDF39810CB872AFA /* SliceView.swift */,
 				341334713B5FC5B6FE17E517 /* ZipArchive.swift */,
 			);
@@ -568,10 +580,12 @@
 		69AB17CFB6CF6BABBD1CB01B /* BackendClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6CEA0AD651D7C313796AC9DE /* BackendClient.swift */; };
 		1FB3EF5D24D28B85A2117460 /* BackendModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE4C55DD07C4576E8140411E /* BackendModels.swift */; };
 		D90BF58441B1121F07D8AF1F /* BackendSocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 581A7D12DF25723234730553 /* BackendSocket.swift */; };
+		B8D8DA3C11F8D370FEFEF21C /* CalibrationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39BBA8704B43B8436A5B92C /* CalibrationModels.swift */; };
 		81926036A9AC4B1B2B812813 /* DoctorModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC19D9D720C5C3F35615BF13 /* DoctorModels.swift */; };
 		0C9A11D6E927CF65B0EBDDA6 /* InventoryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CA97FA8493069881829D8C0 /* InventoryModels.swift */; };
 		A39CA503ADED69919B88189B /* LibraryModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = E7CABC317661C4D8BD371CC6 /* LibraryModels.swift */; };
 		78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885AA9377D85C2DB0D56C617 /* MediaModels.swift */; };
+		7300268691639199AD0164C2 /* CalibrationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2757068E70BAB749710A66D6 /* CalibrationStore.swift */; };
 		E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */; };
 		61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */; };
 		B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */; };
@@ -623,12 +637,15 @@
 		0CABF05B700BE4A1557D4F0F /* TemperatureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A029323C43B5B009E85C0BDD /* TemperatureView.swift */; };
 		1AF02B0B705AB3D11668494A /* TerminalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734E56CB6785876E464569E4 /* TerminalView.swift */; };
 		B6F404418C024967BE71110D /* CalibrationHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFE9E8ED89B7588E7B61B071 /* CalibrationHubView.swift */; };
+		F2B53835D1607386FEF3A0C6 /* CalibrationPrintsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66E60A1157E53157C3F3A55A /* CalibrationPrintsView.swift */; };
+		15CF1A5416A0706DA032A5F0 /* FirstLayerCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524E58E5FC427583409EC2D9 /* FirstLayerCheckView.swift */; };
 		EC00700C1125CBE6BD723BC2 /* FixMyPrinterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA228AAAD34C613804980625 /* FixMyPrinterView.swift */; };
 		ED89E2B28A2D8E37991C4768 /* GCodeInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */; };
 		EF51A7E201473034CD98AF8D /* WorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A542E2A4CD878A6C9B34661E /* WorkflowView.swift */; };
 		CD0FE67E15D87BA7B8F4AFF8 /* FilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706AC3C3C3FDDDD172CC63B1 /* FilesView.swift */; };
 		D0F532A925A85B001A24B619 /* GCodeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28A66B8EC5BB6C14F4353868 /* GCodeDetailView.swift */; };
 		D657F73BC66F870934CADCFD /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9651B521F5A5AE601D1612 /* HistoryView.swift */; };
+		6918A11572A0BFC0372DB983 /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C66CD5FBAFCDA256B4B82DB /* InsightsView.swift */; };
 		E4E459A1B2427EB8D33F9BDE /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAA1E0262EDD51D61EA1D86 /* HomeView.swift */; };
 		11178E2C22B9912346C4F9CB /* PrintingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992A56811E70180AAE10E4AB /* PrintingView.swift */; };
 		14EABB4C711B6160BA20AB69 /* SimpleHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5079CAB0E7D13307F87A279 /* SimpleHomeView.swift */; };
@@ -651,6 +668,7 @@
 		B583D61EBFDFCCB1FAD72E68 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED649326E044B4DEB8848C9 /* SetupWizardView.swift */; };
 		BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */; };
 		33C1FB3B750E7C3BA2670230 /* ModelViewer3D.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */; };
+		3D04B669AB54FC7CF07C628C /* PrintModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBBFBC77375184B1869E813 /* PrintModeView.swift */; };
 		040033D320CD824F1AD5E4EA /* SliceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F08420DFDF39810CB872AFA /* SliceView.swift */; };
 		75763809435E4B46CC0E6175 /* ZipArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 341334713B5FC5B6FE17E517 /* ZipArchive.swift */; };
 		F92B74F857383857E1186C71 /* DiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA34175B573B8DAF41D58A5 /* DiagnosticsView.swift */; };
@@ -703,10 +721,12 @@
 				69AB17CFB6CF6BABBD1CB01B /* BackendClient.swift in Sources */,
 				1FB3EF5D24D28B85A2117460 /* BackendModels.swift in Sources */,
 				D90BF58441B1121F07D8AF1F /* BackendSocket.swift in Sources */,
+				B8D8DA3C11F8D370FEFEF21C /* CalibrationModels.swift in Sources */,
 				81926036A9AC4B1B2B812813 /* DoctorModels.swift in Sources */,
 				0C9A11D6E927CF65B0EBDDA6 /* InventoryModels.swift in Sources */,
 				A39CA503ADED69919B88189B /* LibraryModels.swift in Sources */,
 				78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */,
+				7300268691639199AD0164C2 /* CalibrationStore.swift in Sources */,
 				E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */,
 				61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */,
 				B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */,
@@ -758,12 +778,15 @@
 				0CABF05B700BE4A1557D4F0F /* TemperatureView.swift in Sources */,
 				1AF02B0B705AB3D11668494A /* TerminalView.swift in Sources */,
 				B6F404418C024967BE71110D /* CalibrationHubView.swift in Sources */,
+				F2B53835D1607386FEF3A0C6 /* CalibrationPrintsView.swift in Sources */,
+				15CF1A5416A0706DA032A5F0 /* FirstLayerCheckView.swift in Sources */,
 				EC00700C1125CBE6BD723BC2 /* FixMyPrinterView.swift in Sources */,
 				ED89E2B28A2D8E37991C4768 /* GCodeInspectorView.swift in Sources */,
 				EF51A7E201473034CD98AF8D /* WorkflowView.swift in Sources */,
 				CD0FE67E15D87BA7B8F4AFF8 /* FilesView.swift in Sources */,
 				D0F532A925A85B001A24B619 /* GCodeDetailView.swift in Sources */,
 				D657F73BC66F870934CADCFD /* HistoryView.swift in Sources */,
+				6918A11572A0BFC0372DB983 /* InsightsView.swift in Sources */,
 				E4E459A1B2427EB8D33F9BDE /* HomeView.swift in Sources */,
 				11178E2C22B9912346C4F9CB /* PrintingView.swift in Sources */,
 				14EABB4C711B6160BA20AB69 /* SimpleHomeView.swift in Sources */,
@@ -786,6 +809,7 @@
 				B583D61EBFDFCCB1FAD72E68 /* SetupWizardView.swift in Sources */,
 				BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */,
 				33C1FB3B750E7C3BA2670230 /* ModelViewer3D.swift in Sources */,
+				3D04B669AB54FC7CF07C628C /* PrintModeView.swift in Sources */,
 				040033D320CD824F1AD5E4EA /* SliceView.swift in Sources */,
 				75763809435E4B46CC0E6175 /* ZipArchive.swift in Sources */,
 				F92B74F857383857E1186C71 /* DiagnosticsView.swift in Sources */,

@@ -21,6 +21,7 @@ struct NeptuneRemoteApp: App {
                 .environmentObject(environment.support)
                 .environmentObject(environment.doctor)
                 .environmentObject(environment.alerts)
+                .environmentObject(environment.calibration)
                 .environmentObject(environment.notifications)
                 .preferredColorScheme(environment.settings.colorScheme)
                 .environment(\.locale, environment.settings.locale)
