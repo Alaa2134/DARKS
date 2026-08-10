@@ -344,7 +344,7 @@ final class PrinterConditionTests: XCTestCase {
         let conditions = PrinterConditionEvaluator.conditions(
             for: input(
                 klippy: .ready,
-                state: .error,
+                print: .error,
                 printMessage: "Unknown command: PRINT_START"
             )
         )
@@ -356,7 +356,7 @@ final class PrinterConditionTests: XCTestCase {
     /// A failure with no message still has to appear. Silence was the bug.
     func testAFailedPrintWithoutAMessageStillAppears() throws {
         let conditions = PrinterConditionEvaluator.conditions(
-            for: input(klippy: .ready, state: .error)
+            for: input(klippy: .ready, print: .error)
         )
         let condition = try XCTUnwrap(conditions.first { $0.cause == .printFailed })
         XCTAssertNil(condition.rawMessage)
@@ -365,7 +365,7 @@ final class PrinterConditionTests: XCTestCase {
 
     func testANormalPrintProducesNoFailureCard() {
         let conditions = PrinterConditionEvaluator.conditions(
-            for: input(klippy: .ready, state: .printing, printing: true)
+            for: input(klippy: .ready, print: .printing, printing: true)
         )
         XCTAssertFalse(conditions.contains { $0.cause == .printFailed })
     }
