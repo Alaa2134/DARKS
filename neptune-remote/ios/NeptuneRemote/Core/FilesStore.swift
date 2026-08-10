@@ -91,26 +91,40 @@ final class FilesStore: ObservableObject {
         }
     }
 
-    func startPrint(_ file: BackendGCodeFile) async {
+    /// Starts a print and reports whether it actually started.
+    ///
+    /// The Moonraker path runs through `PrinterStore`, which records its own
+    /// failures on its own `lastError` - and no file screen displays that one.
+    /// So a refused print produced a dismissed sheet, a screen that popped
+    /// back, and not one word anywhere: "I press print and nothing happens".
+    /// The error is carried across here so the screen the user is looking at is
+    /// the screen that shows it.
+    @discardableResult
+    func startPrint(_ file: BackendGCodeFile) async -> Bool {
         if settings.demoMode {
             printer.demoStartPrint(
                 filename: file.filename,
                 estimatedSeconds: file.estimatedTime ?? 2_700,
                 layers: file.layerCount ?? 240
             )
-            return
+            return true
         }
         if file.source == "backend" {
             do {
                 _ = try await printer.backend.sendLocalGCodeToPrinter(name: file.filename, startPrint: true)
                 Haptics.success()
+                return true
             } catch {
                 lastError = APIError.from(error, host: settings.host)
                 Haptics.error()
+                return false
             }
-            return
         }
-        await printer.startPrint(filename: file.path)
+        let started = await printer.startPrint(filename: file.path)
+        if !started {
+            lastError = printer.lastError ?? .unknown(L.t("print.failed_to_start"))
+        }
+        return started
     }
 
     func download(_ file: BackendGCodeFile) async -> URL? {

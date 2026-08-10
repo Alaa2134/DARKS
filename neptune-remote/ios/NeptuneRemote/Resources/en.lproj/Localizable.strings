@@ -71,6 +71,8 @@
 "print.eta" = "Finishes at";
 "print.filament_used" = "Filament used";
 "print.started" = "Started %@";
+"print.unhomed_warning" = "%@ is not homed - the file has to home it itself, or Klipper will stop at the first move";
+"print.failed_to_start" = "The printer did not accept the print";
 "machine.x" = "X";
 "machine.y" = "Y";
 "machine.z" = "Z";

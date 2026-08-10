@@ -71,6 +71,8 @@
 "print.eta" = "تنتهي الساعة";
 "print.filament_used" = "الخامة المستهلكة";
 "print.started" = "بدأت طباعة %@";
+"print.unhomed_warning" = "%@ مش متصفّر - الملف لازم يعمل هومنج بنفسه، وإلا كليبر هيقف عند أول حركة";
+"print.failed_to_start" = "الطابعة مقبلتش الطباعة";
 "machine.x" = "X";
 "machine.y" = "Y";
 "machine.z" = "Z";

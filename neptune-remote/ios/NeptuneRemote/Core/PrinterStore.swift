@@ -786,19 +786,35 @@ final class PrinterStore: ObservableObject {
 
     // MARK: Print control
 
-    func startPrint(filename: String) async {
+    /// Starts a print. Returns whether the printer accepted it.
+    ///
+    /// The result matters: the caller is a file screen that dismisses itself on
+    /// success, and dismissing on a refusal is how a blocked print became
+    /// invisible.
+    @discardableResult
+    func startPrint(filename: String) async -> Bool {
         isBusy = true
         defer { isBusy = false }
 
         if settings.demoMode {
             demo.startPrint(filename: filename)
             Haptics.success()
-            return
+            return true
         }
 
-        // A print started on unhomed axes fails at the first move, sometimes
-        // after the bed has already heated. Refuse and say which axes, so the
-        // Home button on the condition card is the obvious next tap.
+        // Unhomed axes used to *refuse* the print here. That was wrong, and
+        // wrong in the direction that costs the user most: every sliced file
+        // begins by homing - through the slicer's own G28 or through
+        // PRINT_START - and Klipper clears `homed_axes` on M84, which every
+        // print end and every idle timeout runs. So the guard fired on the
+        // completely normal case of "the printer has been sitting idle", and
+        // blocked a print that would have worked.
+        //
+        // Nothing is lost by proceeding. Klipper refuses to move an unhomed
+        // axis itself, with "Must home axis first" - it aborts, it does not
+        // crash the toolhead. Warning and continuing leaves that safety in the
+        // one place that can actually enforce it, and stops this app from
+        // vetoing prints on a guess about a file it has not read.
         let missing = PrinterConditionEvaluator.missingAxes(
             homed: snapshot.homedAxes,
             configured: capabilities.axisLimits.isEmpty
@@ -806,20 +822,17 @@ final class PrinterStore: ObservableObject {
                 : capabilities.axisLimits.keys.sorted()
         )
         if !missing.isEmpty {
-            lastError = .unsafeOperation([
-                L.t("condition.home_first.title"),
-                L.t("condition.home_first.body")
-            ])
-            Haptics.warning()
-            return
+            lastMessage = L.t("print.unhomed_warning", missing.joined(separator: ", ").uppercased())
         }
 
         do {
             try await moonraker.startPrint(filename: filename)
             lastMessage = L.t("print.started", filename)
             Haptics.success()
+            return true
         } catch {
             handle(error)
+            return false
         }
     }
 

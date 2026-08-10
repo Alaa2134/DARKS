@@ -82,6 +82,8 @@ struct FilesView: View {
                     Task {
                         await files.startPrint(file)
                         showingChecklist = false
+                        // A refusal leaves `files.lastError` set, and the list
+                        // behind this sheet is already showing it.
                     }
                 }
             }

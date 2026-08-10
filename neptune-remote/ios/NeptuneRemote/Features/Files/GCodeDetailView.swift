@@ -45,9 +45,12 @@ struct GCodeDetailView: View {
         .sheet(isPresented: $showingChecklist) {
             PrintChecklistView {
                 Task {
-                    await files.startPrint(file)
+                    let started = await files.startPrint(file)
                     showingChecklist = false
-                    dismiss()
+                    // Staying put on a refusal is the point: this screen shows
+                    // `files.lastError`, and dismissing would take the message
+                    // away with it.
+                    if started { dismiss() }
                 }
             }
             .presentationDetents([.medium])
@@ -152,8 +155,7 @@ struct GCodeDetailView: View {
                     showingChecklist = true
                 } else {
                     Task {
-                        await files.startPrint(file)
-                        dismiss()
+                        if await files.startPrint(file) { dismiss() }
                     }
                 }
             } label: {
@@ -170,8 +172,7 @@ struct GCodeDetailView: View {
             NavigationLink {
                 PreflightView(filename: file.path) {
                     Task {
-                        await files.startPrint(file)
-                        dismiss()
+                        if await files.startPrint(file) { dismiss() }
                     }
                 }
             } label: {
