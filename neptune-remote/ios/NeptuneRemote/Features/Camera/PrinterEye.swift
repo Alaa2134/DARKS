@@ -6,6 +6,9 @@ import SwiftUI
 /// not understand the backend relay - so choosing an IP camera worked on the
 /// camera screen and showed nothing on Home. One resolver, one answer.
 enum CameraSource {
+    // AppSettings is @MainActor, so this has to be too - the views calling it
+    // already are.
+    @MainActor
     static func url(for settings: AppSettings) -> URL? {
         let raw = settings.cameraURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !raw.isEmpty else { return nil }
