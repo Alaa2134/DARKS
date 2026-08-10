@@ -19,6 +19,8 @@ final class AppEnvironment: ObservableObject {
     let alerts: AlertStore
     let calibration: CalibrationStore
     let liveActivity: LiveActivityController
+    /// Every store's failures, in one stream, so the root can show them.
+    let errors = ErrorSink()
 
     /// Vision events already turned into a notification, so a repeated summary
     /// frame does not re-alert for the same detection.
@@ -47,6 +49,23 @@ final class AppEnvironment: ObservableObject {
         alerts = AlertStore(settings: settings, printer: printer)
         calibration = CalibrationStore(settings: settings, printer: printer)
         liveActivity = LiveActivityController()
+
+        // Wired here rather than inside each store: a store should not have to
+        // know about a presenter, and the alternative - remembering to show
+        // every store's error on every screen that touches it - was already
+        // missed on fifteen screens.
+        errors.observe(printer.$lastError)
+        errors.observe(files.$lastError)
+        errors.observe(slicing.$lastError)
+        errors.observe(history.$lastError)
+        errors.observe(system.$lastError)
+        errors.observe(library.$lastError)
+        errors.observe(media.$lastError)
+        errors.observe(inventory.$lastError)
+        errors.observe(support.$lastError)
+        errors.observe(doctor.$lastError)
+        errors.observe(alerts.$lastError)
+        errors.observe(calibration.$lastError)
 
         printer.onSliceProgress = { [weak self] progress in
             self?.slicing.apply(progressEvent: progress)

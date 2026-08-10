@@ -28,6 +28,7 @@
 		80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoCapabilities.swift"; sourceTree = "<group>"; };
 		2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoSimulator.swift"; sourceTree = "<group>"; };
 		3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorStore.swift"; sourceTree = "<group>"; };
+		DBF35E15DAF9D9C1B7E84225 /* ErrorSink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ErrorSink.swift"; sourceTree = "<group>"; };
 		F67931E07DCE8C21A0F43132 /* FilesStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FilesStore.swift"; sourceTree = "<group>"; };
 		D01F291E6D8602E08E8B256A /* HistoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HistoryStore.swift"; sourceTree = "<group>"; };
 		57D1D8CAD359B977FAA1E96A /* InventoryStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InventoryStore.swift"; sourceTree = "<group>"; };
@@ -291,6 +292,7 @@
 				026D397BFF969A1B77D7F8EF /* AlertStore.swift */,
 				2757068E70BAB749710A66D6 /* CalibrationStore.swift */,
 				3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */,
+				DBF35E15DAF9D9C1B7E84225 /* ErrorSink.swift */,
 				F67931E07DCE8C21A0F43132 /* FilesStore.swift */,
 				D01F291E6D8602E08E8B256A /* HistoryStore.swift */,
 				57D1D8CAD359B977FAA1E96A /* InventoryStore.swift */,
@@ -609,6 +611,7 @@
 		E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */; };
 		61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */; };
 		B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */; };
+		6C0A71D7B8DD05090399B811 /* ErrorSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF35E15DAF9D9C1B7E84225 /* ErrorSink.swift */; };
 		877FDD9A61EF5407809A3A04 /* FilesStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F67931E07DCE8C21A0F43132 /* FilesStore.swift */; };
 		27313C49EC553BE41F89372D /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D01F291E6D8602E08E8B256A /* HistoryStore.swift */; };
 		2C6D4858ABE03D850CA5EB2A /* InventoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57D1D8CAD359B977FAA1E96A /* InventoryStore.swift */; };
@@ -760,6 +763,7 @@
 				E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */,
 				61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */,
 				B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */,
+				6C0A71D7B8DD05090399B811 /* ErrorSink.swift in Sources */,
 				877FDD9A61EF5407809A3A04 /* FilesStore.swift in Sources */,
 				27313C49EC553BE41F89372D /* HistoryStore.swift in Sources */,
 				2C6D4858ABE03D850CA5EB2A /* InventoryStore.swift in Sources */,

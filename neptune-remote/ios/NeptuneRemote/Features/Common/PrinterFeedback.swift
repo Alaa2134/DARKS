@@ -18,6 +18,10 @@ import SwiftUI
 /// does not need acknowledging.
 struct PrinterFeedback: ViewModifier {
     @EnvironmentObject private var printer: PrinterStore
+    /// Failures from every other store. PrinterStore reports here too, but its
+    /// own property is read directly so the banner can be dismissed and so a
+    /// successful command clears it.
+    @EnvironmentObject private var errors: ErrorSink
 
     /// Long enough to read a clamped-temperature note in a second language,
     /// short enough not to sit over the tab bar.
@@ -34,6 +38,18 @@ struct PrinterFeedback: ViewModifier {
                             tint: Theme.danger
                         ) {
                             printer.lastError = nil
+                            errors.latest = nil
+                        }
+                    } else if let error = errors.latest {
+                        // Anything from the other stores - slicing, library,
+                        // camera, inventory, the doctor. Fifteen screens ran
+                        // commands and showed nothing when they failed.
+                        banner(
+                            text: error.localizedDescription,
+                            symbol: "exclamationmark.triangle.fill",
+                            tint: Theme.danger
+                        ) {
+                            errors.latest = nil
                         }
                     }
                     if let message = printer.lastMessage {
@@ -56,6 +72,7 @@ struct PrinterFeedback: ViewModifier {
                 .padding(.horizontal)
                 .padding(.bottom, 6)
                 .animation(.easeOut(duration: 0.25), value: printer.lastError)
+                .animation(.easeOut(duration: 0.25), value: errors.latest)
                 .animation(.easeOut(duration: 0.25), value: printer.lastMessage)
             }
     }

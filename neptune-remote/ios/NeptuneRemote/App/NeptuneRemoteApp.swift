@@ -23,6 +23,7 @@ struct NeptuneRemoteApp: App {
                 .environmentObject(environment.alerts)
                 .environmentObject(environment.calibration)
                 .environmentObject(environment.notifications)
+                .environmentObject(environment.errors)
                 .preferredColorScheme(environment.settings.colorScheme)
                 .environment(\.locale, environment.settings.locale)
                 .environment(\.layoutDirection, environment.settings.layoutDirection)
