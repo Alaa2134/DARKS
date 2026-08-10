@@ -67,6 +67,10 @@ final class FilesStore: ObservableObject {
             slicer: file.slicer,
             thumbnailPath: file.thumbnailPath,
             layerCount: nil,
+            // Moonraker's own metadata knows nothing about colour changes -
+            // they are our header, and reading it means opening the file. The
+            // detail screen fetches them for one file at a time instead.
+            storedColorChanges: nil,
             source: "moonraker"
         )
     }
@@ -149,6 +153,18 @@ final class FilesStore: ObservableObject {
     func metadata(for file: BackendGCodeFile) async -> MoonrakerFile? {
         guard !settings.demoMode, file.source == "moonraker" else { return nil }
         return try? await printer.moonraker.metadata(filename: file.path)
+    }
+
+    /// The colour changes a file will stop for.
+    ///
+    /// Fetched per file rather than carried in the listing, because reading the
+    /// plan means opening the G-code. Failure is silent and returns nothing:
+    /// this decorates a screen, and an old backend that does not know the
+    /// endpoint must not put an error banner over a file that opens fine.
+    func colorChanges(for file: BackendGCodeFile) async -> [ColorChange] {
+        if !file.colorChanges.isEmpty { return file.colorChanges }
+        guard !settings.demoMode else { return [] }
+        return (try? await printer.backend.gcodeMetadata(path: file.path))?.colorChanges ?? []
     }
 
     func upload(gcodeURL url: URL) async -> Bool {

@@ -9,11 +9,21 @@ struct GCodeDetailView: View {
     @Environment(\.dismiss) private var dismiss
 
     @State private var metadata: MoonrakerFile?
+    @State private var colorChanges: [ColorChange] = []
     @State private var shareURL: URL?
     @State private var showingShare = false
     @State private var showingChecklist = false
     @State private var showingDeleteConfirm = false
     @State private var isWorking = false
+
+    /// Whether the printer is currently working through *this* file, so the
+    /// plan can show which stops have already been passed. Compared by
+    /// basename: Moonraker reports the path it was started with, which is not
+    /// always the path this row carries.
+    private var isThisFilePrinting: Bool {
+        printer.snapshot.isActive
+            && (printer.snapshot.filename as NSString).lastPathComponent == file.filename
+    }
 
     var body: some View {
         ScrollView {
@@ -27,6 +37,15 @@ struct GCodeDetailView: View {
                     )
                 }
                 thumbnailCard
+                // Before the details and the print button, because it changes
+                // what this print asks of you: you have to be in the room.
+                if !colorChanges.isEmpty {
+                    ColorPlanList(
+                        changes: colorChanges,
+                        currentLayer: isThisFilePrinting ? printer.snapshot.currentLayer : nil
+                    )
+                    .card()
+                }
                 detailsCard
                 actionsCard
             }
@@ -38,6 +57,7 @@ struct GCodeDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task {
             metadata = await files.metadata(for: file)
+            colorChanges = await files.colorChanges(for: file)
         }
         .sheet(isPresented: $showingShare) {
             if let shareURL { ShareSheet(items: [shareURL]) }

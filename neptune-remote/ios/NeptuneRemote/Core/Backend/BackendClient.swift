@@ -358,6 +358,22 @@ actor BackendClient {
         )
     }
 
+    /// One file's metadata, including the colour-change plan.
+    ///
+    /// Separate from `gcodes()` on purpose: reading the plan means opening the
+    /// file, and doing that for every row would make the file list slow on a
+    /// Raspberry Pi in exactly the way a file list must not be.
+    func gcodeMetadata(path: String) async throws -> BackendGCodeFile {
+        try await http.decode(
+            BackendGCodeFile.self,
+            from: try request(
+                "gcodes/metadata",
+                query: [URLQueryItem(name: "path", value: path)],
+                timeout: 30
+            )
+        )
+    }
+
     func deleteGCode(path: String) async throws {
         _ = try await http.data(
             try request(

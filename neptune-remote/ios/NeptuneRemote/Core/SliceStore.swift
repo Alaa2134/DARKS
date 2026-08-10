@@ -67,6 +67,13 @@ final class SliceStore: ObservableObject {
     @Published var disableFanFirstLayers: Int = 0
     @Published var avoidCrossingPerimeters = false
     @Published var customOverrides: [String: String] = [:]
+    /// Layers where the print stops so the filament can be swapped.
+    ///
+    /// This is all of multi-colour printing on a one-nozzle machine, and the
+    /// list is kept sorted by layer because that is the order the printer will
+    /// ask for them in - a list out of order reads like a plan that jumps
+    /// around, which is exactly what it must not look like.
+    @Published var colorChanges: [ColorChange] = []
     @Published var uploadToPrinter = true
     @Published var startPrintAfterSlicing = false
 
@@ -172,6 +179,7 @@ final class SliceStore: ObservableObject {
         payload.disableFanFirstLayers = disableFanFirstLayers > 0 ? disableFanFirstLayers : nil
         payload.avoidCrossingPerimeters = avoidCrossingPerimeters ? true : nil
         payload.customOverrides = customOverrides
+        payload.colorChanges = colorChanges.sorted { $0.layer < $1.layer }
         payload.uploadToMoonraker = uploadToPrinter
         payload.startPrintAfterUpload = false // never auto-start; the user confirms
 
@@ -369,6 +377,9 @@ final class SliceStore: ObservableObject {
             error: nil,
             logs: logs,
             stats: stats,
+            storedColorChanges: colorChanges.map {
+                ColorChange(layer: $0.layer, color: $0.color, z: Double($0.layer) * layerHeight)
+            },
             engine: "prusaslicer (demo)"
         )
         progress = 1
@@ -440,6 +451,38 @@ final class SliceStore: ObservableObject {
     }
 
     var hasAdvancedOverrides: Bool { advancedOverrideCount > 0 }
+
+    // MARK: - Colour changes
+
+    /// The stops, in the order the printer will reach them.
+    var sortedColorChanges: [ColorChange] { colorChanges.sorted { $0.layer < $1.layer } }
+
+    /// Colours this print goes through, first to last.
+    ///
+    /// The colour loaded before the print starts has no stop of its own - it is
+    /// simply what is in the printer - so the list starts with a blank the user
+    /// never has to name.
+    var colorSequence: [String] {
+        sortedColorChanges.map(\.color)
+    }
+
+    /// Add a stop, refusing the two mistakes the backend would also refuse -
+    /// here, where the user can still see the layer they typed.
+    @discardableResult
+    func addColorChange(layer: Int, color: String) -> Bool {
+        let name = color.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard layer >= 2, !name.isEmpty else { return false }
+        guard !colorChanges.contains(where: { $0.layer == layer }) else { return false }
+        colorChanges.append(ColorChange(layer: layer, color: name))
+        colorChanges.sort { $0.layer < $1.layer }
+        return true
+    }
+
+    func removeColorChanges(at offsets: IndexSet) {
+        var sorted = sortedColorChanges
+        sorted.remove(atOffsets: offsets)
+        colorChanges = sorted
+    }
 
 
 }

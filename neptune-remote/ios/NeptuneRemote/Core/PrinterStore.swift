@@ -852,6 +852,37 @@ final class PrinterStore: ObservableObject {
         }
     }
 
+    /// The colour the printer is standing still waiting for, if that is why
+    /// it is paused.
+    ///
+    /// Read out of the printer's own display message rather than from the slice
+    /// job: the M117 sits next to every colour-change stop in the file, so this
+    /// works for a file sliced last month, printed from the queue, or started
+    /// from Mainsail - anywhere the app was not the one that pressed print.
+    ///
+    /// Only while actually paused. The message survives the resume, and a
+    /// banner that stayed up while the printer went back to work would be worse
+    /// than no banner.
+    var waitingForColor: String? {
+        guard snapshot.state == .paused else { return nil }
+        return Self.colorFromDisplay(snapshot.displayMessage)
+    }
+
+    /// nonisolated: pure string parsing that touches nothing on the store, and
+    /// a static func on a @MainActor class is otherwise MainActor-isolated,
+    /// which would make it uncallable from a test.
+    nonisolated static func colorFromDisplay(_ message: String) -> String? {
+        // Matches DISPLAY_PREFIX in the backend's app/slicer/colors.py. Latin
+        // on both sides deliberately: the colour name itself is in whatever
+        // script the user thinks in, and the prefix is the part being matched.
+        let prefix = "COLOR:"
+        let text = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard text.uppercased().hasPrefix(prefix) else { return nil }
+        let name = text.dropFirst(prefix.count)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? nil : name
+    }
+
     // Print control prefers the printer's own PAUSE / RESUME / CANCEL_PRINT
     // macros when they are defined, because on most configs those do more than
     // the bare Moonraker call - park the head, retract, lift Z, restore state.

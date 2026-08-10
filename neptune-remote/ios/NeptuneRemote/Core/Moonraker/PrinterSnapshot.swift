@@ -8,6 +8,12 @@ struct PrinterSnapshot: Equatable {
     var klippyMessage: String = ""
     var state: PrinterState = .unknown
     var stateMessage: String = ""
+    /// Whatever M117 last put on the printer's display.
+    ///
+    /// The only channel a running G-code file has for saying something to a
+    /// person, and the colour-change stops use it: the message names the colour
+    /// the printer is standing still waiting for.
+    var displayMessage: String = ""
 
     var filename: String = ""
     var progress: Double = 0
@@ -172,6 +178,8 @@ struct PrinterSnapshot: Equatable {
             snapshot.currentLayer = stats.info?.currentLayer
             snapshot.totalLayer = stats.info?.totalLayer
         }
+
+        snapshot.displayMessage = objects.displayStatus?.message ?? ""
 
         if let progress = objects.displayStatus?.progress {
             snapshot.progress = min(max(progress, 0), 1)

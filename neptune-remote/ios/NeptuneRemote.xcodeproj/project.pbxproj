@@ -69,6 +69,7 @@
 		678A8F0FBDFD04E53A287880 /* ZoomableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ZoomableView.swift"; sourceTree = "<group>"; };
 		24EE48431670E08DBAD4ECBF /* AnomalyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnomalyCard.swift"; sourceTree = "<group>"; };
 		54D2519FA29A1BB09BD08BE3 /* AppMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppMenu.swift"; sourceTree = "<group>"; };
+		4D3C064B281B096ACBE0BB7C /* ColorPlan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorPlan.swift"; sourceTree = "<group>"; };
 		1A63D8DFF51D150A7E07BA9F /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Components.swift"; sourceTree = "<group>"; };
 		2E1788ACF4320141030627FA /* ConditionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConditionCard.swift"; sourceTree = "<group>"; };
 		26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConnectionTestPanel.swift"; sourceTree = "<group>"; };
@@ -115,6 +116,7 @@
 		21A13A6383385B3ABAC37431 /* PrinterCapabilitiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterCapabilitiesView.swift"; sourceTree = "<group>"; };
 		B46BA26DA4AEBAB629D4CF8C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
 		6ED649326E044B4DEB8848C9 /* SetupWizardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SetupWizardView.swift"; sourceTree = "<group>"; };
+		F290ECE4B39666492F9C8C90 /* ColorChangesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorChangesView.swift"; sourceTree = "<group>"; };
 		1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeshLoader.swift"; sourceTree = "<group>"; };
 		686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelViewer3D.swift"; sourceTree = "<group>"; };
 		3BBBFBC77375184B1869E813 /* PrintModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintModeView.swift"; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 		04E68A5C73D0307082FD0DCF /* ATSPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ATSPolicyTests.swift"; sourceTree = "<group>"; };
 		F9C5F23D8F6B2E6A1F4B91AE /* AlertModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlertModelTests.swift"; sourceTree = "<group>"; };
 		D2E2ED1D8E7F57805C6A87AE /* CapabilityDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CapabilityDiscoveryTests.swift"; sourceTree = "<group>"; };
+		5C7694BC9E2CE5BCC4B493D5 /* ColorChangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorChangeTests.swift"; sourceTree = "<group>"; };
 		BFB71C9A1559EAEA74E365F2 /* ConnectionDiagnosticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConnectionDiagnosticsTests.swift"; sourceTree = "<group>"; };
 		6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorTests.swift"; sourceTree = "<group>"; };
 		A464B815DD4754605B807349 /* EcosystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EcosystemTests.swift"; sourceTree = "<group>"; };
@@ -323,6 +326,7 @@
 			children = (
 				24EE48431670E08DBAD4ECBF /* AnomalyCard.swift */,
 				54D2519FA29A1BB09BD08BE3 /* AppMenu.swift */,
+				4D3C064B281B096ACBE0BB7C /* ColorPlan.swift */,
 				1A63D8DFF51D150A7E07BA9F /* Components.swift */,
 				2E1788ACF4320141030627FA /* ConditionCard.swift */,
 				26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */,
@@ -446,6 +450,7 @@
 		95A3FF1001774FB768E3CD35 /* Slice */ = {
 			isa = PBXGroup;
 			children = (
+				F290ECE4B39666492F9C8C90 /* ColorChangesView.swift */,
 				1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */,
 				686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */,
 				3BBBFBC77375184B1869E813 /* PrintModeView.swift */,
@@ -554,6 +559,7 @@
 				04E68A5C73D0307082FD0DCF /* ATSPolicyTests.swift */,
 				F9C5F23D8F6B2E6A1F4B91AE /* AlertModelTests.swift */,
 				D2E2ED1D8E7F57805C6A87AE /* CapabilityDiscoveryTests.swift */,
+				5C7694BC9E2CE5BCC4B493D5 /* ColorChangeTests.swift */,
 				BFB71C9A1559EAEA74E365F2 /* ConnectionDiagnosticsTests.swift */,
 				6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */,
 				A464B815DD4754605B807349 /* EcosystemTests.swift */,
@@ -652,6 +658,7 @@
 		B744812E5B3CE870C46D64CD /* ZoomableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 678A8F0FBDFD04E53A287880 /* ZoomableView.swift */; };
 		44B41150A53216A56208152E /* AnomalyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EE48431670E08DBAD4ECBF /* AnomalyCard.swift */; };
 		33C5908DE3F7BA0ECC0772B3 /* AppMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2519FA29A1BB09BD08BE3 /* AppMenu.swift */; };
+		E5AD8574E0681DB4D3FA5F0F /* ColorPlan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3C064B281B096ACBE0BB7C /* ColorPlan.swift */; };
 		D9FFC02229DBFFD8CE88FFBB /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63D8DFF51D150A7E07BA9F /* Components.swift */; };
 		64906A251A84361C9FE8235D /* ConditionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1788ACF4320141030627FA /* ConditionCard.swift */; };
 		8FCBC5E92CA2956AD680784B /* ConnectionTestPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */; };
@@ -698,6 +705,7 @@
 		45C9E15F6842848097BB5D5B /* PrinterCapabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A13A6383385B3ABAC37431 /* PrinterCapabilitiesView.swift */; };
 		9C3A199BBE38759E9005E6B9 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B46BA26DA4AEBAB629D4CF8C /* SettingsView.swift */; };
 		B583D61EBFDFCCB1FAD72E68 /* SetupWizardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6ED649326E044B4DEB8848C9 /* SetupWizardView.swift */; };
+		2FA65B95C786C8D79E0B3F49 /* ColorChangesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F290ECE4B39666492F9C8C90 /* ColorChangesView.swift */; };
 		BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */; };
 		33C1FB3B750E7C3BA2670230 /* ModelViewer3D.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */; };
 		3D04B669AB54FC7CF07C628C /* PrintModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBBFBC77375184B1869E813 /* PrintModeView.swift */; };
@@ -723,6 +731,7 @@
 		1174704FE94003608A696600 /* ATSPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04E68A5C73D0307082FD0DCF /* ATSPolicyTests.swift */; };
 		4A64F4233F2810992192945E /* AlertModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9C5F23D8F6B2E6A1F4B91AE /* AlertModelTests.swift */; };
 		7B71FBEE0B649C6F86FE1F3F /* CapabilityDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E2ED1D8E7F57805C6A87AE /* CapabilityDiscoveryTests.swift */; };
+		3B00F2E3E13AEEF255ACB91D /* ColorChangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C7694BC9E2CE5BCC4B493D5 /* ColorChangeTests.swift */; };
 		568C40FDA88DB16EEAB8D6C8 /* ConnectionDiagnosticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB71C9A1559EAEA74E365F2 /* ConnectionDiagnosticsTests.swift */; };
 		7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */; };
 		E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A464B815DD4754605B807349 /* EcosystemTests.swift */; };
@@ -804,6 +813,7 @@
 				B744812E5B3CE870C46D64CD /* ZoomableView.swift in Sources */,
 				44B41150A53216A56208152E /* AnomalyCard.swift in Sources */,
 				33C5908DE3F7BA0ECC0772B3 /* AppMenu.swift in Sources */,
+				E5AD8574E0681DB4D3FA5F0F /* ColorPlan.swift in Sources */,
 				D9FFC02229DBFFD8CE88FFBB /* Components.swift in Sources */,
 				64906A251A84361C9FE8235D /* ConditionCard.swift in Sources */,
 				8FCBC5E92CA2956AD680784B /* ConnectionTestPanel.swift in Sources */,
@@ -850,6 +860,7 @@
 				45C9E15F6842848097BB5D5B /* PrinterCapabilitiesView.swift in Sources */,
 				9C3A199BBE38759E9005E6B9 /* SettingsView.swift in Sources */,
 				B583D61EBFDFCCB1FAD72E68 /* SetupWizardView.swift in Sources */,
+				2FA65B95C786C8D79E0B3F49 /* ColorChangesView.swift in Sources */,
 				BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */,
 				33C1FB3B750E7C3BA2670230 /* ModelViewer3D.swift in Sources */,
 				3D04B669AB54FC7CF07C628C /* PrintModeView.swift in Sources */,
@@ -946,6 +957,7 @@
 				1174704FE94003608A696600 /* ATSPolicyTests.swift in Sources */,
 				4A64F4233F2810992192945E /* AlertModelTests.swift in Sources */,
 				7B71FBEE0B649C6F86FE1F3F /* CapabilityDiscoveryTests.swift in Sources */,
+				3B00F2E3E13AEEF255ACB91D /* ColorChangeTests.swift in Sources */,
 				568C40FDA88DB16EEAB8D6C8 /* ConnectionDiagnosticsTests.swift in Sources */,
 				7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */,
 				E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */,

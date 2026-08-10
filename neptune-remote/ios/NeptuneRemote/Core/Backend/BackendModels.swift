@@ -124,6 +124,29 @@ struct BackendModelFile: Decodable, Identifiable, Equatable, Hashable {
     }
 }
 
+/// A layer the print stops at so the filament can be swapped.
+///
+/// One nozzle, several colours: the printer stops, you change the spool, it
+/// carries on. `layer` is the first layer printed in the new colour, counting
+/// the way the app shows layers - the first layer of the print is 1.
+struct ColorChange: Codable, Equatable, Hashable, Identifiable {
+    var layer: Int
+    var color: String
+    /// Height above the bed, filled in by the backend once the file is sliced.
+    /// nil while the change is still only a request: the real height comes from
+    /// the sliced file, because the first layer is usually thicker than the
+    /// rest and multiplying out the layer height would be wrong by that much.
+    var z: Double?
+
+    var id: Int { layer }
+
+    init(layer: Int, color: String, z: Double? = nil) {
+        self.layer = layer
+        self.color = color
+        self.z = z
+    }
+}
+
 struct BackendGCodeFile: Decodable, Identifiable, Equatable, Hashable {
     let path: String
     let filename: String
@@ -140,7 +163,17 @@ struct BackendGCodeFile: Decodable, Identifiable, Equatable, Hashable {
     let slicer: String?
     let thumbnailPath: String?
     let layerCount: Int?
+    /// Filament swaps this file will stop for, read from its own header.
+    ///
+    /// Optional in storage and not in use: a backend that predates this feature
+    /// omits the key, and a missing key must not fail the decode of the whole
+    /// file list. Not private only because that would make the memberwise
+    /// initialiser private too, and demo data needs it. Read `colorChanges`.
+    let storedColorChanges: [ColorChange]?
     let source: String
+
+    /// Empty for anything sliced elsewhere, or by an older backend.
+    var colorChanges: [ColorChange] { storedColorChanges ?? [] }
 
     var id: String { "\(source):\(path)" }
 
@@ -156,6 +189,7 @@ struct BackendGCodeFile: Decodable, Identifiable, Equatable, Hashable {
         case filamentName = "filament_name"
         case thumbnailPath = "thumbnail_path"
         case layerCount = "layer_count"
+        case storedColorChanges = "color_changes"
     }
 }
 
@@ -259,6 +293,11 @@ struct SliceRequestPayload: Encodable, Equatable {
     var speedProfileOverrides: [String: Double] = [:]
     var customOverrides: [String: String] = [:]
 
+    /// Layers at which the print stops for a filament swap. Requires a
+    /// COLOR_CHANGE macro on the printer; the backend refuses the slice rather
+    /// than producing a file that would stop dead at the first swap.
+    var colorChanges: [ColorChange] = []
+
     var outputName: String?
     var uploadToMoonraker: Bool = true
     var startPrintAfterUpload: Bool = false
@@ -302,6 +341,7 @@ struct SliceRequestPayload: Encodable, Equatable {
         case avoidCrossingPerimeters = "avoid_crossing_perimeters"
         case speedProfileOverrides = "speed_profile_overrides"
         case customOverrides = "custom_overrides"
+        case colorChanges = "color_changes"
         case outputName = "output_name"
         case uploadToMoonraker = "upload_to_moonraker"
         case startPrintAfterUpload = "start_print_after_upload"
@@ -351,7 +391,12 @@ struct SliceJob: Decodable, Identifiable, Equatable {
     let error: String?
     let logs: [String]
     let stats: SliceStats
+    /// Where the stops actually landed, with their real heights. Optional for
+    /// the same reason as on BackendGCodeFile - read `colorChanges`.
+    let storedColorChanges: [ColorChange]?
     let engine: String
+
+    var colorChanges: [ColorChange] { storedColorChanges ?? [] }
 
     var isFinished: Bool { ["done", "failed", "cancelled"].contains(status) }
     var isRunning: Bool { status == "running" || status == "queued" }
@@ -359,6 +404,7 @@ struct SliceJob: Decodable, Identifiable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case id, status, progress, stage, error, logs, stats, engine
+        case storedColorChanges = "color_changes"
         case modelID = "model_id"
         case modelFilename = "model_filename"
         case outputFilename = "output_filename"
@@ -543,6 +589,8 @@ struct BackendPrinterStatus: Decodable, Equatable {
     let klippyMessage: String
     let state: String
     let stateMessage: String
+    /// Whatever M117 last put on the printer's display - see PrinterSnapshot.
+    let displayMessage: String
     let filename: String
     let progress: Double
     let printDuration: Double
@@ -571,6 +619,7 @@ struct BackendPrinterStatus: Decodable, Equatable {
         case klippyState = "klippy_state"
         case klippyMessage = "klippy_message"
         case stateMessage = "state_message"
+        case displayMessage = "display_message"
         case printDuration = "print_duration"
         case totalDuration = "total_duration"
         case estimatedTimeLeft = "estimated_time_left"
@@ -600,6 +649,7 @@ struct BackendPrinterStatus: Decodable, Equatable {
         klippyMessage = try container.decodeIfPresent(String.self, forKey: .klippyMessage) ?? ""
         state = try container.decodeIfPresent(String.self, forKey: .state) ?? "unknown"
         stateMessage = try container.decodeIfPresent(String.self, forKey: .stateMessage) ?? ""
+        displayMessage = try container.decodeIfPresent(String.self, forKey: .displayMessage) ?? ""
         filename = try container.decodeIfPresent(String.self, forKey: .filename) ?? ""
         progress = try container.decodeIfPresent(Double.self, forKey: .progress) ?? 0
         printDuration = try container.decodeIfPresent(Double.self, forKey: .printDuration) ?? 0
@@ -631,6 +681,7 @@ struct BackendPrinterStatus: Decodable, Equatable {
         value.klippyMessage = klippyMessage
         value.state = PrinterState(moonraker: state)
         value.stateMessage = stateMessage
+        value.displayMessage = displayMessage
         value.filename = filename
         value.progress = progress
         value.printDuration = printDuration

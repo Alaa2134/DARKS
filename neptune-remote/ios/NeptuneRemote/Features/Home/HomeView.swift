@@ -30,6 +30,17 @@ struct HomeView: View {
                     }
                 }
 
+                // A colour change is a pause, and it reaches the app as one -
+                // so without this the screen would say "paused" and leave the
+                // printer standing hot in front of a part it will not finish
+                // until somebody swaps the spool. Above the state card because
+                // it is the one thing on this screen waiting on a person.
+                if let color = printer.waitingForColor {
+                    ColorChangeWaitingCard(color: color) {
+                        Task { await printer.resumePrint() }
+                    }
+                }
+
                 PrinterStateCard(snapshot: snapshot, printerName: settings.printerName)
 
                 // Anything that needs attention, worst first. Empty when the

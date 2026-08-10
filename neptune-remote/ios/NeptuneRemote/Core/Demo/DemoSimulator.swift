@@ -292,7 +292,7 @@ final class DemoSimulator {
             estimatedTime: 5_053, filamentTotalMM: 4_321, filamentWeightG: 12.9,
             layerHeight: 0.2, firstLayerHeight: 0.24, objectHeight: 48,
             filamentType: "PLA", filamentName: "Generic PLA", slicer: "PrusaSlicer",
-            thumbnailPath: nil, layerCount: 240, source: "demo"
+            thumbnailPath: nil, layerCount: 240, storedColorChanges: nil, source: "demo"
         ),
         BackendGCodeFile(
             path: "calibration_cube.gcode", filename: "calibration_cube.gcode", size: 812_000,
@@ -300,7 +300,8 @@ final class DemoSimulator {
             estimatedTime: 1_820, filamentTotalMM: 1_140, filamentWeightG: 3.4,
             layerHeight: 0.2, firstLayerHeight: 0.24, objectHeight: 20,
             filamentType: "PETG", filamentName: "Generic PETG", slicer: "PrusaSlicer",
-            thumbnailPath: nil, layerCount: 100, source: "demo"
+            thumbnailPath: nil, layerCount: 100,
+            storedColorChanges: [ColorChange(layer: 41, color: "أحمر", z: 8.2)], source: "demo"
         ),
         BackendGCodeFile(
             path: "phone_stand.gcode", filename: "phone_stand.gcode", size: 9_140_000,
@@ -308,7 +309,7 @@ final class DemoSimulator {
             estimatedTime: 14_400, filamentTotalMM: 18_900, filamentWeightG: 56.4,
             layerHeight: 0.28, firstLayerHeight: 0.3, objectHeight: 132,
             filamentType: "PLA", filamentName: "Generic PLA", slicer: "PrusaSlicer",
-            thumbnailPath: nil, layerCount: 471, source: "demo"
+            thumbnailPath: nil, layerCount: 471, storedColorChanges: nil, source: "demo"
         )
     ]
 

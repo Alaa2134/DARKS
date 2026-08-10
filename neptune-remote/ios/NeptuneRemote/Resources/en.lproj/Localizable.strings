@@ -527,6 +527,7 @@
 "demo.disable" = "Turn off";
 "notification.print_started.title" = "Print started";
 "notification.print_paused.title" = "Print paused";
+"notification.color_change.title" = "Change the filament colour";
 "notification.print_resumed.title" = "Print resumed";
 "notification.print_finished.title" = "Print finished";
 "notification.print_failed.title" = "Print failed";
@@ -1481,3 +1482,27 @@
 "anomaly.evidence" = "The numbers behind this";
 
 "preflight.open" = "Check the file before printing";
+
+/* MARK: - Multi-colour printing
+   Several colours on one nozzle: the print stops at a layer, you swap the
+   spool, it carries on. */
+"colors.title" = "Colour changes";
+"colors.explain" = "Your printer has one nozzle, so printing in several colours means the print stops at a layer you choose, you change the spool by hand, and it carries on. Everything below the stop is one colour and everything above it is the next. The app notifies you at each stop and names the colour to load.";
+"colors.plan" = "Colour plan";
+"colors.plan.hint" = "This is the order the printer will ask for them in. Swipe a row to remove it.";
+"colors.empty" = "No stops yet - the whole print comes out in one colour.";
+"colors.starting" = "The colour already loaded when you press print";
+"colors.from_layer" = "From layer";
+"colors.add.section" = "Add a stop";
+"colors.add" = "Add";
+"colors.layer" = "Layer number";
+"colors.layer.hint" = "The first layer of the print is 1. The layer you enter here is the first one printed in the new colour.";
+"colors.name" = "Colour name";
+"colors.error.not_a_number" = "Enter a whole layer number.";
+"colors.error.first_layer" = "Layer 1 is just the colour you load before starting - there is nothing to stop for. Start from 2.";
+"colors.error.duplicate" = "There is already a stop on that layer.";
+"colors.macro.missing" = "This printer has no COLOR_CHANGE macro";
+"colors.macro.missing.body" = "Klipper has no colour-change command of its own, so each stop calls a macro named COLOR_CHANGE. Without it the print ends with 'Unknown command' at the first stop, hours in. The backend refuses to slice until it is installed.";
+"colors.macro.open" = "Generate it from your printer.cfg";
+"colors.waiting.title" = "The printer is waiting for a colour change";
+"colors.waiting.body" = "The nozzle is parked and lifted clear of the part. Pull the old spool out, push the new one in until the colour comes out clean, then press Resume. The printer will wait until you do.";

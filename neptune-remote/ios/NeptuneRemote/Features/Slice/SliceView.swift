@@ -498,6 +498,29 @@ struct SliceView: View {
                 }
             }
 
+            // Multi-colour on a one-nozzle printer: the print stops at the
+            // layers listed here so the spool can be changed. Its own screen,
+            // and above Advanced rather than buried in it, because it changes
+            // what comes off the bed rather than how well it prints.
+            NavigationLink {
+                ColorChangesView()
+            } label: {
+                HStack {
+                    Label(L.t("colors.title"), systemImage: "paintpalette")
+                        .font(.subheadline)
+                    Spacer()
+                    if !slicing.colorChanges.isEmpty {
+                        Text("\(slicing.colorChanges.count)")
+                            .font(.caption2.weight(.bold))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(Theme.accent.opacity(0.2), in: Capsule())
+                    }
+                    Image(systemName: "chevron.forward").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
+
             // Everything the profile normally decides. On its own screen
             // rather than stacked here, because a slicing card with thirty
             // controls is one nobody reads.
@@ -722,6 +745,14 @@ struct SliceResultView: View {
                 VStack(spacing: Theme.spacing) {
                     SliceSummary(stats: job.stats, outputFilename: job.outputFilename)
                         .card()
+
+                    // Where the stops really landed, with the height each one
+                    // is at - read from the sliced file, so this is the first
+                    // point at which the plan stops being a guess.
+                    if !job.colorChanges.isEmpty {
+                        ColorPlanList(changes: job.colorChanges)
+                            .card()
+                    }
 
                     VStack(alignment: .leading, spacing: 10) {
                         SectionHeader("slicer.details", systemImage: "info.circle")
