@@ -202,6 +202,31 @@ actor BackendClient {
         )
     }
 
+    // MARK: - Camera pan and tilt
+
+    func ptzStatus() async throws -> PTZStatus {
+        try await http.decode(PTZStatus.self, from: try request("camera/ptz", timeout: 10))
+    }
+
+    /// Starts or stops a movement. Two calls per gesture: the camera keeps
+    /// turning until it is told to stop.
+    @discardableResult
+    func movePTZ(direction: String, action: String, speed: Int = 4) async throws -> Bool {
+        _ = try await http.data(
+            try request(
+                "camera/ptz",
+                method: "POST",
+                query: [
+                    URLQueryItem(name: "direction", value: direction),
+                    URLQueryItem(name: "action", value: action),
+                    URLQueryItem(name: "speed", value: "\(speed)")
+                ],
+                timeout: 8
+            )
+        )
+        return true
+    }
+
     func anomalies() async throws -> AnomalyStatus {
         try await http.decode(AnomalyStatus.self, from: try request("printer/anomalies"))
     }

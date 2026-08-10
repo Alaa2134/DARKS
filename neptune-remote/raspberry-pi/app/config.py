@@ -165,6 +165,17 @@ class CameraConfig(BaseModel):
     #: busy wifi and the picture tears instead of stalling, which reads as a
     #: broken camera rather than a slow network.
     rtsp_transport: str = "tcp"
+    #: Pan and tilt over the camera's own HTTP control API.
+    #:
+    #: Off by default: a camera with no motors answers these with an error,
+    #: and a control that cannot work should not be on the screen at all.
+    ptz_enabled: bool = False
+    #: Only "dahua" is implemented. Every vendor spells this differently and a
+    #: path written from documentation but never run is worse than nothing.
+    ptz_vendor: str = "dahua"
+    #: Optional. Leave empty and the address and credentials come from
+    #: rtsp_url, which is the usual case.
+    ptz_url: str = ""
     # Fallback: read /dev/videoN directly with FFmpeg (exclusive access).
     device: str = ""
     width: int = 1280

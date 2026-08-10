@@ -126,6 +126,13 @@ camera:
   # Leave empty unless you actually have one. A USB webcam does not use this.
   rtsp_url: ""
   rtsp_transport: "tcp"   # tcp | udp - tcp tears less on a busy wifi
+  # Pan and tilt over the camera's own HTTP API. Off by default: a camera
+  # with no motors answers with an error, and a control that cannot work
+  # should not appear in the app at all. Address and password come from
+  # rtsp_url above; set ptz_url only if the web interface is elsewhere.
+  ptz_enabled: false
+  ptz_vendor: "dahua"     # only dahua is implemented
+  ptz_url: ""
   device: ""            # e.g. "/dev/video0" when no streamer is installed
   width: 1280
   height: 720

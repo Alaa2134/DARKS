@@ -737,3 +737,34 @@ struct MacroSuggestions: Decodable, Equatable {
         ) ?? false
     }
 }
+
+
+/// What the camera can be told to do, as reported by the Pi.
+///
+/// `available` is false on a camera with no motors and on one that was never
+/// configured, and the difference does not matter to the screen: either way
+/// there is nothing to point, and a control that cannot work should not be
+/// drawn at all.
+struct PTZStatus: Decodable, Equatable {
+    var available: Bool = false
+    var vendor: String = ""
+    var host: String = ""
+    var directions: [String] = []
+
+    enum CodingKeys: String, CodingKey { case available, vendor, host, directions }
+
+    init() {}
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        available = try container.decodeIfPresent(Bool.self, forKey: .available) ?? false
+        vendor = try container.decodeIfPresent(String.self, forKey: .vendor) ?? ""
+        host = try container.decodeIfPresent(String.self, forKey: .host) ?? ""
+        directions = try container.decodeIfPresent([String].self, forKey: .directions) ?? []
+    }
+
+    /// Optical zoom exists only on a camera with the motor for it. Most indoor
+    /// pan-and-tilt cameras have none, and the Pi reports what this one
+    /// actually answered to rather than what the box claimed.
+    var hasOpticalZoom: Bool { directions.contains("zoom_in") }
+}

@@ -8,6 +8,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, Response, StreamingResponse
 
 from ..camera.devices import discover
+from ..camera.ptz import PTZError
 from ..deps import get_state
 from ..recording.service import RecordingError
 from ..recording.store import VideoRecord
@@ -100,6 +101,32 @@ async def camera_stream(state: AppState = Depends(get_state)) -> StreamingRespon
         media_type=f"multipart/x-mixed-replace; boundary={boundary}",
         headers={"Cache-Control": "no-store", "Connection": "close"},
     )
+
+
+@router.get("/camera/ptz")
+async def ptz_status(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    return state.ptz.status()
+
+
+@router.post("/camera/ptz")
+async def ptz_move(
+    direction: str = Query(..., min_length=2, max_length=16),
+    action: str = Query("start", pattern="^(start|stop)$"),
+    speed: int = Query(4, ge=1, le=8),
+    state: AppState = Depends(get_state),
+) -> OKResponse:
+    """Start or stop a pan/tilt movement.
+
+    Two calls per gesture, not one: the camera keeps turning until it is told
+    to stop, so a press sends `start` and the release sends `stop`. A single
+    fire-and-forget call would leave the lens travelling until it hit its own
+    limit.
+    """
+    try:
+        await state.ptz.move(direction, action=action, speed=speed)
+    except PTZError as exc:
+        raise HTTPException(status_code=502, detail=exc.message) from exc
+    return OKResponse(ok=True)
 
 
 @router.post("/camera/snapshot/save")

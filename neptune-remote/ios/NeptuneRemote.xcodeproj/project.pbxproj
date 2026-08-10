@@ -63,6 +63,7 @@
 		C4F1A74B0708896A323CD6E2 /* ModelFileTypes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelFileTypes.swift"; sourceTree = "<group>"; };
 		9C28A57EFCE55414712A76B0 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CameraView.swift"; sourceTree = "<group>"; };
 		4A2FD14EEAD6D421B26E2E63 /* MJPEGStream.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MJPEGStream.swift"; sourceTree = "<group>"; };
+		70FE42E4609BBB40DE223A10 /* PTZPad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PTZPad.swift"; sourceTree = "<group>"; };
 		678A8F0FBDFD04E53A287880 /* ZoomableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ZoomableView.swift"; sourceTree = "<group>"; };
 		24EE48431670E08DBAD4ECBF /* AnomalyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnomalyCard.swift"; sourceTree = "<group>"; };
 		1A63D8DFF51D150A7E07BA9F /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Components.swift"; sourceTree = "<group>"; };
@@ -306,6 +307,7 @@
 			children = (
 				9C28A57EFCE55414712A76B0 /* CameraView.swift */,
 				4A2FD14EEAD6D421B26E2E63 /* MJPEGStream.swift */,
+				70FE42E4609BBB40DE223A10 /* PTZPad.swift */,
 				678A8F0FBDFD04E53A287880 /* ZoomableView.swift */,
 			);
 			path = "Camera";
@@ -638,6 +640,7 @@
 		9BBEA36EA3C488F4C0920BE8 /* ModelFileTypes.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4F1A74B0708896A323CD6E2 /* ModelFileTypes.swift */; };
 		9922596F25CFD7DB252D4ED6 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C28A57EFCE55414712A76B0 /* CameraView.swift */; };
 		CAC8E3A7769D6B4223274E02 /* MJPEGStream.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A2FD14EEAD6D421B26E2E63 /* MJPEGStream.swift */; };
+		BD0F07FF8074000462AD3B64 /* PTZPad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70FE42E4609BBB40DE223A10 /* PTZPad.swift */; };
 		B744812E5B3CE870C46D64CD /* ZoomableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 678A8F0FBDFD04E53A287880 /* ZoomableView.swift */; };
 		44B41150A53216A56208152E /* AnomalyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EE48431670E08DBAD4ECBF /* AnomalyCard.swift */; };
 		D9FFC02229DBFFD8CE88FFBB /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63D8DFF51D150A7E07BA9F /* Components.swift */; };
@@ -786,6 +789,7 @@
 				9BBEA36EA3C488F4C0920BE8 /* ModelFileTypes.swift in Sources */,
 				9922596F25CFD7DB252D4ED6 /* CameraView.swift in Sources */,
 				CAC8E3A7769D6B4223274E02 /* MJPEGStream.swift in Sources */,
+				BD0F07FF8074000462AD3B64 /* PTZPad.swift in Sources */,
 				B744812E5B3CE870C46D64CD /* ZoomableView.swift in Sources */,
 				44B41150A53216A56208152E /* AnomalyCard.swift in Sources */,
 				D9FFC02229DBFFD8CE88FFBB /* Components.swift in Sources */,

@@ -25,6 +25,7 @@ from typing import Any, Dict, List, Optional
 
 from . import system_info
 from .backup.service import BackupService
+from .camera.ptz import PTZController
 from .camera.service import CameraService
 from .config import AppConfig
 from .cost.calculator import CostCalculator
@@ -191,6 +192,7 @@ class AppState:
 
         # ---- media --------------------------------------------------------
         self.camera = CameraService(config.camera, self.layout)
+        self.ptz = PTZController(config.camera)
         self.videos = VideoStore(self.db, self.layout)
         self.recording = RecordingService(config.recording, self.camera, self.videos, self.layout)
         self.timelapse = TimelapseService(config.timelapse, self.camera, self.videos, self.layout)
@@ -272,6 +274,8 @@ class AppState:
             await self.timelapse.shutdown()
         with contextlib.suppress(Exception):
             await self.camera.aclose()
+        with contextlib.suppress(Exception):
+            await self.ptz.aclose()
 
         # A clean stop means nothing was interrupted. Deleting the snapshot is
         # what makes its presence on the next boot meaningful.

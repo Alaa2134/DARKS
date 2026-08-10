@@ -117,6 +117,9 @@ struct CameraView: View {
                 .frame(minHeight: 240)
                 .clipShape(RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous))
 
+                // Only draws itself on a camera the Pi says has motors.
+                PTZPad()
+
                 statusCard
                 overlayCard
             }
