@@ -144,7 +144,7 @@ struct ConditionList: View {
         Task {
             switch remedy {
             case .homeAxes(let axes):
-                await printer.homeSafely(axes: axes)
+                await printer.home(axes: axes)
             case .firmwareRestart:
                 await printer.restartFirmware()
             case .restartKlipper:

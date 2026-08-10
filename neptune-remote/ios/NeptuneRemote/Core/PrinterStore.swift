@@ -508,9 +508,10 @@ final class PrinterStore: ObservableObject {
 
     // MARK: Homing / motion
 
-    func home(_ axes: String = "") async {
+    /// The raw G28. Private on purpose - see `home(axes:)`.
+    private func sendHome(_ axes: String) async -> Bool {
         Haptics.impact(.medium)
-        await send(gcode: axes.isEmpty ? "G28" : "G28 \(axes.uppercased())")
+        return await send(gcode: axes.isEmpty ? "G28" : "G28 \(axes.uppercased())")
     }
 
     /// Jogs an axis, never past the travel configured in printer.cfg.
@@ -561,12 +562,19 @@ final class PrinterStore: ObservableObject {
 
     private func sendJog(axis: String, distance: Double, feedrate: Double) async -> Bool {
         Haptics.impact(.light)
-        // Relative move, then restore absolute positioning (Klipper style).
+        // SAVE/RESTORE rather than G91-then-G90.
+        //
+        // Klipper keeps one G-code state for the whole machine, so the old
+        // sequence did not restore what was there - it asserted absolute
+        // positioning, whatever the previous mode had been. Restoring puts back
+        // the mode, the feedrate and the offsets exactly as they were.
+        // MOVE is not passed, so nothing moves on the way out.
+        await send(gcode: "SAVE_GCODE_STATE NAME=neptune_jog", echo: false)
         await send(gcode: "G91", echo: false)
         let ok = await send(
             gcode: String(format: "G1 %@%.3f F%.0f", axis.uppercased(), distance, feedrate)
         )
-        await send(gcode: "G90", echo: false)
+        await send(gcode: "RESTORE_GCODE_STATE NAME=neptune_jog", echo: false)
         return ok
     }
 
@@ -611,8 +619,16 @@ final class PrinterStore: ObservableObject {
         }
 
         Haptics.impact(.light)
+        // M83 used to be left switched on afterwards: every later extrusion in
+        // the session - a macro, a terminal command - then meant something
+        // different from what its author wrote.
+        await send(gcode: "SAVE_GCODE_STATE NAME=neptune_extrude", echo: false)
         await send(gcode: "M83", echo: false)
-        return await send(gcode: String(format: "G1 E%.2f F%.0f", requested, speedMMPerSecond * 60))
+        let ok = await send(
+            gcode: String(format: "G1 E%.2f F%.0f", requested, speedMMPerSecond * 60)
+        )
+        await send(gcode: "RESTORE_GCODE_STATE NAME=neptune_extrude", echo: false)
+        return ok
     }
 
     // MARK: - Fans
@@ -1063,10 +1079,15 @@ final class PrinterStore: ObservableObject {
     /// Z coordinate is invented here: Klipper moves to the configured position
     /// itself. The checks are the ones a person would make before pressing the
     /// button - Klipper alive, nothing printing, no shutdown pending.
+    ///
+    /// This is the **only** public way to home. There used to be an unguarded
+    /// `home()` next to it, and it was the one every button in the app called
+    /// while the checked version was wired to a single card - the safe path
+    /// existed and almost nothing used it.
     @discardableResult
-    func homeSafely(axes: String = "") async -> Bool {
+    func home(axes: String = "") async -> Bool {
         guard !settings.demoMode else {
-            await home(axes)
+            _ = await sendHome(axes)
             return true
         }
         guard moonrakerConnected || snapshot.isOnline else {
@@ -1085,7 +1106,7 @@ final class PrinterStore: ObservableObject {
             return false
         }
 
-        let ok = await send(gcode: axes.isEmpty ? "G28" : "G28 \(axes.uppercased())")
+        let ok = await sendHome(axes)
         // Homing changes homed_axes, and that is what the condition list keys
         // off, so pull a fresh reading rather than waiting for the next poll.
         if ok { await refreshNow() }

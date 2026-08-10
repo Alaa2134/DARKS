@@ -8,6 +8,7 @@
 "home.title" = "الرئيسية";
 "common.ok" = "تمام";
 "common.cancel" = "إلغاء";
+"common.dismiss" = "إخفاء";
 "common.close" = "إغلاق";
 "common.done" = "تم";
 "common.save" = "حفظ";

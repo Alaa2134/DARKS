@@ -8,6 +8,7 @@
 "home.title" = "Home";
 "common.ok" = "OK";
 "common.cancel" = "Cancel";
+"common.dismiss" = "Dismiss";
 "common.close" = "Close";
 "common.done" = "Done";
 "common.save" = "Save";

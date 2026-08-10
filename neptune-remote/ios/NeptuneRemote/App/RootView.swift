@@ -80,6 +80,9 @@ struct RootView: View {
         .sheet(isPresented: $showingSettings) {
             NavigationStack { SettingsView() }
         }
+        // Above every tab, so no command can be refused in silence just
+        // because it was sent from a screen that forgot to display errors.
+        .printerFeedback()
         .onOpenURL { url in
             handle(url: url)
         }

@@ -123,6 +123,9 @@ final class FilesStore: ObservableObject {
         let started = await printer.startPrint(filename: file.path)
         if !started {
             lastError = printer.lastError ?? .unknown(L.t("print.failed_to_start"))
+            // Handed over, not copied: the root now shows printer errors too,
+            // and the same sentence twice on one screen reads like two faults.
+            printer.lastError = nil
         }
         return started
     }

@@ -18,7 +18,6 @@ struct HomeView: View {
         ScrollView {
             LazyVStack(spacing: Theme.spacing) {
                 if settings.demoMode { demoBanner }
-                if let error = printer.lastError { errorBanner(error) }
 
                 // Above the printer state on purpose. If a print died while
                 // nobody was home, that is the first thing to know - and it
@@ -167,13 +166,6 @@ struct HomeView: View {
         .background(Theme.accent.opacity(0.15), in: RoundedRectangle(cornerRadius: Theme.smallCornerRadius, style: .continuous))
     }
 
-    private func errorBanner(_ error: APIError) -> some View {
-        ErrorBanner(
-            message: error.localizedDescription,
-            onRetry: error.isRetryable ? { Task { await printer.refreshNow() } } : nil,
-            onDismiss: { printer.lastError = nil }
-        )
-    }
 }
 
 // MARK: - Printer state card

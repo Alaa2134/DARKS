@@ -16,7 +16,6 @@ struct JogView: View {
         ScrollView {
             VStack(spacing: Theme.spacing) {
                 if !snapshot.isReady { notReadyBanner }
-                if let error = printer.lastError { errorBanner(error) }
 
                 positionCard
                 jogPad
@@ -45,10 +44,6 @@ struct JogView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(Theme.paused.opacity(0.12), in: RoundedRectangle(cornerRadius: Theme.smallCornerRadius, style: .continuous))
-    }
-
-    private func errorBanner(_ error: APIError) -> some View {
-        ErrorBanner(message: error.localizedDescription, onDismiss: { printer.lastError = nil })
     }
 
     private var positionCard: some View {
@@ -125,7 +120,7 @@ struct JogView: View {
             HStack(spacing: 8) {
                 jogButton(axis: "X", sign: -1, systemImage: "chevron.left", label: "X-")
                 Button {
-                    Task { await printer.home("X Y") }
+                    Task { await printer.home(axes: "X Y") }
                 } label: {
                     Image(systemName: "house.fill")
                         .frame(width: 52, height: 52)
@@ -175,11 +170,11 @@ struct JogView: View {
             SectionHeader("control.homing", systemImage: "house")
             HStack(spacing: 10) {
                 BigActionButton(titleKey: "control.home_x", systemImage: "arrow.left.and.right",
-                                isEnabled: canMove) { Task { await printer.home("X") } }
+                                isEnabled: canMove) { Task { await printer.home(axes: "X") } }
                 BigActionButton(titleKey: "control.home_y", systemImage: "arrow.up.and.down",
-                                isEnabled: canMove) { Task { await printer.home("Y") } }
+                                isEnabled: canMove) { Task { await printer.home(axes: "Y") } }
                 BigActionButton(titleKey: "control.home_z", systemImage: "arrow.up.to.line",
-                                isEnabled: canMove) { Task { await printer.home("Z") } }
+                                isEnabled: canMove) { Task { await printer.home(axes: "Z") } }
                 BigActionButton(titleKey: "control.home_all", systemImage: "house.fill",
                                 isEnabled: canMove) { Task { await printer.home() } }
             }

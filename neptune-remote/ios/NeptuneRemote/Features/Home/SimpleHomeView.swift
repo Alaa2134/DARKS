@@ -71,14 +71,6 @@ struct SimpleHomeView: View {
                 if !printer.moonrakerConnected, !printer.backendConnected, !settings.demoMode {
                     offlineBanner
                 }
-                if let error = printer.lastError {
-                    ErrorBanner(message: error.localizedDescription) {
-                        Task { await printer.refreshNow() }
-                    } onDismiss: {
-                        printer.lastError = nil
-                    }
-                }
-
                 stateCard
                 // Classified Klipper conditions, each with its own remedy. An
                 // unhomed axis appears here as a calm "needs Home" card rather
