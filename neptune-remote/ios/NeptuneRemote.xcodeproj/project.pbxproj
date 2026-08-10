@@ -83,11 +83,13 @@
 		524E58E5FC427583409EC2D9 /* FirstLayerCheckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FirstLayerCheckView.swift"; sourceTree = "<group>"; };
 		EA228AAAD34C613804980625 /* FixMyPrinterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FixMyPrinterView.swift"; sourceTree = "<group>"; };
 		15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GCodeInspectorView.swift"; sourceTree = "<group>"; };
+		BE9AA6C94BD29B05779850F6 /* MacroSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MacroSuggestionsView.swift"; sourceTree = "<group>"; };
 		A542E2A4CD878A6C9B34661E /* WorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkflowView.swift"; sourceTree = "<group>"; };
 		706AC3C3C3FDDDD172CC63B1 /* FilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FilesView.swift"; sourceTree = "<group>"; };
 		28A66B8EC5BB6C14F4353868 /* GCodeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GCodeDetailView.swift"; sourceTree = "<group>"; };
 		9F9651B521F5A5AE601D1612 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HistoryView.swift"; sourceTree = "<group>"; };
 		3C66CD5FBAFCDA256B4B82DB /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "InsightsView.swift"; sourceTree = "<group>"; };
+		E5B6FCEABC5666C166BC354B /* EjectPartCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EjectPartCard.swift"; sourceTree = "<group>"; };
 		6AAA1E0262EDD51D61EA1D86 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HomeView.swift"; sourceTree = "<group>"; };
 		992A56811E70180AAE10E4AB /* PrintingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintingView.swift"; sourceTree = "<group>"; };
 		C5079CAB0E7D13307F87A279 /* SimpleHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SimpleHomeView.swift"; sourceTree = "<group>"; };
@@ -343,6 +345,7 @@
 				524E58E5FC427583409EC2D9 /* FirstLayerCheckView.swift */,
 				EA228AAAD34C613804980625 /* FixMyPrinterView.swift */,
 				15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */,
+				BE9AA6C94BD29B05779850F6 /* MacroSuggestionsView.swift */,
 				A542E2A4CD878A6C9B34661E /* WorkflowView.swift */,
 			);
 			path = "Doctor";
@@ -369,6 +372,7 @@
 		64BF1DC9CE27FA5394DDD1CD /* Home */ = {
 			isa = PBXGroup;
 			children = (
+				E5B6FCEABC5666C166BC354B /* EjectPartCard.swift */,
 				6AAA1E0262EDD51D61EA1D86 /* HomeView.swift */,
 				992A56811E70180AAE10E4AB /* PrintingView.swift */,
 				C5079CAB0E7D13307F87A279 /* SimpleHomeView.swift */,
@@ -650,11 +654,13 @@
 		15CF1A5416A0706DA032A5F0 /* FirstLayerCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524E58E5FC427583409EC2D9 /* FirstLayerCheckView.swift */; };
 		EC00700C1125CBE6BD723BC2 /* FixMyPrinterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA228AAAD34C613804980625 /* FixMyPrinterView.swift */; };
 		ED89E2B28A2D8E37991C4768 /* GCodeInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */; };
+		5E62E483E01404A3DF5A9960 /* MacroSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE9AA6C94BD29B05779850F6 /* MacroSuggestionsView.swift */; };
 		EF51A7E201473034CD98AF8D /* WorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A542E2A4CD878A6C9B34661E /* WorkflowView.swift */; };
 		CD0FE67E15D87BA7B8F4AFF8 /* FilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706AC3C3C3FDDDD172CC63B1 /* FilesView.swift */; };
 		D0F532A925A85B001A24B619 /* GCodeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28A66B8EC5BB6C14F4353868 /* GCodeDetailView.swift */; };
 		D657F73BC66F870934CADCFD /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9651B521F5A5AE601D1612 /* HistoryView.swift */; };
 		6918A11572A0BFC0372DB983 /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C66CD5FBAFCDA256B4B82DB /* InsightsView.swift */; };
+		20BD0682F3E5457A14E75763 /* EjectPartCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5B6FCEABC5666C166BC354B /* EjectPartCard.swift */; };
 		E4E459A1B2427EB8D33F9BDE /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AAA1E0262EDD51D61EA1D86 /* HomeView.swift */; };
 		11178E2C22B9912346C4F9CB /* PrintingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 992A56811E70180AAE10E4AB /* PrintingView.swift */; };
 		14EABB4C711B6160BA20AB69 /* SimpleHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5079CAB0E7D13307F87A279 /* SimpleHomeView.swift */; };
@@ -794,11 +800,13 @@
 				15CF1A5416A0706DA032A5F0 /* FirstLayerCheckView.swift in Sources */,
 				EC00700C1125CBE6BD723BC2 /* FixMyPrinterView.swift in Sources */,
 				ED89E2B28A2D8E37991C4768 /* GCodeInspectorView.swift in Sources */,
+				5E62E483E01404A3DF5A9960 /* MacroSuggestionsView.swift in Sources */,
 				EF51A7E201473034CD98AF8D /* WorkflowView.swift in Sources */,
 				CD0FE67E15D87BA7B8F4AFF8 /* FilesView.swift in Sources */,
 				D0F532A925A85B001A24B619 /* GCodeDetailView.swift in Sources */,
 				D657F73BC66F870934CADCFD /* HistoryView.swift in Sources */,
 				6918A11572A0BFC0372DB983 /* InsightsView.swift in Sources */,
+				20BD0682F3E5457A14E75763 /* EjectPartCard.swift in Sources */,
 				E4E459A1B2427EB8D33F9BDE /* HomeView.swift in Sources */,
 				11178E2C22B9912346C4F9CB /* PrintingView.swift in Sources */,
 				14EABB4C711B6160BA20AB69 /* SimpleHomeView.swift in Sources */,

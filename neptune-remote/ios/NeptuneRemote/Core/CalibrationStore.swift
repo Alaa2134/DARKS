@@ -16,6 +16,10 @@ final class CalibrationStore: ObservableObject {
 
     @Published private(set) var generated: CalibrationTest?
     @Published private(set) var firstLayer: FirstLayerReading?
+    /// Macros built from the live printer.cfg. Text only - the app never
+    /// installs one.
+    @Published private(set) var macros: MacroSuggestions?
+    @Published private(set) var isLoadingMacros = false
 
     @Published private(set) var isLoading = false
     @Published private(set) var isGenerating = false
@@ -146,6 +150,26 @@ final class CalibrationStore: ObservableObject {
             lastError = nil
         } catch {
             firstLayer = nil
+            lastError = APIError.from(error, host: settings.host)
+        }
+    }
+
+    /// Reads the macros the backend generates from this printer's own config.
+    ///
+    /// Nothing is installed and nothing is written. The result is text plus the
+    /// reasoning behind every coordinate in it, which the user copies into
+    /// printer.cfg themselves - the one place this app has always refused to
+    /// touch on its own.
+    func loadMacros() async {
+        guard !isLoadingMacros else { return }
+        isLoadingMacros = true
+        defer { isLoadingMacros = false }
+
+        do {
+            macros = try await printer.backend.suggestedMacros()
+            lastError = nil
+        } catch {
+            macros = nil
             lastError = APIError.from(error, host: settings.host)
         }
     }

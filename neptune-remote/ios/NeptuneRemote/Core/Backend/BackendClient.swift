@@ -193,6 +193,15 @@ actor BackendClient {
         try await http.decode(LearningReport.self, from: try request("history/learning", timeout: 20))
     }
 
+    /// Macros generated from the live printer.cfg. Read-only: the backend
+    /// returns text and its reasoning, and installing it stays the user's own
+    /// deliberate act.
+    func suggestedMacros() async throws -> MacroSuggestions {
+        try await http.decode(
+            MacroSuggestions.self, from: try request("config/macros/suggest", timeout: 30)
+        )
+    }
+
     func anomalies() async throws -> AnomalyStatus {
         try await http.decode(AnomalyStatus.self, from: try request("printer/anomalies"))
     }

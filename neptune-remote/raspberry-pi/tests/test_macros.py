@@ -5,7 +5,12 @@ on the config it was written against is a generator that has hardcoded that
 config.
 """
 
-from app.klipper.macros import suggest, suggest_print_end, suggest_print_start
+from app.klipper.macros import (
+    suggest,
+    suggest_eject_part,
+    suggest_print_end,
+    suggest_print_start,
+)
 from app.klipper.model import parse_config
 
 # The reported printer: negative position_min on both X and Y, probed Z, a
@@ -197,3 +202,63 @@ class TestNothingIsInvented:
         suggestion = _start("[stepper_x]\nposition_max: 100\n")
         assert not suggestion.ok
         assert any("extruder" in blocker for blocker in suggestion.blockers)
+
+
+class TestEjectPart:
+    """Sweeping the finished part off the bed.
+
+    The technique needs the bed to be the thing that moves, and needs the part
+    to have let go first. Both are guards, not suggestions: without them the
+    macro drives the toolhead into something still glued down.
+    """
+
+    def test_the_sweep_runs_back_to_front_within_the_configured_travel(self):
+        suggestion = suggest_eject_part(parse_config(NEPTUNE))
+        assert suggestion.ok
+        # Starts behind the part and ends at the front edge of the bed.
+        assert "Y325.0" in suggestion.gcode
+        assert "Y0.0" in suggestion.gcode
+        # position_min is homing overtravel, not bed: the sweep must not run
+        # out to -1.3 and push the part into the frame.
+        assert "-1.3" not in suggestion.gcode
+
+    def test_it_refuses_while_a_print_is_running(self):
+        gcode = suggest_eject_part(parse_config(NEPTUNE)).gcode
+        assert "printer.print_stats.state in ['printing', 'paused']" in gcode
+        assert "action_raise_error" in gcode
+
+    def test_it_refuses_on_a_warm_bed(self):
+        """The whole thing hinges on this - adhesion is what has to let go."""
+        gcode = suggest_eject_part(parse_config(NEPTUNE)).gcode
+        assert "printer.heater_bed.temperature > MAX_BED" in gcode
+
+    def test_it_refuses_with_a_hot_nozzle_using_the_configured_limit(self):
+        gcode = suggest_eject_part(parse_config(NEPTUNE)).gcode
+        # 170 is min_extrude_temp from the fixture, not a constant.
+        assert "printer.extruder.temperature > 170" in gcode
+
+    def test_corexy_is_refused_outright(self):
+        """On a CoreXY the bed never travels, so there is nothing to sweep with."""
+        suggestion = suggest_eject_part(
+            parse_config(
+                "[printer]\nkinematics: corexy\n"
+                "[stepper_x]\nposition_min: 0\nposition_max: 250\n"
+                "[stepper_y]\nposition_min: 0\nposition_max: 250\n"
+            )
+        )
+        assert not suggestion.ok
+        assert not suggestion.gcode
+        assert any("bed-slinger" in blocker for blocker in suggestion.blockers)
+
+    def test_unknown_travel_is_refused(self):
+        suggestion = suggest_eject_part(parse_config("[extruder]\nmin_extrude_temp: 180\n"))
+        assert not suggestion.ok
+
+    def test_the_bed_slinger_assumption_is_stated_not_hidden(self):
+        """printer.cfg cannot say whether Y moves the bed or the gantry."""
+        suggestion = suggest_eject_part(parse_config(NEPTUNE))
+        assert any("bed-slinger" in reason for reason in suggestion.rationale)
+
+    def test_it_is_offered_alongside_the_other_macros(self):
+        names = [macro["name"] for macro in suggest(parse_config(NEPTUNE))["macros"]]
+        assert "EJECT_PART" in names

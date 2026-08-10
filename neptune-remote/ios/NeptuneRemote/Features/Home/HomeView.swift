@@ -73,9 +73,11 @@ struct HomeView: View {
                     onCancel: { Task { await printer.cancelPrint() } }
                 )
 
-                // Only appears on a printer that actually has a light in its
-                // config; there is nothing to switch otherwise.
+                // Both of these appear only when the printer's own config says
+                // they can: a light section for one, an installed EJECT_PART
+                // macro for the other.
                 LightsCard()
+                EjectPartCard()
 
                 MachineStateCard(snapshot: snapshot)
                 CameraPreviewCard()

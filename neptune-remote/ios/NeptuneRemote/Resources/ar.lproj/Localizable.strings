@@ -1324,6 +1324,26 @@
 /* MARK: - Calibration prints */
 "calibration.prints.title" = "معايرة الإكستروجن";
 "calibration.prints.subtitle" = "التدفق، Pressure Advance، الحرارة، الـ Retraction";
+
+"macros.title" = "ماكروهات للطابعة دي";
+"macros.subtitle" = "PRINT_START و PRINT_END وزقّ القطعة، مولّدين من الـ printer.cfg بتاعك";
+"macros.intro" = "كل إحداثي تحت اتقري من الـ printer.cfg بتاعك انت - حدود الحركة، البروب، الميش المحفوظ. انسخ اللي عايزه وحطه في printer.cfg وشغّل FIRMWARE_RESTART. التطبيق عمره ما بيعدّل الملف ده.";
+"macros.copy" = "انسخ الماكرو";
+"macros.why" = "ليه شكله كده";
+"macros.exists" = "عندك واحد بنفس الاسم";
+"macros.slicer" = "قول للسلايسر يناديهم";
+"macros.slicer.start" = "G-code البداية";
+"macros.slicer.end" = "G-code النهاية";
+"common.copied" = "اتنسخ";
+
+"eject.title" = "زقّ القطعة";
+"eject.explain" = "بيشغّل ماكرو EJECT_PART من الـ printer.cfg بتاعك: الفوهة بتنزل فوق السرير بشوية ورا القطعة، والسرير بيتحرك تحتها فالقطعة تتزق وتقع من الحافة الأمامية.";
+"eject.action" = "ازق القطعة برّه";
+"eject.blocked.printing" = "لسه فيه طبعة شغالة";
+"eject.blocked.bed_hot" = "السرير %.0f° - لازم يبقى تحت %.0f° وإلا القطعة مش هتسيب";
+"eject.blocked.nozzle_hot" = "الفوهة لسه سخنة (%.0f°)";
+"eject.confirm.title" = "تزق القطعة من على السرير؟";
+"eject.confirm.message" = "الرأس هيتحرك على السرير على ارتفاع واطي. اتأكد إن مفيش حاجة تحته وإن القطعة بردت، وخلي إيدك على زرار الطوارئ.";
 "calibration.section.temps" = "حرارة الاختبار";
 "calibration.section.temps.footer" = "دي الحرارة اللي هتتطبع بيها قطعة الاختبار. خليها زي اللي بتطبع بيها عادةً.";
 "calibration.nozzle_temp" = "النوزل";

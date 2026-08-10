@@ -259,6 +259,147 @@ def suggest_print_end(config: ParsedConfig) -> MacroSuggestion:
     )
 
 
+#: Bed temperature at or below which a printed part has usually let go.
+#:
+#: Adhesion is thermal: the plastic contracts faster than the sheet as both
+#: cool, and that mismatch is what breaks the bond. Sweeping a part off a warm
+#: bed does not eject it - it drives the toolhead into something that is still
+#: glued down, which costs steps, and can cost a nozzle.
+EJECT_MAX_BED_C = 40.0
+
+#: How high the nozzle rides during the sweep.
+#:
+#: Low enough to catch the first layer rather than glide over a short part,
+#: high enough not to score the sheet. This is the one number worth tuning per
+#: build surface, so it is a parameter with this as its default.
+EJECT_SWEEP_Z_MM = 1.0
+
+#: How fast the sweep runs, mm/min. Fast enough that momentum helps, slow
+#: enough that a part which refuses to move stalls the motor rather than
+#: slamming into the frame.
+EJECT_SWEEP_FEED = 6000
+
+
+def suggest_eject_part(config: ParsedConfig) -> MacroSuggestion:
+    """A macro that pushes the finished part off the bed.
+
+    Only generated for a bed-slinger, and only with its assumptions stated.
+    Klipper's config says `kinematics: cartesian`; it does **not** say whether Y
+    moves the bed or the gantry, and this technique needs the bed to be the
+    thing that moves. That is written into the rationale rather than hidden,
+    because it is the one thing here that cannot be read from the file.
+
+    On corexy/delta the bed does not travel at all, so it is refused outright
+    instead of emitting motion that would sweep the toolhead across a stationary
+    part at a guessed height.
+    """
+    rationale: List[str] = []
+    blockers: List[str] = []
+
+    kinematics = (config.kinematics or "").strip().lower()
+    if kinematics and kinematics != "cartesian":
+        blockers.append(
+            f"kinematics is '{kinematics}'. Sweeping a part off needs the bed to "
+            f"move under a stationary nozzle, which only happens on a bed-slinger."
+        )
+
+    x = config.axis_limits("x")
+    y = config.axis_limits("y")
+    z = config.axis_limits("z")
+    if not x.is_known or not y.is_known:
+        blockers.append(
+            "stepper_x/stepper_y travel is not fully defined, so the sweep would "
+            "run to guessed coordinates."
+        )
+
+    extruder = config.section("extruder")
+    min_extrude = DEFAULT_MIN_EXTRUDE_TEMP
+    if extruder is not None:
+        min_extrude = extruder.get_float("min_extrude_temp") or DEFAULT_MIN_EXTRUDE_TEMP
+
+    if blockers:
+        return MacroSuggestion(
+            name="EJECT_PART",
+            gcode="",
+            rationale=rationale,
+            blockers=blockers,
+            existing=_existing_macro(config, "EJECT_PART"),
+        )
+
+    # position_min is homing overtravel, not bed. Sweep between the real
+    # surface edges.
+    front_y = max(y.position_min, 0.0)
+    back_y = y.position_max - EDGE_MARGIN_MM
+    centre_x = (max(x.position_min, 0.0) + x.position_max) / 2.0
+
+    rationale.append(
+        f"Assumes Y moves the bed (a bed-slinger). The nozzle starts at "
+        f"Y{back_y:.1f} and sweeps to Y{front_y:.1f}, so the part is pushed off "
+        f"the front edge. If Y moves the gantry on your machine instead, do not "
+        f"install this - printer.cfg cannot tell the two apart."
+    )
+    rationale.append(
+        f"Refuses above {EJECT_MAX_BED_C:.0f}C. A part only releases once the bed "
+        f"has cooled; sweeping a warm one pushes the toolhead into something still "
+        f"stuck, which skips steps."
+    )
+    rationale.append(
+        f"Refuses above the configured min_extrude_temp ({min_extrude:.0f}C) on the "
+        f"nozzle: a hot nozzle drags a melted line across the part and oozes onto "
+        f"the sheet."
+    )
+    rationale.append(
+        f"Sweeps at Z{EJECT_SWEEP_Z_MM:.1f} by default - low enough to catch a "
+        f"first layer, high enough not to score the sheet. Pass Z= to change it."
+    )
+
+    lines: List[str] = [
+        "[gcode_macro EJECT_PART]",
+        "description: Sweep the finished part off the bed - generated from this printer.cfg",
+        "gcode:",
+        f"    {{% set SWEEP_Z = params.Z|default({EJECT_SWEEP_Z_MM})|float %}}",
+        f"    {{% set MAX_BED = params.MAX_BED|default({EJECT_MAX_BED_C:.0f})|float %}}",
+        "",
+        "    # Refuse rather than fight the printer.",
+        "    {% if printer.print_stats.state in ['printing', 'paused'] %}",
+        '        { action_raise_error("EJECT_PART: a print is still running") }',
+        "    {% endif %}",
+        "    {% if printer.heater_bed.temperature > MAX_BED %}",
+        '        { action_raise_error("EJECT_PART: bed is %.0fC, wait until it is under'
+        ' %.0fC or the part will not release" % (printer.heater_bed.temperature, MAX_BED)) }',
+        "    {% endif %}",
+        f"    {{% if printer.extruder.temperature > {min_extrude:.0f} %}}",
+        '        { action_raise_error("EJECT_PART: nozzle is still hot") }',
+        "    {% endif %}",
+        "",
+        "    {% if 'xyz' not in printer.toolhead.homed_axes %}",
+        "        G28",
+        "    {% endif %}",
+        "",
+        "    G90",
+    ]
+
+    if z.is_known:
+        lines.append("    G1 Z{SWEEP_Z + 20} F3000              # clear of the part first")
+        rationale.append("Lifts before travelling so the nozzle does not clip the part on the way.")
+
+    lines += [
+        f"    G1 X{centre_x:.1f} Y{back_y:.1f} F6000      # behind the part",
+        "    G1 Z{SWEEP_Z} F1500",
+        f"    G1 Y{front_y:.1f} F{EJECT_SWEEP_FEED}                 # the sweep",
+        "    G1 Z20 F3000",
+        "    M84",
+    ]
+
+    return MacroSuggestion(
+        name="EJECT_PART",
+        gcode="\n".join(lines) + "\n",
+        rationale=rationale,
+        blockers=blockers,
+        existing=_existing_macro(config, "EJECT_PART"),
+    )
+
+
 def _existing_macro(config: ParsedConfig, name: str) -> Optional[str]:
     for section in config.sections_of_kind("gcode_macro"):
         if section.label.upper() == name.upper():
@@ -270,9 +411,10 @@ def suggest(config: ParsedConfig) -> dict:
     """Both macros, plus what the slicer has to be told to call them."""
     start = suggest_print_start(config)
     end = suggest_print_end(config)
+    eject = suggest_eject_part(config)
 
     return {
-        "macros": [start.to_dict(), end.to_dict()],
+        "macros": [start.to_dict(), end.to_dict(), eject.to_dict()],
         # Generating the macro is only half of it: a macro nothing calls does
         # nothing at all, which is the state this printer is in today.
         "slicer": {

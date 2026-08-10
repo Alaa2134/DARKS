@@ -67,6 +67,31 @@ struct CalibrationHubView: View {
                     .card()
                 }
                 .buttonStyle(.plain)
+
+                // The macros themselves. Every wizard above tunes a number;
+                // these are the G-code that has to run for those numbers to be
+                // used at all - the mesh nothing loads, the part nobody sweeps.
+                NavigationLink {
+                    MacroSuggestionsView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "chevron.left.forwardslash.chevron.right")
+                            .foregroundStyle(Theme.accent)
+                            .frame(width: 26)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(localized: "macros.title")
+                                .font(.subheadline.weight(.medium))
+                            Text(localized: "macros.subtitle")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.forward").font(.caption).foregroundStyle(.secondary)
+                    }
+                    .card()
+                }
+                .buttonStyle(.plain)
             }
             .padding(Theme.spacing)
         }

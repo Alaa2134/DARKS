@@ -1324,6 +1324,26 @@
 /* MARK: - Calibration prints */
 "calibration.prints.title" = "Extrusion calibration";
 "calibration.prints.subtitle" = "Flow, pressure advance, temperature, retraction";
+
+"macros.title" = "Macros for this printer";
+"macros.subtitle" = "PRINT_START, PRINT_END and part ejection, generated from your printer.cfg";
+"macros.intro" = "Every coordinate below was read from your own printer.cfg - the travel limits, the probe, the saved mesh. Copy what you want into printer.cfg and run FIRMWARE_RESTART. The app never edits that file.";
+"macros.copy" = "Copy the macro";
+"macros.why" = "Why it looks like this";
+"macros.exists" = "you already have one with this name";
+"macros.slicer" = "Tell the slicer to call them";
+"macros.slicer.start" = "Start G-code";
+"macros.slicer.end" = "End G-code";
+"common.copied" = "Copied";
+
+"eject.title" = "Eject the part";
+"eject.explain" = "Runs the EJECT_PART macro from your printer.cfg: the nozzle drops to just above the bed behind the part, and the bed sweeps under it so the part is pushed off the front edge.";
+"eject.action" = "Sweep the part off";
+"eject.blocked.printing" = "A print is still running";
+"eject.blocked.bed_hot" = "Bed is %.0f°C - it has to be under %.0f°C or the part will not release";
+"eject.blocked.nozzle_hot" = "Nozzle is still hot (%.0f°C)";
+"eject.confirm.title" = "Sweep the part off the bed?";
+"eject.confirm.message" = "The toolhead will move across the bed at low height. Make sure nothing is under it and that the part has cooled, and be ready to hit emergency stop.";
 "calibration.section.temps" = "Test temperatures";
 "calibration.section.temps.footer" = "What the test piece prints at. Use whatever you normally print with.";
 "calibration.nozzle_temp" = "Nozzle";

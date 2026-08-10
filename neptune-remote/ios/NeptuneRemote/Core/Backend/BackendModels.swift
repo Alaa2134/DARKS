@@ -628,3 +628,78 @@ struct BackendPrinterEvent: Decodable, Identifiable, Equatable {
     let message: String
     let filename: String
 }
+
+// MARK: - Generated macros
+
+/// One macro the backend built from the live printer.cfg, with its reasoning.
+///
+/// `rationale` is not decoration. A macro that moves the toolhead is only worth
+/// installing if you can see why every coordinate in it is what it is, and
+/// `blockers` says when the backend refused to generate one at all rather than
+/// emitting motion it could not justify.
+struct MacroSuggestion: Decodable, Equatable, Identifiable {
+    let name: String
+    let gcode: String
+    let rationale: [String]
+    let blockers: [String]
+    /// A macro of this name already in the user's config.
+    let existing: String?
+    let ok: Bool
+    let conflicts: Bool
+
+    var id: String { name }
+
+    enum CodingKeys: String, CodingKey {
+        case name, gcode, rationale, blockers, existing, ok, conflicts
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        name = try container.decodeIfPresent(String.self, forKey: .name) ?? ""
+        gcode = try container.decodeIfPresent(String.self, forKey: .gcode) ?? ""
+        rationale = try container.decodeIfPresent([String].self, forKey: .rationale) ?? []
+        blockers = try container.decodeIfPresent([String].self, forKey: .blockers) ?? []
+        existing = try container.decodeIfPresent(String.self, forKey: .existing)
+        ok = try container.decodeIfPresent(Bool.self, forKey: .ok) ?? blockers.isEmpty
+        conflicts = try container.decodeIfPresent(Bool.self, forKey: .conflicts) ?? (existing != nil)
+    }
+}
+
+struct MacroSlicerWiring: Decodable, Equatable {
+    let startGCode: String
+    let endGCode: String
+    let note: String
+
+    enum CodingKeys: String, CodingKey {
+        case startGCode = "start_gcode"
+        case endGCode = "end_gcode"
+        case note
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        startGCode = try container.decodeIfPresent(String.self, forKey: .startGCode) ?? ""
+        endGCode = try container.decodeIfPresent(String.self, forKey: .endGCode) ?? ""
+        note = try container.decodeIfPresent(String.self, forKey: .note) ?? ""
+    }
+}
+
+struct MacroSuggestions: Decodable, Equatable {
+    let macros: [MacroSuggestion]
+    let slicer: MacroSlicerWiring?
+    let alreadyConfigured: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case macros, slicer
+        case alreadyConfigured = "already_configured"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        macros = try container.decodeIfPresent([MacroSuggestion].self, forKey: .macros) ?? []
+        slicer = try container.decodeIfPresent(MacroSlicerWiring.self, forKey: .slicer)
+        alreadyConfigured = try container.decodeIfPresent(
+            Bool.self, forKey: .alreadyConfigured
+        ) ?? false
+    }
+}
