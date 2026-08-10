@@ -5,6 +5,8 @@ on the config it was written against is a generator that has hardcoded that
 config.
 """
 
+import re
+
 from app.klipper.macros import (
     suggest,
     suggest_eject_part,
@@ -215,12 +217,43 @@ class TestEjectPart:
     def test_the_sweep_runs_back_to_front_within_the_configured_travel(self):
         suggestion = suggest_eject_part(parse_config(NEPTUNE))
         assert suggestion.ok
-        # Starts behind the part and ends at the front edge of the bed.
-        assert "Y325.0" in suggestion.gcode
+        # Starts at the back of the configured mesh - a point the probe has
+        # reached on the bed - and ends at the front edge.
+        assert "Y300.0" in suggestion.gcode
         assert "Y0.0" in suggestion.gcode
         # position_min is homing overtravel, not bed: the sweep must not run
         # out to -1.3 and push the part into the frame.
         assert "-1.3" not in suggestion.gcode
+
+    def test_it_sweeps_more_than_once_across_the_width(self):
+        """The nozzle is a point, not a blade as wide as the bed.
+
+        One pass down the middle walks straight past a part printed off to a
+        side, which is exactly the case somebody hits on their second print.
+        """
+        gcode = suggest_eject_part(parse_config(NEPTUNE)).gcode
+        assert gcode.count("Pass ") == 3
+        columns = sorted(set(re.findall(r"G1 X([\d.]+) Y300\.0", gcode)))
+        assert len(columns) == 3, columns
+
+    def test_the_first_pass_is_the_middle_of_the_bed(self):
+        """Where most prints are, so the usual case ends on pass one."""
+        gcode = suggest_eject_part(parse_config(NEPTUNE)).gcode
+        first = re.search(r"# Pass 1 of 3.*?G1 X([\d.]+) Y", gcode, re.S)
+        assert first is not None
+        others = [float(value) for value in re.findall(r"G1 X([\d.]+) Y300\.0", gcode)]
+        middle = float(first.group(1))
+        assert min(others) < middle < max(others)
+
+    def test_the_sweep_never_reaches_the_bed_surface(self):
+        """Sweeping at Z0 scrapes the sheet and shears the adhesion layer.
+
+        Lifting the part from a millimetre up tips it instead, which releases
+        it with a fraction of the force and leaves the surface alone.
+        """
+        gcode = suggest_eject_part(parse_config(NEPTUNE)).gcode
+        assert "Z{SWEEP_Z}" in gcode
+        assert "Z0 " not in gcode and "Z0\n" not in gcode
 
     def test_it_refuses_while_a_print_is_running(self):
         gcode = suggest_eject_part(parse_config(NEPTUNE)).gcode

@@ -334,14 +334,57 @@ def suggest_eject_part(config: ParsedConfig) -> MacroSuggestion:
     # position_min is homing overtravel, not bed. Sweep between the real
     # surface edges.
     front_y = max(y.position_min, 0.0)
-    back_y = y.position_max - EDGE_MARGIN_MM
-    centre_x = (max(x.position_min, 0.0) + x.position_max) / 2.0
+
+    # Where the sweep starts. A configured mesh gives a coordinate the probe
+    # has actually reached on the bed surface, which beats measuring in from
+    # the travel limit and hoping the rear clips are not there.
+    mesh = config.section("bed_mesh")
+    mesh_max = (mesh.get("mesh_max") if mesh else None) or ""
+    mesh_max_y: Optional[float] = None
+    mesh_min_x: Optional[float] = None
+    mesh_max_x: Optional[float] = None
+    try:
+        parts = [float(piece) for piece in mesh_max.replace(" ", "").split(",") if piece]
+        mesh_max_y = parts[1] if len(parts) > 1 else None
+        mesh_max_x = parts[0] if parts else None
+        low = [
+            float(piece)
+            for piece in ((mesh.get("mesh_min") if mesh else "") or "").replace(" ", "").split(",")
+            if piece
+        ]
+        mesh_min_x = low[0] if low else None
+    except ValueError:
+        mesh_max_y = mesh_min_x = mesh_max_x = None
+
+    back_y = mesh_max_y if mesh_max_y is not None else y.position_max - EDGE_MARGIN_MM
+    if mesh_max_y is not None:
+        rationale.append(
+            f"Starts at Y{back_y:.1f}, the back of the configured mesh - a point "
+            f"the probe already reaches on the bed itself, rather than a "
+            f"measurement in from the travel limit that could be over the clips."
+        )
+
+    # Three passes, not one. The nozzle is a point travelling in a straight
+    # line, not a blade the width of the bed: it only moves what is in its
+    # path. One pass down the middle catches the usual centred part and walks
+    # straight past anything printed off to a side.
+    low_x = mesh_min_x if mesh_min_x is not None else max(x.position_min, 0.0) + EDGE_MARGIN_MM
+    high_x = mesh_max_x if mesh_max_x is not None else x.position_max - EDGE_MARGIN_MM
+    centre_x = (low_x + high_x) / 2.0
+    # Middle first: it is where most prints are, and a part that goes on the
+    # first pass makes the other two harmless travel moves.
+    pass_x = [centre_x, low_x + (centre_x - low_x) / 2.0, centre_x + (high_x - centre_x) / 2.0]
 
     rationale.append(
         f"Assumes Y moves the bed (a bed-slinger). The nozzle starts at "
         f"Y{back_y:.1f} and sweeps to Y{front_y:.1f}, so the part is pushed off "
         f"the front edge. If Y moves the gantry on your machine instead, do not "
         f"install this - printer.cfg cannot tell the two apart."
+    )
+    rationale.append(
+        "Three passes across the width (%s). The nozzle only moves what it "
+        "actually touches, so a single pass down the middle misses a part "
+        "printed off to one side." % ", ".join(f"X{value:.0f}" for value in pass_x)
     )
     rationale.append(
         f"Refuses above {EJECT_MAX_BED_C:.0f}C. A part only releases once the bed "
@@ -385,14 +428,19 @@ def suggest_eject_part(config: ParsedConfig) -> MacroSuggestion:
     ]
 
     if z.is_known:
-        lines.append("    G1 Z{SWEEP_Z + 20} F3000              # clear of the part first")
         rationale.append("Lifts before travelling so the nozzle does not clip the part on the way.")
 
+    for index, sweep_x in enumerate(pass_x, start=1):
+        lines += [
+            f"    # Pass {index} of {len(pass_x)}",
+            "    G1 Z{SWEEP_Z + 20} F3000",
+            f"    G1 X{sweep_x:.1f} Y{back_y:.1f} F6000",
+            "    G1 Z{SWEEP_Z} F1500",
+            f"    G1 Y{front_y:.1f} F{EJECT_SWEEP_FEED}",
+        ]
+
     lines += [
-        f"    G1 X{centre_x:.1f} Y{back_y:.1f} F6000      # behind the part",
-        "    G1 Z{SWEEP_Z} F1500",
-        f"    G1 Y{front_y:.1f} F{EJECT_SWEEP_FEED}                 # the sweep",
-        "    G1 Z20 F3000",
+        "    G1 Z{SWEEP_Z + 20} F3000",
         "    M84",
     ]
 
