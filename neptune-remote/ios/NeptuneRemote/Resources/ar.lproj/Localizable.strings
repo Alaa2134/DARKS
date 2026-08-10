@@ -302,6 +302,8 @@
 "camera.url" = "رابط الكاميرا";
 "camera.url.footer" = "استخدم الرابط الذي يعمل في المتصفح. غالبًا crowsnest يوفر /webcam/?action=stream.";
 "camera.settings" = "إعدادات الكاميرا";
+"camera.ip_camera" = "كاميرا IP عن طريق الباي";
+"camera.ip_camera.hint" = "للكاميرات اللي بتتكلم RTSP بس - زي Dahua أو Hikvision. حط عنوان الـ rtsp:// بتاعها في camera.rtsp_url في config.yaml على الباي؛ الباي بيفك التشفير ويطلّع بث الموبايل يقدر يعرضه. الباسورد بيفضل على الباي.";
 "camera.presets" = "روابط شائعة";
 "camera.image" = "الصورة";
 "camera.rotation" = "الدوران";

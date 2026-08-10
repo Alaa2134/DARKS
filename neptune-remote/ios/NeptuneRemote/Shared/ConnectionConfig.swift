@@ -92,6 +92,31 @@ public struct ConnectionConfig: Codable, Equatable, Sendable {
 
     public var defaultCameraStreamURL: String { cameraPresets[0] }
 
+    /// What `cameraURL` is set to when the camera is an IP camera the Pi is
+    /// relaying, rather than a stream the phone can reach on its own.
+    ///
+    /// A sentinel rather than a stored URL, because the real URL carries the
+    /// backend token - and `cameraURL` lives in ordinary settings while the
+    /// token lives in the Keychain. Keeping the sentinel here means the token
+    /// is assembled at request time and never written down twice.
+    public static let backendRelaySentinel = "backend-relay"
+
+    /// The Pi's MJPEG relay, with the token attached for this one request.
+    ///
+    /// Only an RTSP camera goes through here. Anything already serving MJPEG
+    /// is reached directly, which keeps the Pi out of the video path.
+    public func backendCameraStreamURL(token: String) -> URL? {
+        guard var components = backendBaseURL
+            .flatMap({ URLComponents(url: $0, resolvingAgainstBaseURL: false) })
+        else { return nil }
+        components.path = "/api/camera/stream"
+        let trimmed = token.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty {
+            components.queryItems = [URLQueryItem(name: "token", value: trimmed)]
+        }
+        return components.url
+    }
+
     public var isValid: Bool {
         let trimmed = host.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return false }

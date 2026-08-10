@@ -302,6 +302,8 @@
 "camera.url" = "Camera URL";
 "camera.url.footer" = "Use the stream URL that works in a browser. crowsnest usually serves /webcam/?action=stream.";
 "camera.settings" = "Camera settings";
+"camera.ip_camera" = "IP camera through the Pi";
+"camera.ip_camera.hint" = "For a camera that only speaks RTSP - a Dahua, Hikvision or similar. Put its rtsp:// address in camera.rtsp_url in config.yaml on the Pi; the Pi decodes it and serves a stream the phone can show. The password stays on the Pi.";
 "camera.presets" = "Common URLs";
 "camera.image" = "Image";
 "camera.rotation" = "Rotation";

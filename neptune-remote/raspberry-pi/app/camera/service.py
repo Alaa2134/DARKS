@@ -5,6 +5,10 @@ Two sources are supported and both are real:
 * ``stream``  - an MJPEG/snapshot URL served by crowsnest / ustreamer / mjpg-streamer.
                 This is the normal MainsailOS setup and lets the camera be shared
                 between Mainsail, this backend and the phone at the same time.
+* ``rtsp``    - an IP camera. FFmpeg decodes the H.264 stream, because neither
+                a browser nor the phone can open RTSP directly. Costs CPU on
+                the Pi, which is the trade for resolution and for a camera that
+                is not tied to a USB port.
 * ``device``  - a /dev/videoN node read directly with FFmpeg. Used when no
                 streamer is installed. Only one consumer can hold the device.
 
@@ -14,6 +18,7 @@ Snapshots are taken with FFmpeg, so exactly what is recorded is what you see.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import shutil
 import time
@@ -33,7 +38,7 @@ log = logging.getLogger("neptune.camera")
 @dataclass
 class CameraStatus:
     available: bool = False
-    source: str = "none"          # stream | device | none
+    source: str = "none"          # stream | rtsp | device | none
     url: str = ""
     device_path: str = ""
     ffmpeg_available: bool = False
@@ -87,6 +92,8 @@ class CameraService:
     def source(self) -> str:
         if self.config.snapshot_url or self.config.stream_url:
             return "stream"
+        if self.config.rtsp_url:
+            return "rtsp"
         if self.config.device:
             return "device"
         return "none"
@@ -180,6 +187,13 @@ class CameraService:
                 return data
             first_error = first_error or self._last_error
 
+        if self.config.rtsp_url:
+            tried = True
+            data = await self._snapshot_from_rtsp()
+            if data:
+                return data
+            first_error = first_error or self._last_error
+
         if self.config.device:
             tried = True
             data = await self._snapshot_from_device()
@@ -231,6 +245,63 @@ class CameraService:
         except httpx.HTTPError as exc:
             self._last_error = f"stream request failed: {exc}"
         return None
+
+    async def _snapshot_from_rtsp(self) -> Optional[bytes]:
+        """One frame out of an RTSP stream.
+
+        `-frames:v 1` alone is not enough: an H.264 stream starts wherever you
+        joined it, so the first decoded picture can be a partial frame full of
+        blocks. Discarding a couple of frames first costs a moment and returns
+        a picture rather than a smear.
+        """
+        binary = self.ffmpeg
+        if binary is None:
+            self._last_error = "ffmpeg is not installed"
+            return None
+
+        target = self.layout.cache / f"snapshot_{int(time.time() * 1000)}.jpg"
+        command = [
+            binary, "-hide_banner", "-loglevel", "error", "-y",
+            "-rtsp_transport", self.config.rtsp_transport or "tcp",
+            "-i", self.config.rtsp_url,
+            "-frames:v", "1",
+            "-vf", "select=gte(n\\,2)",
+            "-q:v", "3",
+            str(target),
+        ]
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            _, stderr = await asyncio.wait_for(process.communicate(), timeout=25)
+        except (OSError, asyncio.TimeoutError) as exc:
+            self._last_error = f"rtsp snapshot failed: {exc}"
+            target.unlink(missing_ok=True)
+            return None
+
+        if process.returncode != 0 or not target.is_file():
+            self._last_error = self._redact(
+                (stderr or b"").decode("utf-8", errors="replace").strip()[:300]
+            )
+            target.unlink(missing_ok=True)
+            return None
+
+        data = target.read_bytes()
+        target.unlink(missing_ok=True)
+        self._last_snapshot_at = time.time()
+        self._last_error = ""
+        return data
+
+    def _redact(self, text: str) -> str:
+        """FFmpeg echoes the input URL in its errors, and an RTSP URL carries
+        the camera's password. The error is shown in the app and pasted into
+        support bundles, so the credentials come out first."""
+        url = self.config.rtsp_url
+        if not url or "@" not in url:
+            return text
+        scheme, _, rest = url.partition("://")
+        _, _, host = rest.partition("@")
+        return text.replace(url, f"{scheme}://***@{host}")
 
     async def _snapshot_from_device(self) -> Optional[bytes]:
         binary = self.ffmpeg
@@ -285,6 +356,11 @@ class CameraService:
                 "-f", "mjpeg",
                 "-i", self.config.stream_url,
             ]
+        if self.config.rtsp_url:
+            return [
+                "-rtsp_transport", self.config.rtsp_transport or "tcp",
+                "-i", self.config.rtsp_url,
+            ]
         if self.config.device:
             return [
                 "-f", "v4l2",
@@ -293,6 +369,62 @@ class CameraService:
                 "-i", self.config.device,
             ]
         return None
+
+    # ------------------------------------------------------------ mjpeg relay
+    async def mjpeg_frames(self, *, fps: Optional[int] = None):
+        """Yield multipart JPEG frames, transcoding RTSP on the way.
+
+        Nothing in a phone or a browser can open RTSP, so a camera that only
+        speaks it is invisible until something turns it into frames. FFmpeg
+        does that here and the result is an ordinary MJPEG stream, which is
+        what every camera surface in this app already knows how to display.
+
+        The cost is real and worth stating: this decodes H.264 continuously
+        for as long as someone is watching. It stops the moment the client
+        disconnects - the generator is closed, the process is killed - because
+        a transcode left running for a viewer who walked away is a Pi busy
+        doing nothing while a print needs it.
+        """
+        binary = self.ffmpeg
+        if binary is None:
+            self._last_error = "ffmpeg is not installed"
+            return
+        if not self.config.rtsp_url:
+            self._last_error = "no RTSP camera configured"
+            return
+
+        rate = max(1, min(int(fps or self.config.fps or 10), 30))
+        command = [
+            binary, "-hide_banner", "-loglevel", "error",
+            "-rtsp_transport", self.config.rtsp_transport or "tcp",
+            "-i", self.config.rtsp_url,
+            "-f", "mpjpeg",
+            "-q:v", "5",
+            "-r", str(rate),
+            "-",
+        ]
+        process = await asyncio.create_subprocess_exec(
+            *command, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.DEVNULL
+        )
+        try:
+            assert process.stdout is not None
+            while True:
+                chunk = await process.stdout.read(32768)
+                if not chunk:
+                    break
+                yield chunk
+        finally:
+            if process.returncode is None:
+                process.kill()
+                with contextlib.suppress(ProcessLookupError, asyncio.TimeoutError):
+                    await asyncio.wait_for(process.wait(), timeout=5)
+
+    @property
+    def can_relay_mjpeg(self) -> bool:
+        """Only an RTSP camera needs relaying. Everything else already serves
+        MJPEG the phone can read directly, and proxying it would put the Pi in
+        the middle of a stream that was working without it."""
+        return bool(self.config.rtsp_url) and self.ffmpeg is not None
 
     @property
     def last_error(self) -> str:

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
-from fastapi.responses import FileResponse, Response
+from fastapi.responses import FileResponse, Response, StreamingResponse
 
 from ..camera.devices import discover
 from ..deps import get_state
@@ -78,6 +78,28 @@ async def camera_snapshot(state: AppState = Depends(get_state)) -> Response:
             detail=state.camera.last_error or "Camera is not available",
         )
     return Response(content=data, media_type="image/jpeg", headers={"Cache-Control": "no-store"})
+
+
+@router.get("/camera/stream")
+async def camera_stream(state: AppState = Depends(get_state)) -> StreamingResponse:
+    """MJPEG for a camera that only speaks RTSP.
+
+    Deliberately not a general proxy: a crowsnest stream is already MJPEG and
+    the phone talks to it directly over Tailscale, which keeps the Pi out of
+    the path entirely. This exists for the one case where the Pi has to be in
+    the path, because nothing on the phone can decode H.264 from RTSP.
+    """
+    if not state.camera.can_relay_mjpeg:
+        raise HTTPException(
+            status_code=503,
+            detail=state.camera.last_error or "No RTSP camera is configured",
+        )
+    boundary = "--ffmpeg"
+    return StreamingResponse(
+        state.camera.mjpeg_frames(),
+        media_type=f"multipart/x-mixed-replace; boundary={boundary}",
+        headers={"Cache-Control": "no-store", "Connection": "close"},
+    )
 
 
 @router.post("/camera/snapshot/save")

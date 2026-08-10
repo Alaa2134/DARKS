@@ -16,6 +16,12 @@ struct CameraView: View {
     private var cameraURL: URL? {
         let raw = settings.cameraURL.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !raw.isEmpty else { return nil }
+        // An IP camera speaks RTSP, which nothing on a phone can open, so the
+        // Pi transcodes it. The token is attached here rather than stored in
+        // the URL - it belongs in the Keychain, not in settings.
+        if raw == ConnectionConfig.backendRelaySentinel {
+            return settings.connection.backendCameraStreamURL(token: settings.backendToken)
+        }
         if raw.lowercased().hasPrefix("http") { return URL(string: raw) }
         // Relative path -> resolve against the Pi.
         guard let base = settings.connection.moonrakerBaseURL else { return nil }

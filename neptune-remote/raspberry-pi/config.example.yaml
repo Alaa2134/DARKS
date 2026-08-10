@@ -117,6 +117,15 @@ camera:
   enabled: true
   stream_url: "http://127.0.0.1/webcam/?action=stream"
   snapshot_url: "http://127.0.0.1/webcam/?action=snapshot"
+  # An IP camera. Nothing in a phone or a browser can open RTSP, so the Pi
+  # decodes it and serves MJPEG at GET /api/camera/stream. That costs CPU for
+  # as long as somebody is watching, which is why the camera's *substream* is
+  # usually the right choice for monitoring:
+  #   main stream: rtsp://user:pass@IP:554/cam/realmonitor?channel=1&subtype=0
+  #   substream:   rtsp://user:pass@IP:554/cam/realmonitor?channel=1&subtype=1
+  # Leave empty unless you actually have one. A USB webcam does not use this.
+  rtsp_url: ""
+  rtsp_transport: "tcp"   # tcp | udp - tcp tears less on a busy wifi
   device: ""            # e.g. "/dev/video0" when no streamer is installed
   width: 1280
   height: 720

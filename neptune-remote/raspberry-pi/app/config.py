@@ -153,6 +153,18 @@ class CameraConfig(BaseModel):
     # Preferred: a stream served by crowsnest / ustreamer, shared with Mainsail.
     stream_url: str = ""
     snapshot_url: str = ""
+    # An IP camera's RTSP stream, read with FFmpeg.
+    #
+    # Everything else here speaks MJPEG, which a browser and the phone can
+    # display directly. RTSP is H.264 in a container neither can open, so the
+    # Pi decodes it - that costs CPU, which is why the substream is usually the
+    # right choice for monitoring and the main stream is worth it only when you
+    # actually need the detail.
+    rtsp_url: str = ""
+    #: TCP is the default on purpose. RTSP over UDP drops frames silently on a
+    #: busy wifi and the picture tears instead of stalling, which reads as a
+    #: broken camera rather than a slow network.
+    rtsp_transport: str = "tcp"
     # Fallback: read /dev/videoN directly with FFmpeg (exclusive access).
     device: str = ""
     width: int = 1280

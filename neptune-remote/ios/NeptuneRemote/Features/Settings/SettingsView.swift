@@ -403,11 +403,31 @@ struct CameraSettingsView: View {
                 Text(localized: "camera.url.footer")
             }
 
-            Section(L.t("camera.presets")) {
+            Section {
+                // An IP camera does not appear in this list, and cannot: it
+                // speaks RTSP, and no URL you could paste here would open on
+                // a phone. This picks the Pi's relay instead, and the RTSP
+                // address itself stays in config.yaml with its password.
+                Button {
+                    settings.cameraURL = ConnectionConfig.backendRelaySentinel
+                    settings.cameraKind = .mjpeg
+                } label: {
+                    HStack {
+                        Label(L.t("camera.ip_camera"), systemImage: "web.camera")
+                        Spacer()
+                        if settings.cameraURL == ConnectionConfig.backendRelaySentinel {
+                            Image(systemName: "checkmark").foregroundStyle(Theme.accent)
+                        }
+                    }
+                }
                 ForEach(presets, id: \.self) { preset in
                     Button(preset) { settings.cameraURL = preset }
                         .font(.system(.footnote, design: .monospaced))
                 }
+            } header: {
+                Text(localized: "camera.presets")
+            } footer: {
+                Text(localized: "camera.ip_camera.hint")
             }
 
             Section(L.t("camera.image")) {
