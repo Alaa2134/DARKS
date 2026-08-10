@@ -1192,6 +1192,8 @@
 "condition.error.body" = "The printer stopped. Read the original message below before restarting.";
 "condition.config_error.title" = "Configuration or mainboard error";
 "condition.config_error.body" = "Restarting will not clear this on its own - printer.cfg or the hardware connection needs attention first.";
+"condition.print_failed.title" = "The print stopped";
+"condition.print_failed.body" = "Klipper stopped the print and gave no reason. Check the console.";
 "condition.unknown.title" = "A Klipper message needs review";
 "condition.technical_details" = "Technical details";
 "condition.open_config" = "Check printer.cfg";

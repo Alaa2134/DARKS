@@ -11,7 +11,8 @@ final class PrinterConditionTests: XCTestCase {
         homed: String = "xyz",
         print state: PrinterState = .standby,
         printing: Bool = false,
-        axes: [String] = ["x", "y", "z"]
+        axes: [String] = ["x", "y", "z"],
+        printMessage: String = ""
     ) -> PrinterConditionEvaluator.Input {
         var value = PrinterConditionEvaluator.Input()
         value.klippy = klippy
@@ -20,6 +21,7 @@ final class PrinterConditionTests: XCTestCase {
         value.printState = state
         value.isPrinting = printing
         value.configuredAxes = axes
+        value.printMessage = printMessage
         return value
     }
 
@@ -329,5 +331,42 @@ final class PrinterConditionTests: XCTestCase {
                 XCTAssertNotNil(table[key], "\(key) missing from \(language).lproj")
             }
         }
+    }
+    // MARK: - A print that stopped by itself
+
+    /// The reported symptom: "I press print and nothing happens."
+    ///
+    /// Moonraker accepts the start, Klipper reads the first line, finds a
+    /// macro that is not defined, and aborts. Klipper itself stays **ready**,
+    /// so no Klippy condition fires - and the reason lives in
+    /// print_stats.message, which the app stored and never showed.
+    func testAFailedPrintReportsKlippersOwnReason() throws {
+        let conditions = PrinterConditionEvaluator.conditions(
+            for: input(
+                klippy: .ready,
+                state: .error,
+                printMessage: "Unknown command: PRINT_START"
+            )
+        )
+        let condition = try XCTUnwrap(conditions.first { $0.cause == .printFailed })
+        XCTAssertTrue(condition.isError)
+        XCTAssertEqual(condition.rawMessage, "Unknown command: PRINT_START")
+    }
+
+    /// A failure with no message still has to appear. Silence was the bug.
+    func testAFailedPrintWithoutAMessageStillAppears() throws {
+        let conditions = PrinterConditionEvaluator.conditions(
+            for: input(klippy: .ready, state: .error)
+        )
+        let condition = try XCTUnwrap(conditions.first { $0.cause == .printFailed })
+        XCTAssertNil(condition.rawMessage)
+        XCTAssertNotNil(condition.bodyKey)
+    }
+
+    func testANormalPrintProducesNoFailureCard() {
+        let conditions = PrinterConditionEvaluator.conditions(
+            for: input(klippy: .ready, state: .printing, printing: true)
+        )
+        XCTAssertFalse(conditions.contains { $0.cause == .printFailed })
     }
 }

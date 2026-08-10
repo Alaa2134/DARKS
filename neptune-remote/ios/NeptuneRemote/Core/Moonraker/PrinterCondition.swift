@@ -68,6 +68,7 @@ struct PrinterCondition: Identifiable, Equatable {
         case notHomed
         case printPaused
         case printCancelled
+        case printFailed
         case filamentRunout
         case unknownMessage
     }
@@ -108,6 +109,11 @@ enum PrinterConditionEvaluator {
         /// `toolhead.homed_axes`, e.g. "xy" or "xyz".
         var homedAxes: String = ""
         var printState: PrinterState = .unknown
+        /// `print_stats.message` - Klipper's own reason a print stopped.
+        /// This is where "Unknown command: PRINT_START" and "Move out of
+        /// range" arrive, and it is a different field from the webhooks
+        /// message: Klipper stays *ready* while the print itself has failed.
+        var printMessage: String = ""
         var idleTimeoutState: String = ""
         var isPrinting: Bool = false
         /// Axes this printer actually has, from printer.cfg. A machine with no
@@ -254,7 +260,31 @@ enum PrinterConditionEvaluator {
             )
         }
 
-        // 5. Normal print states, informational only.
+        // 5. A print that stopped by itself.
+        //
+        //    This is the gap that made "I press print and nothing happens"
+        //    unexplainable. Moonraker accepts the start, Klipper reads the
+        //    first line, hits something it cannot do - a macro that is not
+        //    defined, an unhomed axis, a move out of range - and aborts a
+        //    second later. Klipper itself stays *ready*, so none of the
+        //    conditions above fire, and print_stats.message, which holds the
+        //    reason in Klipper's own words, was stored and never shown.
+        let printMessage = input.printMessage.trimmingCharacters(in: .whitespacesAndNewlines)
+        if input.printState == .error {
+            result.append(
+                PrinterCondition(
+                    cause: .printFailed,
+                    severity: .recoverableError,
+                    titleKey: "condition.print_failed.title",
+                    bodyKey: printMessage.isEmpty ? "condition.print_failed.body" : nil,
+                    rawMessage: printMessage.isEmpty ? nil : printMessage,
+                    remedy: .none,
+                    axes: ""
+                )
+            )
+        }
+
+        // 6. Normal print states, informational only.
         if input.printState == .paused, input.filamentRunoutSensor == nil {
             result.append(
                 PrinterCondition(

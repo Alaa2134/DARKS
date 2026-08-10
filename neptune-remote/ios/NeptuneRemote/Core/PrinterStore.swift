@@ -1052,6 +1052,7 @@ final class PrinterStore: ObservableObject {
         input.klippyMessage = snapshot.klippyMessage
         input.homedAxes = snapshot.homedAxes
         input.printState = snapshot.state
+        input.printMessage = snapshot.stateMessage
         input.isPrinting = snapshot.isActive
         input.connected = moonrakerConnected
         input.filamentRunoutSensor = snapshot.filamentRunoutSensor

@@ -40,6 +40,12 @@ actor HTTPClient {
             // it is an exclusivity violation.
             let existing = components.queryItems ?? []
             components.queryItems = existing + request.query
+            // URLComponents leaves "+" unescaped in query values, and a server
+            // reads that as a space - so printing "bracket+v2.gcode" asks for
+            // "bracket v2.gcode" and comes back 404 for a file that is there.
+            if let encoded = components.percentEncodedQuery {
+                components.percentEncodedQuery = encoded.replacingOccurrences(of: "+", with: "%2B")
+            }
         }
         guard let url = components.url else { throw APIError.invalidURL }
 

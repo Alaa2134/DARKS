@@ -1192,6 +1192,8 @@
 "condition.error.body" = "توقفت الطابعة. اقرأ الرسالة الأصلية بالأسفل قبل إعادة التشغيل.";
 "condition.config_error.title" = "خطأ في الإعدادات أو اللوحة";
 "condition.config_error.body" = "إعادة التشغيل وحدها لن تحل هذا - يحتاج printer.cfg أو توصيل العتاد إلى مراجعة أولًا.";
+"condition.print_failed.title" = "الطباعة وقفت";
+"condition.print_failed.body" = "كليبر وقّف الطباعة من غير ما يقول السبب. بص في الكونسول.";
 "condition.unknown.title" = "رسالة من Klipper تحتاج مراجعة";
 "condition.technical_details" = "التفاصيل التقنية";
 "condition.open_config" = "راجع printer.cfg";
