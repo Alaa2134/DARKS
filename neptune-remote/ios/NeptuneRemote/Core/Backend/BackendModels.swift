@@ -235,6 +235,22 @@ struct SliceRequestPayload: Encodable, Equatable {
 
     var retractionLength: Double?
     var retractionSpeed: Double?
+    var retractionZHop: Double?
+
+    var topSolidLayers: Int?
+    var bottomSolidLayers: Int?
+    var ironing: Bool?
+    var seamPosition: String?
+    var spiralVase: Bool?
+
+    var supportZDistance: Double?
+    var supportInterfaceLayers: Int?
+
+    var fanMinPercent: Int?
+    var fanMaxPercent: Int?
+    var disableFanFirstLayers: Int?
+
+    var avoidCrossingPerimeters: Bool?
 
     var speedProfileOverrides: [String: Double] = [:]
     var customOverrides: [String: String] = [:]
@@ -266,6 +282,18 @@ struct SliceRequestPayload: Encodable, Equatable {
         case firstLayerBedTemperature = "first_layer_bed_temperature"
         case retractionLength = "retraction_length"
         case retractionSpeed = "retraction_speed"
+        case retractionZHop = "retraction_z_hop"
+        case topSolidLayers = "top_solid_layers"
+        case bottomSolidLayers = "bottom_solid_layers"
+        case ironing
+        case seamPosition = "seam_position"
+        case spiralVase = "spiral_vase"
+        case supportZDistance = "support_z_distance"
+        case supportInterfaceLayers = "support_interface_layers"
+        case fanMinPercent = "fan_min_percent"
+        case fanMaxPercent = "fan_max_percent"
+        case disableFanFirstLayers = "disable_fan_first_layers"
+        case avoidCrossingPerimeters = "avoid_crossing_perimeters"
         case speedProfileOverrides = "speed_profile_overrides"
         case customOverrides = "custom_overrides"
         case outputName = "output_name"

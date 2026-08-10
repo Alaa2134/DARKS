@@ -92,6 +92,15 @@ PRUSA_KEY_MAP: Dict[str, str] = {
     "first_layer_bed_temperature": "first_layer_bed_temperature",
     "retraction_length": "retract_length",
     "retraction_speed": "retract_speed",
+    "retraction_z_hop": "retract_lift",
+    "top_solid_layers": "top_solid_layers",
+    "bottom_solid_layers": "bottom_solid_layers",
+    "seam_position": "seam_position",
+    "support_z_distance": "support_material_contact_distance",
+    "support_interface_layers": "support_material_interface_layers",
+    "fan_min_percent": "min_fan_speed",
+    "fan_max_percent": "max_fan_speed",
+    "disable_fan_first_layers": "disable_fan_first_layers",
 }
 
 # SliceRequest field -> OrcaSlicer JSON key
@@ -107,6 +116,15 @@ ORCA_KEY_MAP: Dict[str, str] = {
     "first_layer_bed_temperature": "hot_plate_temp_initial_layer",
     "retraction_length": "retraction_length",
     "retraction_speed": "retraction_speed",
+    "retraction_z_hop": "z_hop",
+    "top_solid_layers": "top_shell_layers",
+    "bottom_solid_layers": "bottom_shell_layers",
+    "seam_position": "seam_position",
+    "support_z_distance": "support_top_z_distance",
+    "support_interface_layers": "support_interface_top_layers",
+    "fan_min_percent": "fan_min_speed",
+    "fan_max_percent": "fan_max_speed",
+    "disable_fan_first_layers": "close_fan_the_first_x_layers",
 }
 
 # Normalised speed keys used by the iOS app -> slicer specific keys.
@@ -181,6 +199,13 @@ def build_prusa_overrides(request: SliceRequest) -> Dict[str, str]:
         if request.support_threshold_angle is not None:
             out["support_material_threshold"] = str(int(request.support_threshold_angle))
 
+    if request.ironing is not None:
+        out["ironing"] = "1" if request.ironing else "0"
+    if request.spiral_vase is not None:
+        out["spiral_vase"] = "1" if request.spiral_vase else "0"
+    if request.avoid_crossing_perimeters is not None:
+        out["avoid_crossing_perimeters"] = "1" if request.avoid_crossing_perimeters else "0"
+
     if request.adhesion:
         out.update(ADHESION_PRUSA.get(request.adhesion, {}))
     if request.brim_width is not None:
@@ -218,6 +243,14 @@ def build_orca_overrides(request: SliceRequest) -> Dict[str, Any]:
             )
         if request.support_threshold_angle is not None:
             out["support_threshold_angle"] = int(request.support_threshold_angle)
+
+    if request.ironing is not None:
+        # Orca expresses it as which surfaces to iron rather than on/off.
+        out["ironing_type"] = "top" if request.ironing else "no ironing"
+    if request.spiral_vase is not None:
+        out["spiral_mode"] = request.spiral_vase
+    if request.avoid_crossing_perimeters is not None:
+        out["reduce_crossing_wall"] = request.avoid_crossing_perimeters
 
     if request.adhesion:
         out.update(ADHESION_ORCA.get(request.adhesion, {}))

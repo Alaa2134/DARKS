@@ -273,6 +273,37 @@ class SliceRequest(BaseModel):
 
     retraction_length: Optional[float] = None
     retraction_speed: Optional[float] = None
+    #: Z lift on retraction. Stops the nozzle dragging over what it just
+    #: printed; costs a little time per travel move.
+    retraction_z_hop: Optional[float] = None
+
+    # --- Shell -----------------------------------------------------------
+    top_solid_layers: Optional[int] = None
+    bottom_solid_layers: Optional[int] = None
+    #: Smooths top surfaces by running the nozzle over them again.
+    ironing: Optional[bool] = None
+    #: aligned | nearest | rear | random - where the layer's start point goes.
+    seam_position: Optional[str] = None
+    #: Single-wall vase mode. Nothing else survives it: no infill, no top
+    #: layers, one perimeter, and the model has to be built for it.
+    spiral_vase: Optional[bool] = None
+
+    # --- Support detail --------------------------------------------------
+    #: Gap between support and the part, in mm. Larger releases more easily
+    #: and leaves a rougher surface.
+    support_z_distance: Optional[float] = None
+    support_interface_layers: Optional[int] = None
+
+    # --- Cooling ---------------------------------------------------------
+    fan_min_percent: Optional[int] = None
+    fan_max_percent: Optional[int] = None
+    #: Layers printed with the fan off so the first layers stay stuck down.
+    disable_fan_first_layers: Optional[int] = None
+
+    # --- Travel ----------------------------------------------------------
+    #: Route travel moves around walls instead of across them. Slower, and it
+    #: keeps stringing off visible surfaces.
+    avoid_crossing_perimeters: Optional[bool] = None
 
     speed_profile_overrides: Dict[str, float] = Field(default_factory=dict)
     custom_overrides: Dict[str, str] = Field(default_factory=dict)

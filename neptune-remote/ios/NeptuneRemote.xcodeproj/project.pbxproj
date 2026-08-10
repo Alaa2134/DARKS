@@ -114,6 +114,7 @@
 		1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeshLoader.swift"; sourceTree = "<group>"; };
 		686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelViewer3D.swift"; sourceTree = "<group>"; };
 		3BBBFBC77375184B1869E813 /* PrintModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintModeView.swift"; sourceTree = "<group>"; };
+		D059FD0859BB8B49C0145A78 /* SliceAdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SliceAdvancedView.swift"; sourceTree = "<group>"; };
 		0F08420DFDF39810CB872AFA /* SliceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SliceView.swift"; sourceTree = "<group>"; };
 		341334713B5FC5B6FE17E517 /* ZipArchive.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ZipArchive.swift"; sourceTree = "<group>"; };
 		6AA34175B573B8DAF41D58A5 /* DiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DiagnosticsView.swift"; sourceTree = "<group>"; };
@@ -440,6 +441,7 @@
 				1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */,
 				686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */,
 				3BBBFBC77375184B1869E813 /* PrintModeView.swift */,
+				D059FD0859BB8B49C0145A78 /* SliceAdvancedView.swift */,
 				0F08420DFDF39810CB872AFA /* SliceView.swift */,
 				341334713B5FC5B6FE17E517 /* ZipArchive.swift */,
 			);
@@ -687,6 +689,7 @@
 		BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */; };
 		33C1FB3B750E7C3BA2670230 /* ModelViewer3D.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */; };
 		3D04B669AB54FC7CF07C628C /* PrintModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBBFBC77375184B1869E813 /* PrintModeView.swift */; };
+		1AE0D50AA08201DCF02A31A5 /* SliceAdvancedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D059FD0859BB8B49C0145A78 /* SliceAdvancedView.swift */; };
 		040033D320CD824F1AD5E4EA /* SliceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F08420DFDF39810CB872AFA /* SliceView.swift */; };
 		75763809435E4B46CC0E6175 /* ZipArchive.swift in Sources */ = {isa = PBXBuildFile; fileRef = 341334713B5FC5B6FE17E517 /* ZipArchive.swift */; };
 		F92B74F857383857E1186C71 /* DiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA34175B573B8DAF41D58A5 /* DiagnosticsView.swift */; };
@@ -834,6 +837,7 @@
 				BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */,
 				33C1FB3B750E7C3BA2670230 /* ModelViewer3D.swift in Sources */,
 				3D04B669AB54FC7CF07C628C /* PrintModeView.swift in Sources */,
+				1AE0D50AA08201DCF02A31A5 /* SliceAdvancedView.swift in Sources */,
 				040033D320CD824F1AD5E4EA /* SliceView.swift in Sources */,
 				75763809435E4B46CC0E6175 /* ZipArchive.swift in Sources */,
 				F92B74F857383857E1186C71 /* DiagnosticsView.swift in Sources */,

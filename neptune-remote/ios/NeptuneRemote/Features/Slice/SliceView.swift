@@ -415,6 +415,28 @@ struct SliceView: View {
                         .monospacedDigit()
                 }
             }
+
+            // Everything the profile normally decides. On its own screen
+            // rather than stacked here, because a slicing card with thirty
+            // controls is one nobody reads.
+            NavigationLink {
+                SliceAdvancedView()
+            } label: {
+                HStack {
+                    Label(L.t("slicer.advanced.title"), systemImage: "slider.horizontal.below.rectangle")
+                        .font(.subheadline)
+                    Spacer()
+                    if slicing.hasAdvancedOverrides {
+                        Text("\(slicing.advancedOverrideCount)")
+                            .font(.caption2.weight(.bold))
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 3)
+                            .background(Theme.accent.opacity(0.2), in: Capsule())
+                    }
+                    Image(systemName: "chevron.forward").font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
         }
         .card()
     }

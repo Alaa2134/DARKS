@@ -41,6 +41,25 @@ final class SliceStore: ObservableObject {
     @Published var bedTemperature: Int = 60
     @Published var overrideTemperatures = false
     @Published var retractionLength: Double = 1.0
+    @Published var retractionZHop: Double = 0
+
+    /// Every one of these is optional to the backend, and the sentinel that
+    /// means "leave it alone" is deliberate rather than lazy: sending a value
+    /// the user never chose overrides the printer profile silently, and the
+    /// profile is usually right. Zero here is "the profile decides", not
+    /// "none" - which is why the screen labels it rather than showing 0.
+    @Published var infillPattern = ""
+    @Published var topSolidLayers: Int = 0
+    @Published var bottomSolidLayers: Int = 0
+    @Published var ironing = false
+    @Published var seamPosition = ""
+    @Published var spiralVase = false
+    @Published var supportZDistance: Double = 0
+    @Published var supportInterfaceLayers: Int = 0
+    @Published var fanMinPercent: Int = 0
+    @Published var fanMaxPercent: Int = 0
+    @Published var disableFanFirstLayers: Int = 0
+    @Published var avoidCrossingPerimeters = false
     @Published var customOverrides: [String: String] = [:]
     @Published var uploadToPrinter = true
     @Published var startPrintAfterSlicing = false
@@ -129,6 +148,21 @@ final class SliceStore: ObservableObject {
             : nil
         payload.adhesion = adhesion
         payload.retractionLength = retractionLength
+        payload.retractionZHop = retractionZHop > 0 ? retractionZHop : nil
+        payload.infillPattern = infillPattern.isEmpty ? nil : infillPattern
+        payload.topSolidLayers = topSolidLayers > 0 ? topSolidLayers : nil
+        payload.bottomSolidLayers = bottomSolidLayers > 0 ? bottomSolidLayers : nil
+        payload.ironing = ironing ? true : nil
+        payload.seamPosition = seamPosition.isEmpty ? nil : seamPosition
+        payload.spiralVase = spiralVase ? true : nil
+        payload.supportZDistance = (supports && supportZDistance > 0) ? supportZDistance : nil
+        payload.supportInterfaceLayers = (supports && supportInterfaceLayers > 0)
+            ? supportInterfaceLayers
+            : nil
+        payload.fanMinPercent = fanMinPercent > 0 ? fanMinPercent : nil
+        payload.fanMaxPercent = fanMaxPercent > 0 ? fanMaxPercent : nil
+        payload.disableFanFirstLayers = disableFanFirstLayers > 0 ? disableFanFirstLayers : nil
+        payload.avoidCrossingPerimeters = avoidCrossingPerimeters ? true : nil
         payload.customOverrides = customOverrides
         payload.uploadToMoonraker = uploadToPrinter
         payload.startPrintAfterUpload = false // never auto-start; the user confirms
@@ -375,4 +409,29 @@ final class SliceStore: ObservableObject {
                            values: ["layer_height": "0.2", "perimeters": "3", "fill_density": "20%"])
         ]
     )
+    /// How many profile settings the user has deliberately overridden.
+    ///
+    /// Shown as a badge so an override made three sessions ago is visible
+    /// rather than quietly shaping every slice from then on.
+    var advancedOverrideCount: Int {
+        var count = 0
+        if !infillPattern.isEmpty { count += 1 }
+        if topSolidLayers > 0 { count += 1 }
+        if bottomSolidLayers > 0 { count += 1 }
+        if ironing { count += 1 }
+        if !seamPosition.isEmpty { count += 1 }
+        if spiralVase { count += 1 }
+        if supportZDistance > 0 { count += 1 }
+        if supportInterfaceLayers > 0 { count += 1 }
+        if fanMinPercent > 0 { count += 1 }
+        if fanMaxPercent > 0 { count += 1 }
+        if disableFanFirstLayers > 0 { count += 1 }
+        if avoidCrossingPerimeters { count += 1 }
+        if retractionZHop > 0 { count += 1 }
+        return count
+    }
+
+    var hasAdvancedOverrides: Bool { advancedOverrideCount > 0 }
+
+
 }

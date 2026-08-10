@@ -471,3 +471,91 @@ class TestSupportPlacement:
 
         out = build_prusa_overrides(self._request())
         assert "support_material_threshold" not in out
+
+
+class TestExpandedOptions:
+    """The settings the app could not express, and what "unset" has to mean.
+
+    Every one of these is optional, and the rule throughout is that a value
+    the user never chose is never sent: overriding a printer profile silently
+    is worse than not offering the setting at all.
+    """
+
+    def _request(self, **kwargs):
+        from app.schemas import SliceRequest
+
+        return SliceRequest(model_id="m", **kwargs)
+
+    def test_nothing_extra_is_sent_when_nothing_was_chosen(self):
+        from app.slicer.engine import build_prusa_overrides
+
+        out = build_prusa_overrides(self._request())
+        for key in (
+            "top_solid_layers", "bottom_solid_layers", "ironing", "seam_position",
+            "spiral_vase", "retract_lift", "min_fan_speed", "max_fan_speed",
+            "disable_fan_first_layers", "avoid_crossing_perimeters", "fill_pattern",
+        ):
+            assert key not in out, key
+
+    def test_shell_and_surface_reach_prusa(self):
+        from app.slicer.engine import build_prusa_overrides
+
+        out = build_prusa_overrides(
+            self._request(
+                top_solid_layers=5,
+                bottom_solid_layers=4,
+                seam_position="rear",
+                infill_pattern="gyroid",
+                retraction_z_hop=0.4,
+            )
+        )
+        assert out["top_solid_layers"] == "5"
+        assert out["bottom_solid_layers"] == "4"
+        assert out["seam_position"] == "rear"
+        assert out["fill_pattern"] == "gyroid"
+        assert out["retract_lift"] == "0.4"
+
+    def test_booleans_use_each_engines_own_spelling(self):
+        """Orca does not have an on/off ironing flag; it names the surfaces."""
+        from app.slicer.engine import build_orca_overrides, build_prusa_overrides
+
+        request = self._request(ironing=True, spiral_vase=True, avoid_crossing_perimeters=True)
+        prusa = build_prusa_overrides(request)
+        orca = build_orca_overrides(request)
+
+        assert prusa["ironing"] == "1"
+        assert prusa["spiral_vase"] == "1"
+        assert prusa["avoid_crossing_perimeters"] == "1"
+
+        assert orca["ironing_type"] == "top"
+        assert orca["spiral_mode"] is True
+        assert orca["reduce_crossing_wall"] is True
+
+    def test_ironing_off_is_sent_as_off_not_omitted(self):
+        """False is a choice; None is not. They must not collapse together."""
+        from app.slicer.engine import build_orca_overrides, build_prusa_overrides
+
+        request = self._request(ironing=False)
+        assert build_prusa_overrides(request)["ironing"] == "0"
+        assert build_orca_overrides(request)["ironing_type"] == "no ironing"
+
+    def test_cooling_reaches_both_engines(self):
+        from app.slicer.engine import build_orca_overrides, build_prusa_overrides
+
+        request = self._request(
+            fan_min_percent=30, fan_max_percent=100, disable_fan_first_layers=2
+        )
+        prusa = build_prusa_overrides(request)
+        orca = build_orca_overrides(request)
+        assert prusa["min_fan_speed"] == "30"
+        assert prusa["disable_fan_first_layers"] == "2"
+        assert orca["fan_max_speed"] == 100
+        assert orca["close_fan_the_first_x_layers"] == 2
+
+    def test_raw_overrides_still_win_over_everything(self):
+        from app.slicer.engine import build_prusa_overrides
+
+        out = build_prusa_overrides(
+            self._request(top_solid_layers=5, custom_overrides={"top_solid_layers": "9"})
+        )
+        assert out["top_solid_layers"] == "9"
