@@ -42,6 +42,7 @@ struct CameraView: View {
         .navigationTitle(L.t("tab.camera"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) { AppMenu() }
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button {

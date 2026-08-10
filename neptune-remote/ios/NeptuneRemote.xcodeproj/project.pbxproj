@@ -66,6 +66,7 @@
 		70FE42E4609BBB40DE223A10 /* PTZPad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PTZPad.swift"; sourceTree = "<group>"; };
 		678A8F0FBDFD04E53A287880 /* ZoomableView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ZoomableView.swift"; sourceTree = "<group>"; };
 		24EE48431670E08DBAD4ECBF /* AnomalyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AnomalyCard.swift"; sourceTree = "<group>"; };
+		54D2519FA29A1BB09BD08BE3 /* AppMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppMenu.swift"; sourceTree = "<group>"; };
 		1A63D8DFF51D150A7E07BA9F /* Components.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Components.swift"; sourceTree = "<group>"; };
 		2E1788ACF4320141030627FA /* ConditionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConditionCard.swift"; sourceTree = "<group>"; };
 		26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConnectionTestPanel.swift"; sourceTree = "<group>"; };
@@ -317,6 +318,7 @@
 			isa = PBXGroup;
 			children = (
 				24EE48431670E08DBAD4ECBF /* AnomalyCard.swift */,
+				54D2519FA29A1BB09BD08BE3 /* AppMenu.swift */,
 				1A63D8DFF51D150A7E07BA9F /* Components.swift */,
 				2E1788ACF4320141030627FA /* ConditionCard.swift */,
 				26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */,
@@ -643,6 +645,7 @@
 		BD0F07FF8074000462AD3B64 /* PTZPad.swift in Sources */ = {isa = PBXBuildFile; fileRef = 70FE42E4609BBB40DE223A10 /* PTZPad.swift */; };
 		B744812E5B3CE870C46D64CD /* ZoomableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 678A8F0FBDFD04E53A287880 /* ZoomableView.swift */; };
 		44B41150A53216A56208152E /* AnomalyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EE48431670E08DBAD4ECBF /* AnomalyCard.swift */; };
+		33C5908DE3F7BA0ECC0772B3 /* AppMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54D2519FA29A1BB09BD08BE3 /* AppMenu.swift */; };
 		D9FFC02229DBFFD8CE88FFBB /* Components.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A63D8DFF51D150A7E07BA9F /* Components.swift */; };
 		64906A251A84361C9FE8235D /* ConditionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1788ACF4320141030627FA /* ConditionCard.swift */; };
 		8FCBC5E92CA2956AD680784B /* ConnectionTestPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */; };
@@ -792,6 +795,7 @@
 				BD0F07FF8074000462AD3B64 /* PTZPad.swift in Sources */,
 				B744812E5B3CE870C46D64CD /* ZoomableView.swift in Sources */,
 				44B41150A53216A56208152E /* AnomalyCard.swift in Sources */,
+				33C5908DE3F7BA0ECC0772B3 /* AppMenu.swift in Sources */,
 				D9FFC02229DBFFD8CE88FFBB /* Components.swift in Sources */,
 				64906A251A84361C9FE8235D /* ConditionCard.swift in Sources */,
 				8FCBC5E92CA2956AD680784B /* ConnectionTestPanel.swift in Sources */,

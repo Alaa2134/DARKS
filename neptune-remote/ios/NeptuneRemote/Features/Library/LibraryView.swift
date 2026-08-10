@@ -72,6 +72,7 @@ struct LibraryView: View {
         .navigationTitle(L.t("library.title"))
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) { AppMenu() }
             // Import gets its own button, deliberately NOT inside the menu.
             //
             // A .fileImporter presented from a Menu button races the menu's own

@@ -120,27 +120,7 @@ struct HomeView: View {
         .navigationTitle(L.t("tab.home"))
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    NavigationLink(destination: SystemInfoView()) {
-                        Label(L.t("system.title"), systemImage: "cpu")
-                    }
-                    NavigationLink(destination: HistoryView()) {
-                        Label(L.t("history.title"), systemImage: "clock.arrow.circlepath")
-                    }
-                    NavigationLink(destination: TerminalView()) {
-                        Label(L.t("terminal.title"), systemImage: "terminal")
-                    }
-                    Divider()
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Label(L.t("settings.title"), systemImage: "gearshape")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                }
-            }
+            ToolbarItem(placement: .topBarTrailing) { AppMenu() }
         }
         .refreshable {
             await printer.refreshNow()

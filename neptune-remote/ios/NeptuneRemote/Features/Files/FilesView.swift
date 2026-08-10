@@ -39,14 +39,7 @@ struct FilesView: View {
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $search, prompt: L.t("files.search"))
         .toolbar {
-            ToolbarItem(placement: .topBarLeading) {
-                NavigationLink {
-                    InsightsView()
-                } label: {
-                    Image(systemName: "lightbulb")
-                }
-                .accessibilityLabel(L.t("insights.title"))
-            }
+            ToolbarItem(placement: .topBarLeading) { AppMenu() }
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
                     showingImporter = true

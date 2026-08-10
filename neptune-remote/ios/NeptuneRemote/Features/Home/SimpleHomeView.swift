@@ -89,35 +89,11 @@ struct SimpleHomeView: View {
         .navigationTitle(settings.printerName.isEmpty ? L.t("tab.home") : settings.printerName)
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Menu {
-                    Toggle(L.t("mode.advanced"), isOn: $settings.advancedMode)
-                    Divider()
-                    NavigationLink(destination: QueueView()) {
-                        Label(L.t("queue.title"), systemImage: "list.number")
-                    }
-                    NavigationLink(destination: HistoryView()) {
-                        Label(L.t("history.title"), systemImage: "clock.arrow.circlepath")
-                    }
-                    NavigationLink(destination: FixMyPrinterView()) {
-                        Label(L.t("doctor.title"), systemImage: "stethoscope")
-                    }
-                    NavigationLink(destination: CalibrationHubView()) {
-                        Label(L.t("calibration.title"), systemImage: "wand.and.stars")
-                    }
-                    NavigationLink(destination: SupportView()) {
-                        Label(L.t("support.title"), systemImage: "questionmark.circle")
-                    }
-                    Divider()
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Label(L.t("settings.title"), systemImage: "gearshape")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                }
-            }
+            // The same menu as every other screen. Simple Mode used to get a
+            // shorter one of its own, which meant the two modes disagreed
+            // about where things live - and a screen you found yesterday was
+            // missing today.
+            ToolbarItem(placement: .topBarTrailing) { AppMenu() }
         }
         .sheet(isPresented: $showingIdeas) {
             NavigationStack { IdeaFinderView().withLibraryDestinations() }
