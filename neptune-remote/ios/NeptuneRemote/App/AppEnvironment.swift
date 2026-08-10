@@ -54,7 +54,9 @@ final class AppEnvironment: ObservableObject {
         // know about a presenter, and the alternative - remembering to show
         // every store's error on every screen that touches it - was already
         // missed on fifteen screens.
-        errors.observe(printer.$lastError)
+        // Not the printer's: that one is read directly by the presenter so a
+        // successful command can clear it. Mirroring it here as well would
+        // resurrect an error the next success had just cleared.
         errors.observe(files.$lastError)
         errors.observe(slicing.$lastError)
         errors.observe(history.$lastError)
