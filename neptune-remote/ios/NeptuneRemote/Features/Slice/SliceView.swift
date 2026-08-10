@@ -143,8 +143,10 @@ struct SliceView: View {
                         select(model)
                     } label: {
                         HStack {
-                            Image(systemName: slicing.selectedModel?.id == model.id
-                                  ? "checkmark.circle.fill" : "circle")
+                            // Filled for the model being sliced, a plus for the
+                            // others sharing its plate: two different roles, and
+                            // one tick for both would hide which is which.
+                            Image(systemName: symbol(for: model))
                                 .foregroundStyle(Theme.accent)
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(model.filename)
@@ -160,6 +162,14 @@ struct SliceView: View {
                     }
                     .buttonStyle(.plain)
                     .contextMenu {
+                        Button {
+                            togglePlate(model)
+                        } label: {
+                            Label(
+                                L.t(onPlate(model) ? "slicer.plate.remove" : "slicer.plate.add"),
+                                systemImage: onPlate(model) ? "minus.square" : "plus.square.on.square"
+                            )
+                        }
                         Button(role: .destructive) {
                             Task { await files.deleteModel(model) }
                         } label: {
@@ -169,8 +179,66 @@ struct SliceView: View {
                     if model.id != files.models.last?.id { Divider() }
                 }
             }
+
+            if slicing.selectedModel != nil { plateSummary }
         }
         .card()
+    }
+
+    /// One plate, one file. Shown only once there is something to say about it.
+    private var plateSummary: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Divider()
+
+            Stepper(value: $slicing.copies, in: 1...24) {
+                HStack {
+                    Text(localized: "slicer.copies")
+                    Spacer()
+                    Text("\(slicing.copies)").monospacedDigit().foregroundStyle(.secondary)
+                }
+                .font(.subheadline)
+            }
+
+            if !slicing.plateModels.isEmpty {
+                Text(L.t("slicer.plate.count", slicing.plateModels.count + 1))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Said once, plainly. A full plate is one print job - which is the
+            // point, and also the risk.
+            if slicing.plateModels.count > 0 || slicing.copies > 1 {
+                Label(L.t("slicer.plate.warning"), systemImage: "exclamationmark.circle")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.paused)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            Text(localized: "slicer.plate.hint")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func onPlate(_ model: BackendModelFile) -> Bool {
+        slicing.plateModels.contains { $0.id == model.id }
+    }
+
+    private func symbol(for model: BackendModelFile) -> String {
+        if slicing.selectedModel?.id == model.id { return "checkmark.circle.fill" }
+        if onPlate(model) { return "plus.circle.fill" }
+        return "circle"
+    }
+
+    private func togglePlate(_ model: BackendModelFile) {
+        guard slicing.selectedModel?.id != model.id else { return }
+        if let index = slicing.plateModels.firstIndex(where: { $0.id == model.id }) {
+            slicing.plateModels.remove(at: index)
+        } else {
+            slicing.plateModels.append(model)
+        }
+        Haptics.selection()
     }
 
     private var previewCard: some View {

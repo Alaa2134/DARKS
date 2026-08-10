@@ -16,6 +16,12 @@ final class SliceStore: ObservableObject {
 
     // Slicing form state
     @Published var selectedModel: BackendModelFile?
+    /// Extra models sharing the plate with `selectedModel`, in the order they
+    /// were picked. One G-code file, one heat-up, one purge - and one failure
+    /// that takes all of them, which the screen says out loud.
+    @Published var plateModels: [BackendModelFile] = []
+    /// Copies of everything on the plate.
+    @Published var copies: Int = 1
     @Published var printerProfile = "neptune3plus_0.4"
     @Published var filamentProfile = "pla"
     @Published var printProfile = "standard"
@@ -133,6 +139,8 @@ final class SliceStore: ObservableObject {
     var request: SliceRequestPayload? {
         guard let model = selectedModel else { return nil }
         var payload = SliceRequestPayload(modelID: model.id)
+        payload.extraModelIDs = plateModels.map(\.id).filter { $0 != model.id }
+        payload.copies = max(1, copies)
         payload.mode = mode
         payload.printerProfile = printerProfile
         payload.filamentProfile = filamentProfile

@@ -232,6 +232,15 @@ class SliceOverrides(BaseModel):
 
 class SliceRequest(BaseModel):
     model_id: str
+    #: More models to put on the same plate, sliced into one G-code file.
+    #:
+    #: One print job instead of four means one heat-up, one purge and one
+    #: chance for the first layer to go wrong. It also means one failure takes
+    #: everything with it, which is why the app says so rather than treating a
+    #: full plate as free.
+    extra_model_ids: List[str] = Field(default_factory=list)
+    #: Copies of everything on the plate. 1 leaves the arrangement alone.
+    copies: int = 1
     printer_profile: str = "neptune3plus_0.4"
     filament_profile: str = "pla"
     print_profile: str = "standard"

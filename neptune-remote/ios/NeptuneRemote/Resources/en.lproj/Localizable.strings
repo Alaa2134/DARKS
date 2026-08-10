@@ -242,6 +242,12 @@
 "slicer.spiral_vase.hint" = "One continuous wall, no infill and no top. The model has to be designed for it - anything else comes out hollow and open.";
 "slicer.reset_advanced" = "Reset all of these";
 "slicer.reset_advanced.hint" = "Hands every setting back to the printer profile.";
+"slicer.copies" = "Copies";
+"slicer.plate.add" = "Add to the plate";
+"slicer.plate.remove" = "Take off the plate";
+"slicer.plate.count" = "%d models on one plate";
+"slicer.plate.warning" = "One print job. If it fails, everything on the plate fails with it.";
+"slicer.plate.hint" = "Press and hold another model to add it to the same plate. The slicer arranges them for you.";
 "slicer.support_placement" = "Where support may start";
 "slicer.support_placement.everywhere" = "Everywhere";
 "slicer.support_placement.plate" = "From the bed only";

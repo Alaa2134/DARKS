@@ -488,7 +488,7 @@ class PrusaSlicerEngine(BaseEngine):
 
     async def slice(
         self,
-        model_path: Path,
+        model_paths: List[Path],
         output_path: Path,
         request: SliceRequest,
         workdir: Path,
@@ -514,11 +514,26 @@ class PrusaSlicerEngine(BaseEngine):
             str(override_path),
         ]
 
-        center = bed_center(printer)
-        if center:
-            command += ["--center", center]
+        copies = max(1, int(request.copies or 1))
+        # Arrange whenever there is more than one thing on the plate.
+        #
+        # Without it every object lands on the same centre point and the
+        # slicer either refuses or produces a single overlapping mess.
+        # `--center` is what places a lone object, and the two fight, so only
+        # one of them is ever passed.
+        needs_arrange = len(model_paths) > 1 or copies > 1
+        if needs_arrange:
+            command.insert(1, "--arrange")
+        else:
+            center = bed_center(printer)
+            if center:
+                command += ["--center", center]
 
-        command += ["--output", str(output_path), str(model_path)]
+        if copies > 1:
+            command += ["--duplicate", str(copies)]
+
+        command += ["--output", str(output_path)]
+        command += [str(path) for path in model_paths]
 
         logs = await self._run(command, PRUSA_STAGES, progress, workdir)
 
@@ -551,12 +566,22 @@ class OrcaSlicerEngine(BaseEngine):
 
     async def slice(
         self,
-        model_path: Path,
+        model_paths: List[Path],
         output_path: Path,
         request: SliceRequest,
         workdir: Path,
         progress: Optional[ProgressCallback] = None,
     ) -> SliceOutcome:
+        # Refused by name rather than attempted. Arranging several objects on
+        # one plate is spelled differently in Orca's CLI, and a flag written
+        # from documentation and never run produces a plate of overlapping
+        # models - which slices happily and prints as a lump.
+        if len(model_paths) > 1 or int(request.copies or 1) > 1:
+            raise SlicerError(
+                "Several models on one plate is implemented for PrusaSlicer only. "
+                "Slice them separately, or switch slicer.engine to prusaslicer."
+            )
+        model_path = model_paths[0]
         machine = self.store.orca_profile("printer", request.printer_profile)
         process = self.store.orca_profile("print", request.print_profile)
         filament = self.store.orca_profile("filament", request.filament_profile)

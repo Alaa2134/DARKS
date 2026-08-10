@@ -206,6 +206,10 @@ struct BackendSlicerInfo: Decodable, Equatable {
 
 struct SliceRequestPayload: Encodable, Equatable {
     var modelID: String
+    /// More models on the same plate, sliced into one file.
+    var extraModelIDs: [String] = []
+    /// Copies of everything on the plate.
+    var copies: Int = 1
     var printerProfile: String = "neptune3plus_0.4"
     var filamentProfile: String = "pla"
     var printProfile: String = "standard"
@@ -261,6 +265,8 @@ struct SliceRequestPayload: Encodable, Equatable {
 
     enum CodingKeys: String, CodingKey {
         case modelID = "model_id"
+        case extraModelIDs = "extra_model_ids"
+        case copies
         case printerProfile = "printer_profile"
         case filamentProfile = "filament_profile"
         case printProfile = "print_profile"

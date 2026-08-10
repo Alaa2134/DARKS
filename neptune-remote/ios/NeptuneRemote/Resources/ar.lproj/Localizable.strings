@@ -242,6 +242,12 @@
 "slicer.spiral_vase.hint" = "جدار واحد متصل، من غير تعبئة ولا سطح علوي. المجسم لازم يكون متصمم لكده - أي حاجة تانية هتطلع مجوّفة ومفتوحة.";
 "slicer.reset_advanced" = "رجّع كل ده للأصل";
 "slicer.reset_advanced.hint" = "بيسلّم كل إعداد لبروفايل الطابعة تاني.";
+"slicer.copies" = "عدد النسخ";
+"slicer.plate.add" = "ضيفه على نفس السرير";
+"slicer.plate.remove" = "شيله من السرير";
+"slicer.plate.count" = "%d مجسمات على سرير واحد";
+"slicer.plate.warning" = "دي طبعة واحدة. لو فشلت، كل اللي على السرير يروح معاها.";
+"slicer.plate.hint" = "دوس مطوّل على مجسم تاني عشان تضيفه لنفس السرير. السلايسر بيرتّبهم لوحده.";
 "slicer.support_placement" = "الدعامات تبدأ منين";
 "slicer.support_placement.everywhere" = "من أي مكان";
 "slicer.support_placement.plate" = "من السرير بس";

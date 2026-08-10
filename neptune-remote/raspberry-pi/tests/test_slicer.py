@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import tempfile
 import textwrap
 from pathlib import Path
 
@@ -344,7 +345,7 @@ async def test_orca_engine_explains_missing_json_profiles(tmp_path: Path):
     engine = OrcaSlicerEngine("orca-slicer", ProfileStore(PROFILES_DIR), 30)
     with pytest.raises(SlicerError) as excinfo:
         await engine.slice(
-            tmp_path / "m.stl", tmp_path / "o.gcode", SliceRequest(model_id="x"), tmp_path
+            [tmp_path / "m.stl"], tmp_path / "o.gcode", SliceRequest(model_id="x"), tmp_path
         )
     assert "profiles/orca" in str(excinfo.value)
 
@@ -559,3 +560,83 @@ class TestExpandedOptions:
             self._request(top_solid_layers=5, custom_overrides={"top_solid_layers": "9"})
         )
         assert out["top_solid_layers"] == "9"
+
+
+class TestPlate:
+    """Several models in one G-code file.
+
+    One print job instead of four means one heat-up, one purge and one chance
+    for the first layer to go wrong - and one failure that takes everything
+    with it.
+    """
+
+    def _engine(self):
+        from app.slicer.engine import PrusaSlicerEngine
+
+        return PrusaSlicerEngine("prusa-slicer", ProfileStore(PROFILES_DIR), 30)
+
+    def _command(self, paths, **kwargs):
+        """The command the engine would run, without running it."""
+        import asyncio
+        from unittest.mock import AsyncMock, patch
+
+        from app.schemas import SliceRequest
+
+        engine = self._engine()
+        request = SliceRequest(model_id="a", **kwargs)
+        captured = {}
+
+        async def fake_run(command, stages, progress, workdir):
+            captured["command"] = command
+            # The engine checks for the file afterwards; make one.
+            index = command.index("--output")
+            Path(command[index + 1]).write_text("G1\n", encoding="utf-8")
+            return []
+
+        with patch.object(engine, "_run", AsyncMock(side_effect=fake_run)):
+            with tempfile.TemporaryDirectory() as tmp:
+                out = Path(tmp) / "out.gcode"
+                asyncio.run(engine.slice(paths, out, request, Path(tmp)))
+        return captured["command"]
+
+    def test_a_single_model_is_centred_and_not_arranged(self):
+        command = self._command([Path("/tmp/a.stl")])
+        assert "--arrange" not in command
+        assert "--center" in command
+
+    def test_more_than_one_model_is_arranged_instead_of_centred(self):
+        """Every object lands on the same centre point otherwise."""
+        command = self._command([Path("/tmp/a.stl"), Path("/tmp/b.stl")])
+        assert "--arrange" in command
+        assert "--center" not in command
+        assert command.count("/tmp/b.stl") == 1
+
+    def test_copies_arrange_too(self):
+        command = self._command([Path("/tmp/a.stl")], copies=4)
+        assert "--arrange" in command
+        assert "--duplicate" in command
+        assert command[command.index("--duplicate") + 1] == "4"
+
+    def test_one_copy_adds_nothing(self):
+        command = self._command([Path("/tmp/a.stl")], copies=1)
+        assert "--duplicate" not in command
+
+    def test_orca_refuses_a_plate_by_name_rather_than_overlapping_models(self):
+        """A flag written from documentation and never run slices happily and
+        prints as a lump."""
+        import asyncio
+
+        from app.schemas import SliceRequest
+
+        engine = OrcaSlicerEngine("orca-slicer", ProfileStore(PROFILES_DIR), 30)
+        with tempfile.TemporaryDirectory() as tmp:
+            with pytest.raises(SlicerError) as excinfo:
+                asyncio.run(
+                    engine.slice(
+                        [Path(tmp) / "a.stl", Path(tmp) / "b.stl"],
+                        Path(tmp) / "o.gcode",
+                        SliceRequest(model_id="a", extra_model_ids=["b"]),
+                        Path(tmp),
+                    )
+                )
+        assert "PrusaSlicer only" in str(excinfo.value)

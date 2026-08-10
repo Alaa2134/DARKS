@@ -98,16 +98,36 @@ class SliceJobManager:
         if model is None:
             raise FileNotFoundError(f"Model '{request.model_id}' not found")
 
-        extension = Path(model.filename).suffix.lower()
-        if extension not in SUPPORTED_MODEL_EXTENSIONS:
-            raise ValueError(
-                f"Unsupported model type '{extension}'. Supported: "
-                + ", ".join(sorted(SUPPORTED_MODEL_EXTENSIONS))
-            )
+        # Every model on the plate is checked before any of them is queued.
+        # Failing on the fourth file after the first three have been prepared
+        # wastes the user's time and leaves a half-built job behind.
+        plate = [model]
+        for extra_id in request.extra_model_ids:
+            if extra_id == request.model_id:
+                continue
+            extra = self.models.get(extra_id)
+            if extra is None:
+                raise FileNotFoundError(f"Model '{extra_id}' not found")
+            plate.append(extra)
+
+        for item in plate:
+            extension = Path(item.filename).suffix.lower()
+            if extension not in SUPPORTED_MODEL_EXTENSIONS:
+                raise ValueError(
+                    f"Unsupported model type '{extension}' in {item.filename}. Supported: "
+                    + ", ".join(sorted(SUPPORTED_MODEL_EXTENSIONS))
+                )
 
         job_id = uuid.uuid4().hex[:12]
+        # A plate of four parts named after only the first one is a file you
+        # cannot identify a week later.
+        default_name = Path(model.filename).stem
+        if len(plate) > 1:
+            default_name += f"+{len(plate) - 1}"
+        if int(request.copies or 1) > 1:
+            default_name += f"-x{int(request.copies)}"
         output_name = safe_filename(
-            request.output_name or f"{Path(model.filename).stem}.gcode", "output.gcode"
+            request.output_name or f"{default_name}.gcode", "output.gcode"
         )
         if not output_name.lower().endswith((".gcode", ".gco", ".g")):
             output_name += ".gcode"
@@ -144,11 +164,19 @@ class SliceJobManager:
 
             workdir = Path(tempfile.mkdtemp(prefix=f"neptune-slice-{job.id}-"))
             try:
-                model_path = self.models.path_for(job.model_id)
-                if model_path is None:
-                    raise SlicerError("Model file disappeared before slicing started")
-
                 assert job.request is not None
+                identifiers = [job.model_id] + [
+                    value for value in job.request.extra_model_ids if value != job.model_id
+                ]
+                model_paths = []
+                for identifier in identifiers:
+                    path = self.models.path_for(identifier)
+                    if path is None:
+                        raise SlicerError(
+                            f"Model file for '{identifier}' disappeared before slicing started"
+                        )
+                    model_paths.append(path)
+
                 output_path = self.gcodes.unique_path(job.output_filename)
                 job.output_filename = output_path.name
 
@@ -169,7 +197,7 @@ class SliceJobManager:
                         await self._publish(job)
 
                 outcome = await self.engine.slice(
-                    model_path, output_path, job.request, workdir, progress
+                    model_paths, output_path, job.request, workdir, progress
                 )
 
                 job.output_path = str(outcome.output_path)
