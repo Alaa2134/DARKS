@@ -63,6 +63,9 @@
 "power.provider.webhook" = "HTTP webhook";
 "power.provider.demo" = "Demo switch";
 "power.provider.none" = "None";
+"home.start_print" = "Start a print";
+"home.start_print.hint" = "Pick a file from the printer or send a new one";
+"home.machine_detail" = "Machine detail";
 "home.quick_actions" = "Quick actions";
 "home.machine" = "Machine";
 "home.connection" = "Connection";
@@ -934,6 +937,12 @@
 "slicer.preview.unavailable" = "Could not read this model file";
 
 /* Navigation + common (phase 2) */
+"more.section.printing" = "The print";
+"more.section.machine" = "Drive the machine";
+"more.section.materials" = "Materials and cost";
+"more.section.health" = "Health and calibration";
+"more.section.system" = "Under the hood";
+"more.section.app" = "App";
 "more.title" = "More";
 "common.on" = "On";
 "common.off" = "Off";

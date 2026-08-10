@@ -63,6 +63,9 @@
 "power.provider.webhook" = "ويب هوك HTTP";
 "power.provider.demo" = "مفتاح تجريبي";
 "power.provider.none" = "بدون";
+"home.start_print" = "ابدأ طباعة";
+"home.start_print.hint" = "اختار ملف من الطابعة أو ابعت ملف جديد";
+"home.machine_detail" = "تفاصيل الماكينة";
 "home.quick_actions" = "إجراءات سريعة";
 "home.machine" = "الماكينة";
 "home.connection" = "الاتصال";
@@ -934,6 +937,12 @@
 "slicer.preview.unavailable" = "مش قادر أقرأ ملف الموديل ده";
 
 /* تنقل + عام (المرحلة الثانية) */
+"more.section.printing" = "الطباعة";
+"more.section.machine" = "تشغيل الطابعة";
+"more.section.materials" = "الخامات والتكلفة";
+"more.section.health" = "الصحة والمعايرة";
+"more.section.system" = "تحت الغطا";
+"more.section.app" = "التطبيق";
 "more.title" = "المزيد";
 "common.on" = "شغال";
 "common.off" = "مقفول";

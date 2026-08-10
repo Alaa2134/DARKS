@@ -11,6 +11,7 @@ struct HomeView: View {
 
     @State private var showingPowerOffWarning = false
     @State private var showingPreheatSheet = false
+    @State private var showingMachineDetail = false
 
     private var snapshot: PrinterSnapshot { printer.snapshot }
 
@@ -42,22 +43,15 @@ struct HomeView: View {
                 // running - on a settings page it would be a post-mortem.
                 AnomalyList()
 
-                PowerCard(
-                    power: printer.power,
-                    safety: printer.powerOffSafety,
-                    isBusy: printer.isBusy,
-                    onPowerOn: { Task { await printer.powerOn() } },
-                    onPowerOff: {
-                        if printer.powerOffSafety.isSafe {
-                            Task { await printer.powerOff(force: false) }
-                        } else {
-                            showingPowerOffWarning = true
-                        }
-                    }
-                )
-
+                // The print comes before the machine.
+                //
+                // This card used to sit below the power switch, so during a
+                // print - the one time the screen has an obvious subject - you
+                // scrolled past mains power to reach it.
                 if snapshot.isActive || snapshot.state == .complete {
                     PrintProgressCard(snapshot: snapshot, thumbnailURL: thumbnailURL)
+                } else {
+                    startPrintLink
                 }
 
                 TemperaturesCard(snapshot: snapshot)
@@ -78,14 +72,41 @@ struct HomeView: View {
                 LightsCard()
                 EjectPartCard()
 
-                MachineStateCard(snapshot: snapshot)
                 CameraPreviewCard()
-                ConnectionCard(
-                    moonrakerConnected: printer.moonrakerConnected,
-                    backendConnected: printer.backendConnected,
-                    health: printer.backendHealth,
-                    host: settings.host
+
+                PowerCard(
+                    power: printer.power,
+                    safety: printer.powerOffSafety,
+                    isBusy: printer.isBusy,
+                    onPowerOn: { Task { await printer.powerOn() } },
+                    onPowerOff: {
+                        if printer.powerOffSafety.isSafe {
+                            Task { await printer.powerOff(force: false) }
+                        } else {
+                            showingPowerOffWarning = true
+                        }
+                    }
                 )
+
+                // Coordinates, speeds, socket states. Real information and
+                // rarely the reason anyone opened the app, so it is folded
+                // away rather than making every visit scroll past it.
+                DisclosureGroup(isExpanded: $showingMachineDetail) {
+                    VStack(spacing: Theme.spacing) {
+                        MachineStateCard(snapshot: snapshot)
+                        ConnectionCard(
+                            moonrakerConnected: printer.moonrakerConnected,
+                            backendConnected: printer.backendConnected,
+                            health: printer.backendHealth,
+                            host: settings.host
+                        )
+                    }
+                    .padding(.top, Theme.spacing)
+                } label: {
+                    Label(L.t("home.machine_detail"), systemImage: "gearshape.2")
+                        .font(.subheadline.weight(.medium))
+                }
+                .padding(.horizontal, 4)
 
                 EmergencyStopButton {
                     Task { await printer.emergencyStop() }
@@ -145,6 +166,33 @@ struct HomeView: View {
         } message: {
             Text(printer.powerOffSafety.blockers.joined(separator: "\n\n"))
         }
+    }
+
+    /// Idle printers have one obvious next step, and it used to be four taps
+    /// away behind a menu.
+    private var startPrintLink: some View {
+        NavigationLink {
+            FilesView()
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "printer.fill")
+                    .font(.title3)
+                    .foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localized: "home.start_print")
+                        .font(.subheadline.weight(.semibold))
+                    Text(localized: "home.start_print.hint")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.forward")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            .card(tint: Theme.accent)
+        }
+        .buttonStyle(.plain)
     }
 
     private var thumbnailURL: URL? {

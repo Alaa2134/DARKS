@@ -25,9 +25,18 @@ struct RootView: View {
         .animation(.easeInOut, value: settings.hasCompletedSetup)
     }
 
-    /// Simple Mode keeps four tabs; Advanced Mode adds the machine-level ones.
-    /// Nothing is removed from the app - the extra screens stay reachable from
-    /// "More" either way.
+    /// Five tabs, the same five in both modes.
+    ///
+    /// They used to change: Simple Mode had four, Advanced Mode grew two more
+    /// in the middle, so Camera and More slid sideways the moment the toggle
+    /// moved. A tab bar you cannot reach for without looking is worse than one
+    /// with an extra item on it, and Advanced Mode is about what the screens
+    /// offer, not about where they live.
+    ///
+    /// The order is the order of a print: look at the machine, pick a file,
+    /// drive it, watch it. Files is a tab rather than the eighth row of a
+    /// menu - it is where a print actually starts, and it was buried under
+    /// "More" while a browsing screen had a tab of its own.
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
             NavigationStack(path: $homePath) {
@@ -43,26 +52,19 @@ struct RootView: View {
             .tabItem { Label(L.t("tab.home"), systemImage: "house.fill") }
             .tag(Tab.home)
 
+            NavigationStack {
+                FilesView()
+                    .withLibraryDestinations()
+            }
+            .tabItem { Label(L.t("tab.files"), systemImage: "doc.text.fill") }
+            .tag(Tab.files)
+
             NavigationStack(path: $libraryPath) {
                 LibraryView()
                     .withLibraryDestinations()
             }
             .tabItem { Label(L.t("library.title"), systemImage: "square.grid.2x2.fill") }
             .tag(Tab.library)
-
-            if settings.advancedMode {
-                NavigationStack {
-                    ControlView()
-                }
-                .tabItem { Label(L.t("tab.control"), systemImage: "slider.horizontal.3") }
-                .tag(Tab.control)
-
-                NavigationStack {
-                    SliceView()
-                }
-                .tabItem { Label(L.t("tab.slice"), systemImage: "cube.transparent") }
-                .tag(Tab.slice)
-            }
 
             NavigationStack {
                 CameraView()
@@ -93,9 +95,9 @@ struct RootView: View {
     private func handle(url: URL) {
         guard url.scheme == "neptuneremote" else { return }
         switch url.host {
-        case "control": selectedTab = settings.advancedMode ? .control : .more
-        case "slice": selectedTab = settings.advancedMode ? .slice : .more
-        case "files": selectedTab = .more
+        case "control": selectedTab = .more
+        case "slice": selectedTab = .library
+        case "files": selectedTab = .files
         case "camera": selectedTab = .camera
         case "library": selectedTab = .library
         case "settings": showingSettings = true
@@ -111,7 +113,15 @@ struct RootView: View {
     }
 }
 
-/// Everything that is not one of the primary tabs, in one list.
+/// Everything that is not a primary tab.
+///
+/// It was five unlabelled sections and seventeen destinations - a drawer you
+/// had to read end to end every time, because nothing said what any group was
+/// for. The dividers were there; the meaning was not.
+///
+/// Now each group is named for the question it answers, and they are ordered
+/// by how often that question comes up: what is the printer doing, what am I
+/// printing with, is the machine well, and what is underneath.
 struct MoreView: View {
     @Binding var showingSettings: Bool
 
@@ -120,19 +130,6 @@ struct MoreView: View {
 
     var body: some View {
         List {
-            Section {
-                Toggle(isOn: $settings.advancedMode) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(localized: "mode.advanced")
-                        Text(localized: settings.advancedMode ? "mode.advanced.description" : "mode.simple.description")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                }
-            } header: {
-                Text(localized: "mode.switch")
-            }
-
             Section {
                 NavigationLink { QueueView() } label: {
                     HStack {
@@ -145,15 +142,33 @@ struct MoreView: View {
                         }
                     }
                 }
+                NavigationLink { HistoryView() } label: {
+                    Label(L.t("history.title"), systemImage: "clock.arrow.circlepath")
+                }
                 NavigationLink { VideosView() } label: {
                     Label(L.t("video.title"), systemImage: "film")
                 }
                 NavigationLink { VisionView() } label: {
                     Label(L.t("vision.title"), systemImage: "eye")
                 }
-                NavigationLink { HistoryView() } label: {
-                    Label(L.t("history.title"), systemImage: "clock.arrow.circlepath")
+            } header: {
+                Text(localized: "more.section.printing")
+            }
+
+            Section {
+                NavigationLink { ControlView() } label: {
+                    Label(L.t("tab.control"), systemImage: "slider.horizontal.3")
                 }
+                NavigationLink { SliceView() } label: {
+                    Label(L.t("tab.slice"), systemImage: "cube.transparent")
+                }
+                if settings.advancedMode {
+                    NavigationLink { TerminalView() } label: {
+                        Label(L.t("terminal.title"), systemImage: "terminal")
+                    }
+                }
+            } header: {
+                Text(localized: "more.section.machine")
             }
 
             Section {
@@ -166,59 +181,62 @@ struct MoreView: View {
                 NavigationLink { ProductsView() } label: {
                     Label(L.t("products.title"), systemImage: "tag")
                 }
-                NavigationLink { MaintenanceView() } label: {
-                    Label(L.t("maintenance.title"), systemImage: "wrench.and.screwdriver")
-                }
+            } header: {
+                Text(localized: "more.section.materials")
             }
 
             Section {
                 NavigationLink { FixMyPrinterView() } label: {
                     Label(L.t("doctor.title"), systemImage: "stethoscope")
                 }
+                NavigationLink { CalibrationHubView() } label: {
+                    Label(L.t("calibration.title"), systemImage: "wand.and.stars")
+                }
+                NavigationLink { MaintenanceView() } label: {
+                    Label(L.t("maintenance.title"), systemImage: "wrench.and.screwdriver")
+                }
                 NavigationLink { PrinterHealthView() } label: {
                     Label(L.t("health.title"), systemImage: "heart.text.square")
                 }
-                NavigationLink { CalibrationHubView() } label: {
-                    Label(L.t("calibration.title"), systemImage: "wand.and.stars")
+            } header: {
+                Text(localized: "more.section.health")
+            }
+
+            Section {
+                NavigationLink { PrinterCapabilitiesView() } label: {
+                    Label(L.t("capabilities.title"), systemImage: "list.bullet.clipboard")
                 }
                 NavigationLink { ConfigVersionsView() } label: {
                     Label(L.t("config.versions.title"), systemImage: "doc.on.doc")
                 }
-            }
-
-            Section {
-                NavigationLink { SupportView() } label: {
-                    Label(L.t("support.title"), systemImage: "questionmark.circle")
-                }
-                NavigationLink { FilesView() } label: {
-                    Label(L.t("tab.files"), systemImage: "folder")
-                }
                 NavigationLink { SystemInfoView() } label: {
                     Label(L.t("system.title"), systemImage: "cpu")
                 }
-                NavigationLink { PrinterCapabilitiesView() } label: {
-                    Label(L.t("capabilities.title"), systemImage: "list.bullet.clipboard")
+                NavigationLink { SupportView() } label: {
+                    Label(L.t("support.title"), systemImage: "questionmark.circle")
                 }
-                if settings.advancedMode {
-                    NavigationLink { TerminalView() } label: {
-                        Label(L.t("terminal.title"), systemImage: "terminal")
-                    }
-                } else {
-                    NavigationLink { ControlView() } label: {
-                        Label(L.t("tab.control"), systemImage: "slider.horizontal.3")
-                    }
-                    NavigationLink { SliceView() } label: {
-                        Label(L.t("tab.slice"), systemImage: "cube.transparent")
-                    }
-                }
+            } header: {
+                Text(localized: "more.section.system")
             }
 
             Section {
+                Toggle(isOn: $settings.advancedMode) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(localized: "mode.advanced")
+                        Text(localized: settings.advancedMode
+                                ? "mode.advanced.description"
+                                : "mode.simple.description")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
                 Button {
                     showingSettings = true
                 } label: {
                     Label(L.t("settings.title"), systemImage: "gearshape")
                 }
+            } header: {
+                Text(localized: "more.section.app")
             }
         }
         .navigationTitle(L.t("more.title"))
@@ -226,4 +244,3 @@ struct MoreView: View {
         .task { await inventory.load() }
     }
 }
-
