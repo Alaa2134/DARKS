@@ -100,6 +100,11 @@ def _purge_line(config: ParsedConfig, rationale: List[str]) -> List[str]:
     return [
         "",
         "    # Purge line - placed inside this printer's configured travel",
+        # M82 is not decoration. The E values below are absolute, and the
+        # extruder mode at this point belongs to whatever ran last - a slicer
+        # that emitted M83, a previous macro, a terminal command. In relative
+        # mode "E15 then E30" purges 45 mm instead of 30.
+        "    M82",
         "    G92 E0",
         "    G90",
         f"    G1 X{start_x:.1f} Y{start_y:.1f} Z0.3 F5000",
