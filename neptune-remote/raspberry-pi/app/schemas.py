@@ -121,6 +121,12 @@ class PrinterStatusResponse(BaseModel):
     extrude_factor: float = 1.0
     fan_speed: float = 0.0
     filament_sensors: Dict[str, FilamentSensorState] = Field(default_factory=dict)
+    #: Whatever M117 last put on the printer's display.
+    #:
+    #: Carried because it is the only channel a running G-code file has for
+    #: saying something to a human, and the colour-change stops use it: the
+    #: message names the colour the printer is waiting for.
+    display_message: str = ""
     #: How `estimated_time_left` was arrived at - the method, the confidence,
     #: and the calibration factor learned from this printer's own history.
     #: Reported so the UI can say where the number came from instead of
@@ -180,6 +186,44 @@ class PowerActionResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# Colour changes
+#
+# Defined before Files because a G-code file carries its own colour plan, and
+# before Slicing because that is where the plan is asked for.
+# --------------------------------------------------------------------------- #
+
+
+class ColorChange(BaseModel):
+    """Stop the print at a layer and ask for a different filament colour.
+
+    One nozzle prints as many colours as you are willing to stand next to it
+    for: the print pauses, you swap the spool, it carries on. `layer` is the
+    first layer printed in the new colour, counting the way the app shows it -
+    the first layer of the print is 1.
+    """
+
+    #: 2 and up. A change at layer 1 is just the colour you load before you
+    #: press print, so there is nothing to stop for - the API says so rather
+    #: than silently accepting a stop that does nothing.
+    layer: int = Field(ge=2)
+    #: Free text, in whatever language the user thinks in. It is repeated back
+    #: to them on the phone and on the printer's display when the pause comes.
+    color: str = Field(min_length=1, max_length=40)
+
+
+class AppliedColorChange(BaseModel):
+    """A colour change that was really placed, with the height it lands at."""
+
+    layer: int
+    color: str
+    #: Height above the bed, read from the sliced file rather than multiplied
+    #: out from the layer height - first layers are usually a different
+    #: thickness, so the arithmetic would be wrong by exactly that much.
+    z: Optional[float] = None
+
+
+
+# --------------------------------------------------------------------------- #
 # Files
 # --------------------------------------------------------------------------- #
 
@@ -208,6 +252,10 @@ class GCodeFile(BaseModel):
     slicer: Optional[str] = None
     thumbnail_path: Optional[str] = None
     layer_count: Optional[int] = None
+    #: Filament swaps this file will stop for, read from its own header. Any
+    #: file carries its plan with it, so a G-code sliced last week still shows
+    #: what it is going to ask for.
+    color_changes: List[AppliedColorChange] = Field(default_factory=list)
     source: str = "moonraker"  # moonraker | backend
 
 
@@ -317,6 +365,15 @@ class SliceRequest(BaseModel):
     speed_profile_overrides: Dict[str, float] = Field(default_factory=dict)
     custom_overrides: Dict[str, str] = Field(default_factory=dict)
 
+    # --- Colour ----------------------------------------------------------
+    #: Layers at which the print stops for a filament swap.
+    #:
+    #: Applied to the sliced G-code afterwards, because no slicer's command
+    #: line can place them. Requires a COLOR_CHANGE macro on the printer, which
+    #: the API checks for before accepting the job - a call to a macro that
+    #: does not exist ends the print with "Unknown command".
+    color_changes: List[ColorChange] = Field(default_factory=list)
+
     output_name: Optional[str] = None
     upload_to_moonraker: bool = True
     start_print_after_upload: bool = False
@@ -349,6 +406,10 @@ class SliceJob(BaseModel):
     error: Optional[str] = None
     logs: List[str] = Field(default_factory=list)
     stats: SliceStats = Field(default_factory=SliceStats)
+    #: Where the stops actually landed, with their real heights. Not a copy of
+    #: the request: a layer that turned out not to exist fails the job instead
+    #: of appearing here.
+    color_changes: List[AppliedColorChange] = Field(default_factory=list)
     request: Optional[SliceRequest] = None
     engine: str = ""
 

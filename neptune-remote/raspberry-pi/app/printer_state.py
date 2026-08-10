@@ -75,6 +75,7 @@ def build_status(
     fan = status.get("fan") or {}
     webhooks = status.get("webhooks") or {}
     virtual_sdcard = status.get("virtual_sdcard") or {}
+    display_status = status.get("display_status") or {}
 
     state = str(print_stats.get("state") or ("standby" if klippy_connected else "unknown"))
     if state not in KNOWN_STATES:
@@ -110,6 +111,7 @@ def build_status(
         extrude_factor=float(gcode_move.get("extrude_factor") or 1.0),
         fan_speed=float(fan.get("speed") or 0.0),
         filament_sensors=filament_sensors,
+        display_message=str(display_status.get("message") or ""),
         error=error,
         raw={
             "print_stats": print_stats,
@@ -117,6 +119,7 @@ def build_status(
             "gcode_move": gcode_move,
             "virtual_sdcard": virtual_sdcard,
             "webhooks": webhooks,
+            "display_status": display_status,
         },
     )
 

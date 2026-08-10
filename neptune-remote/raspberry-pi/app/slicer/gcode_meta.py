@@ -138,3 +138,21 @@ def parse_gcode(path: Path) -> Dict[str, Optional[float | int | str]]:
 
     result["gcode_size"] = path.stat().st_size
     return result
+
+
+def color_changes(path: Path) -> list:
+    """The filament swaps a G-code file will stop for.
+
+    Read from the file's own header rather than from the slice job, so a file
+    sliced last week - or uploaded from somewhere else entirely - still says
+    what it is going to ask for.
+    """
+    path = Path(path)
+    if not path.is_file():
+        return []
+    from .colors import parse_manifest
+
+    try:
+        return parse_manifest(_read_edges(path))
+    except OSError:
+        return []

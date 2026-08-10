@@ -11,10 +11,10 @@ from fastapi.responses import FileResponse, Response
 
 from ..deps import get_state
 from ..moonraker import MoonrakerError
-from ..schemas import GCodeFile, ModelFile, OKResponse, UploadResponse
+from ..schemas import AppliedColorChange, GCodeFile, ModelFile, OKResponse, UploadResponse
 from ..security import require_token
 from ..slicer.engine import SUPPORTED_MODEL_EXTENSIONS
-from ..slicer.gcode_meta import parse_gcode
+from ..slicer.gcode_meta import color_changes, parse_gcode
 from ..state import AppState
 
 router = APIRouter(dependencies=[Depends(require_token)])
@@ -172,6 +172,10 @@ async def list_gcodes(
                     filament_type=_optional_str(meta.get("filament_type")),
                     slicer=_optional_str(meta.get("slicer")),
                     layer_count=_optional_int(meta.get("layer_count")),
+                    color_changes=[
+                        AppliedColorChange(layer=c.layer, color=c.color, z=c.z)
+                        for c in color_changes(path)
+                    ],
                     source="backend",
                 )
             )
@@ -190,7 +194,20 @@ async def gcode_metadata(
     except MoonrakerError as exc:
         raise HTTPException(status_code=502, detail=exc.message) from exc
     metadata.setdefault("path", path)
-    return _moonraker_entry(metadata)
+    entry = _moonraker_entry(metadata)
+
+    # Moonraker does not know about colour changes - they are our own header,
+    # written after slicing. The copy we sliced is still on the Pi under the
+    # same name, so the plan is read from there. Only on this endpoint, never
+    # in the listing: opening every file to check would make the file list slow
+    # on a Pi in exactly the way a file list must not be.
+    local = state.gcodes.path_for(entry.filename)
+    if local.is_file():
+        entry.color_changes = [
+            AppliedColorChange(layer=item.layer, color=item.color, z=item.z)
+            for item in color_changes(local)
+        ]
+    return entry
 
 
 @router.get("/gcodes/thumbnail")

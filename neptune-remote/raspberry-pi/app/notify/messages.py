@@ -180,6 +180,16 @@ TEMPLATES: Dict[str, Template] = {
         tags=("x",),
         critical=True,
     ),
+    "color_change": Template(
+        ar="غيّر لون الفيلامنت",
+        en="Change the filament colour",
+        priority=Priority.URGENT,
+        tags=("art", "pause_button"),
+        # The printer is standing still with a hot nozzle waiting for a person.
+        # It will wait all night if nobody is told, so this one goes through
+        # quiet hours - it is the only pause where the delay is the cost.
+        critical=True,
+    ),
     "print_paused": Template(
         ar="الطباعة اتوقفت مؤقتاً",
         en="Print paused",

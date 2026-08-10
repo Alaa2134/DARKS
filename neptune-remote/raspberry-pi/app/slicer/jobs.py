@@ -11,8 +11,9 @@ import uuid
 from pathlib import Path
 from typing import Awaitable, Callable, Dict, List, Optional
 
-from ..schemas import SliceJob, SliceJobSummary, SliceRequest
+from ..schemas import AppliedColorChange, SliceJob, SliceJobSummary, SliceRequest
 from ..storage import GCodeStore, ModelStore, safe_filename
+from .colors import apply_color_changes
 from .engine import BaseEngine, SlicerError, SUPPORTED_MODEL_EXTENSIONS
 
 log = logging.getLogger("neptune.slicer.jobs")
@@ -150,6 +151,42 @@ class SliceJobManager:
         self._tasks[job_id] = asyncio.create_task(self._run(job, on_complete))
         return job
 
+    async def _apply_color_changes(
+        self,
+        job: SliceJob,
+        output_path: Path,
+        progress: Callable[[float, str, Optional[str]], Awaitable[None]],
+    ) -> None:
+        """Place the filament swaps, after slicing and before anything reads the file.
+
+        No slicer's command line can do this, so it is done to the finished
+        G-code. Rewriting a large file is blocking work on a Raspberry Pi that
+        is also serving the app, so it runs in a thread rather than stalling the
+        event loop.
+
+        A failure here fails the whole job. A three-colour print that quietly
+        came out in one colour would be discovered six hours later, by which
+        point the filament and the time are already spent.
+        """
+        assert job.request is not None
+        requested = job.request.color_changes
+        if not requested:
+            return
+
+        await progress(0.97, "Placing colour changes", None)
+        applied = await asyncio.to_thread(
+            apply_color_changes,
+            output_path,
+            [(item.layer, item.color) for item in requested],
+        )
+        job.color_changes = [
+            AppliedColorChange(layer=item.layer, color=item.color, z=item.z)
+            for item in applied
+        ]
+        for item in applied:
+            height = f" (Z {item.z:.2f} mm)" if item.z is not None else ""
+            job.logs.append(f"Colour change at layer {item.layer}{height}: {item.color}")
+
     async def _run(
         self,
         job: SliceJob,
@@ -199,6 +236,8 @@ class SliceJobManager:
                 outcome = await self.engine.slice(
                     model_paths, output_path, job.request, workdir, progress
                 )
+
+                await self._apply_color_changes(job, Path(outcome.output_path), progress)
 
                 job.output_path = str(outcome.output_path)
                 job.stats = outcome.stats

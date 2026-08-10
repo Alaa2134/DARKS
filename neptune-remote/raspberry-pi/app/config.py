@@ -310,6 +310,7 @@ class QuietHoursConfig(BaseModel):
             "print_interrupted",
             "klipper_error",
             "filament_runout",
+            "color_change",
             "vision_alert",
             "ai_pause_failed",
             "print_failed",

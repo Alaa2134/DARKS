@@ -42,6 +42,7 @@ from .klipper.validator import NEPTUNE_3_PLUS
 from .library.store import LibraryStore
 from .preflight import PreflightReport, run_preflight
 from .safety.engine import PrinterSafetyEngine, SafetyContext
+from .slicer.colors import color_from_display
 from .slicer.golden import GoldenProfileStore
 from .maintenance.store import MaintenanceStore
 from .moonraker import MoonrakerClient, MoonrakerError
@@ -905,7 +906,23 @@ class AppState:
             await self._emit_event("print_resumed", "Print resumed", filename, filename)
 
         elif new == "paused":
-            await self._emit_event("print_paused", "Print paused", filename, filename)
+            # A colour change is a pause too, and the two need different words:
+            # "print paused" tells you something might be wrong, when in fact
+            # the printer is waiting for you and will wait all night. The colour
+            # travels in the printer's own display message, put there by the
+            # M117 the slicer wrote next to the COLOR_CHANGE call - so this
+            # works for any file carrying that marker, not only ones this
+            # session sliced.
+            color = color_from_display(status.display_message)
+            if color:
+                await self._emit_event(
+                    "color_change",
+                    "غيّر لون الفيلامنت",
+                    f"الطابعة واقفة ومستنياك تحط «{color}». بعد ما تغيّر، اضغط استئناف.",
+                    filename,
+                )
+            else:
+                await self._emit_event("print_paused", "Print paused", filename, filename)
 
         elif new in {"complete", "cancelled", "error"}:
             result = {"complete": "completed", "cancelled": "cancelled", "error": "error"}[new]

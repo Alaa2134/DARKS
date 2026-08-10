@@ -453,6 +453,178 @@ def suggest_eject_part(config: ParsedConfig) -> MacroSuggestion:
     )
 
 
+#: How much filament to pull back before the nozzle leaves the print.
+#:
+#: More than a normal travel retraction: the nozzle is about to sit still with
+#: the heater on for as long as it takes a person to walk over and change a
+#: spool, and anything left in the melt zone drools out in that time.
+COLOR_CHANGE_RETRACT_MM = 5.0
+
+#: How far to lift before travelling to the park position.
+COLOR_CHANGE_LIFT_MM = 10.0
+
+
+def suggest_color_change(config: ParsedConfig) -> MacroSuggestion:
+    """A macro that stops the print and asks for a different filament colour.
+
+    This is the whole of multi-colour printing on a single-nozzle machine: stop,
+    swap the spool, carry on. The sliced file calls this at each chosen layer -
+    see :mod:`app.slicer.colors` - and everything hard about it is here, in the
+    order of three commands.
+
+    ``PAUSE`` has to come *before* the parking moves. Klipper's ``[pause_resume]``
+    records the toolhead position at the moment ``PAUSE`` runs and ``RESUME``
+    returns to it; park first and the recorded position is the parking corner,
+    so the print resumes by extruding a line from the corner of the bed. This is
+    the same order Klipper's own documented ``PAUSE`` macro uses, and it is the
+    single most common way a homemade M600 ruins a print.
+
+    Without ``[pause_resume]`` there is no ``PAUSE`` at all, so the macro is
+    refused rather than generated around a command that does not exist.
+    """
+    rationale: List[str] = []
+    blockers: List[str] = []
+
+    if not config.has("pause_resume"):
+        blockers.append(
+            "No [pause_resume] section. Klipper has no PAUSE/RESUME without it, "
+            "so there is no way to stop a print and continue it. Add an empty "
+            "[pause_resume] section to printer.cfg first."
+        )
+
+    x = config.axis_limits("x")
+    y = config.axis_limits("y")
+    z = config.axis_limits("z")
+
+    if blockers:
+        return MacroSuggestion(
+            name="COLOR_CHANGE",
+            gcode="",
+            rationale=rationale,
+            blockers=blockers,
+            existing=_existing_macro(config, "COLOR_CHANGE"),
+        )
+
+    lines: List[str] = [
+        "[gcode_macro COLOR_CHANGE]",
+        "description: Pause for a filament colour swap - generated from this printer.cfg",
+        "gcode:",
+        "    {% set COLOR = params.COLOR|default('the next colour')|string %}",
+        "    {% set LAYER = params.LAYER|default(0)|int %}",
+        f"    {{% set RETRACT = params.E|default({COLOR_CHANGE_RETRACT_MM})|float %}}",
+        f"    {{% set LIFT = params.Z|default({COLOR_CHANGE_LIFT_MM})|float %}}",
+        "",
+        "    # Say it before stopping, so the message is already on screen and",
+        "    # already sent to the phone by the time the printer goes quiet.",
+        "    M117 COLOR: {COLOR}",
+    ]
+    rationale.append(
+        "M117 carries the colour name into display_status, which is how the app "
+        "knows which colour to ask you for - it does not have to match the "
+        "running file back to the job that sliced it."
+    )
+
+    if config.has("respond"):
+        lines.append(
+            '    RESPOND PREFIX=color MSG="Layer {LAYER}: load {COLOR}, then press Resume"'
+        )
+        rationale.append(
+            "[respond] is configured, so the same message also goes to the "
+            "Mainsail/Fluidd console where it stays in the log."
+        )
+    else:
+        rationale.append(
+            "No [respond] section, so the message goes to the display only. "
+            "Adding [respond] would also put it in the web console."
+        )
+
+    lines += [
+        "",
+        "    SAVE_GCODE_STATE NAME=COLOR_CHANGE_STATE",
+        "    PAUSE",
+    ]
+    rationale.append(
+        "PAUSE runs *before* the parking moves. [pause_resume] records where the "
+        "toolhead is when PAUSE executes and RESUME goes back to exactly there; "
+        "parking first would make the parking corner the resume point, and the "
+        "print would restart by drawing a line across the bed."
+    )
+
+    lines += [
+        "",
+        "    # Now it is safe to move: RESUME already knows where to come back to.",
+        "    G91",
+        "    G1 E-{RETRACT} F1800",
+    ]
+    rationale.append(
+        f"Retracts {COLOR_CHANGE_RETRACT_MM:.0f} mm - more than a travel retraction, "
+        f"because the nozzle now sits hot and still for as long as the swap takes, "
+        f"and whatever is left in the melt zone oozes out onto the part."
+    )
+
+    if z.is_known:
+        lines.append("    G1 Z{LIFT} F600")
+        rationale.append(
+            f"Lifts {COLOR_CHANGE_LIFT_MM:.0f} mm so the nozzle is clear of the print "
+            f"while you work, and so the ooze that does happen lands on nothing."
+        )
+
+    lines.append("    G90")
+
+    if x.is_known and y.is_known:
+        # The same corner PRINT_END parks in: reachable from the front, and
+        # inside the configured travel rather than on the limit.
+        park_x = max(x.position_min, 0.0) + EDGE_MARGIN_MM
+        park_y = max(y.position_min, 0.0) + EDGE_MARGIN_MM
+        lines.append(f"    G1 X{park_x:.1f} Y{park_y:.1f} F6000")
+        rationale.append(
+            f"Parks at X{park_x:.1f} Y{park_y:.1f} - the front-left corner, "
+            f"{EDGE_MARGIN_MM:.0f} mm inside the configured travel, where the "
+            f"filament path is in reach and the nozzle is not over the part."
+        )
+    else:
+        rationale.append(
+            "No parking move: the X/Y travel is not fully defined in the config, "
+            "so the nozzle stays where it stopped. It will ooze onto the print."
+        )
+
+    lines += [
+        "",
+        "    # Coordinate and extruder modes back to what the file was using.",
+        "    # MOVE=0: RESUME does the moving, and it knows the real position.",
+        "    RESTORE_GCODE_STATE NAME=COLOR_CHANGE_STATE MOVE=0",
+    ]
+    rationale.append(
+        "RESTORE_GCODE_STATE with MOVE=0 puts G90/G91 and M82/M83 back the way "
+        "the sliced file left them without moving anything. Moving is RESUME's "
+        "job, and RESUME is the only thing that knows where the print stopped."
+    )
+    rationale.append(
+        "The filament is not unloaded for you. Pull the old spool out by hand "
+        "and push the new one in until colour comes out clean - a macro that "
+        "guessed at your Bowden length would either leave old colour in the "
+        "nozzle or grind filament through the extruder."
+    )
+
+    return MacroSuggestion(
+        name="COLOR_CHANGE",
+        gcode="\n".join(lines) + "\n",
+        rationale=rationale,
+        blockers=blockers,
+        existing=_existing_macro(config, "COLOR_CHANGE"),
+    )
+
+
+def has_color_change_macro(config: ParsedConfig) -> bool:
+    """Whether this printer can honour a colour change at all.
+
+    Checked before a colour-change slice is accepted. A file that calls a macro
+    the printer does not have does not print in one colour - it stops dead with
+    "Unknown command" at the first swap, hours in.
+    """
+    return _existing_macro(config, "COLOR_CHANGE") is not None
+
+
 def _existing_macro(config: ParsedConfig, name: str) -> Optional[str]:
     for section in config.sections_of_kind("gcode_macro"):
         if section.label.upper() == name.upper():
@@ -465,9 +637,10 @@ def suggest(config: ParsedConfig) -> dict:
     start = suggest_print_start(config)
     end = suggest_print_end(config)
     eject = suggest_eject_part(config)
+    color = suggest_color_change(config)
 
     return {
-        "macros": [start.to_dict(), end.to_dict(), eject.to_dict()],
+        "macros": [start.to_dict(), end.to_dict(), eject.to_dict(), color.to_dict()],
         # Generating the macro is only half of it: a macro nothing calls does
         # nothing at all, which is the state this printer is in today.
         "slicer": {

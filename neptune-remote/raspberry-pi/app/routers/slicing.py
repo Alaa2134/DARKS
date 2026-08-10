@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 
 from ..deps import get_state
+from ..klipper.macros import has_color_change_macro
 from ..schemas import OKResponse, SliceJob, SliceJobSummary, SliceRequest
 from ..security import require_token
 from ..slicer import modes as print_modes
@@ -118,6 +119,43 @@ def _apply_mode(request: SliceRequest, state: AppState) -> SliceRequest:
     return updated
 
 
+async def _require_color_change_macro(state: AppState) -> None:
+    """Refuse a colour-change slice the printer could not actually run.
+
+    Each swap is a call to a COLOR_CHANGE macro. Klipper has no M600 and no
+    colour-change command of its own, so if that macro is not in printer.cfg the
+    print does not come out in one colour - it stops dead at the first swap with
+    "Unknown command", which on this printer has already happened once with
+    PRINT_START. Six hours of filament is too expensive a way to find out.
+
+    The check reads the live config. If printer.cfg cannot be read at all the
+    slice is refused too: accepting it would be guessing, and the guess is only
+    ever wrong in the expensive direction.
+    """
+    config = await state.refresh_live_config()
+    if config is None:
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Cannot read printer.cfg, so there is no way to tell whether this "
+                "printer has a COLOR_CHANGE macro. Colour changes are refused "
+                "rather than sliced into a file that might stop dead at the first "
+                "swap."
+                + (f" ({state.live_config_error})" if state.live_config_error else "")
+            ),
+        )
+    if not has_color_change_macro(config):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "This printer has no COLOR_CHANGE macro, and Klipper has no colour "
+                "change command of its own - the print would stop with 'Unknown "
+                "command' at the first swap. Open Doctor > Macros to get one "
+                "generated from your printer.cfg, install it, then slice again."
+            ),
+        )
+
+
 @router.post("/slice", response_model=SliceJob, status_code=202)
 async def start_slice(request: SliceRequest, state: AppState = Depends(get_state)) -> SliceJob:
     # Checked first: a misspelled mode is the caller's mistake and has nothing
@@ -146,6 +184,9 @@ async def start_slice(request: SliceRequest, state: AppState = Depends(get_state
                 + " Run raspberry-pi/install.sh or install prusa-slicer manually."
             ),
         )
+    if request.color_changes:
+        await _require_color_change_macro(state)
+
     if request.mode:
         request = _apply_mode(request, state)
 
