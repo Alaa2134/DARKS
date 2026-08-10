@@ -13,20 +13,7 @@ struct CameraView: View {
     @State private var showingShare = false
     @State private var snapshotURL: URL?
 
-    private var cameraURL: URL? {
-        let raw = settings.cameraURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !raw.isEmpty else { return nil }
-        // An IP camera speaks RTSP, which nothing on a phone can open, so the
-        // Pi transcodes it. The token is attached here rather than stored in
-        // the URL - it belongs in the Keychain, not in settings.
-        if raw == ConnectionConfig.backendRelaySentinel {
-            return settings.connection.backendCameraStreamURL(token: settings.backendToken)
-        }
-        if raw.lowercased().hasPrefix("http") { return URL(string: raw) }
-        // Relative path -> resolve against the Pi.
-        guard let base = settings.connection.moonrakerBaseURL else { return nil }
-        return URL(string: base.absoluteString + (raw.hasPrefix("/") ? raw : "/\(raw)"))
-    }
+    private var cameraURL: URL? { CameraSource.url(for: settings) }
 
     var body: some View {
         Group {
@@ -416,11 +403,9 @@ struct CameraPreviewCard: View {
     @EnvironmentObject private var settings: AppSettings
     @StateObject private var stream = MJPEGStream()
 
-    private var cameraURL: URL? {
-        let raw = settings.cameraURL.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !raw.isEmpty, raw.lowercased().hasPrefix("http") else { return nil }
-        return URL(string: raw)
-    }
+    // Was its own copy, and one that did not know about the backend relay:
+    // picking an IP camera worked on the camera screen and showed nothing here.
+    private var cameraURL: URL? { CameraSource.url(for: settings) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

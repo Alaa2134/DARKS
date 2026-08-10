@@ -72,7 +72,12 @@ struct HomeView: View {
                 LightsCard()
                 EjectPartCard()
 
-                CameraPreviewCard()
+                // Only when there is no print to sit beside - during one the
+                // live view is already in the progress card above, and two
+                // streams from one camera is one more than most will serve.
+                if !(snapshot.isActive || snapshot.state == .complete) {
+                    CameraPreviewCard()
+                }
 
                 PowerCard(
                     power: printer.power,
@@ -321,6 +326,19 @@ struct PrintProgressCard: View {
         VStack(alignment: .leading, spacing: 14) {
             SectionHeader("print.progress", systemImage: "chart.pie.fill")
 
+            // The picture belongs to the print, not to a separate screen.
+            //
+            // The question during a print is never "what does the camera see",
+            // it is "what is my print doing" - and the answer to that is an
+            // image. It used to be five cards further down, under the power
+            // switch, while this card showed a static render of the model.
+            NavigationLink {
+                CameraView()
+            } label: {
+                PrinterEye(fallbackURL: thumbnailURL, height: 170)
+            }
+            .buttonStyle(.plain)
+
             HStack(spacing: 16) {
                 ProgressRing(
                     progress: snapshot.progress,
@@ -330,20 +348,6 @@ struct PrintProgressCard: View {
                 .frame(width: 108, height: 108)
 
                 VStack(alignment: .leading, spacing: 10) {
-                    if let thumbnailURL {
-                        AsyncImage(url: thumbnailURL) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image.resizable().scaledToFit()
-                            default:
-                                Image(systemName: "photo")
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .frame(height: 56)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-
                     InfoRow(titleKey: "print.elapsed", value: Format.clock(snapshot.printDuration))
                     InfoRow(
                         titleKey: "print.remaining",
