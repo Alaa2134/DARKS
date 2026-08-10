@@ -317,12 +317,58 @@ struct SliceView: View {
             }
 
             if slicing.supports {
-                Picker(L.t("slicer.support_style"), selection: $slicing.supportStyle) {
-                    Text("Grid").tag("grid")
-                    Text("Snug").tag("snug")
-                    Text("Organic").tag("organic")
+                // Where support may start from. This is the choice that
+                // decides how the part comes out - support growing off the
+                // model marks the surface it stood on, and no style fixes
+                // that. It used to be missing entirely, so the app quietly
+                // used the slicer's default of "everywhere".
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(localized: "slicer.support_placement").font(.subheadline)
+                    Picker("", selection: $slicing.supportPlacement) {
+                        Text(localized: "slicer.support_placement.everywhere").tag("everywhere")
+                        Text(localized: "slicer.support_placement.plate").tag("build_plate_only")
+                    }
+                    .pickerStyle(.segmented)
+                    Text(localized: slicing.supportPlacement == "build_plate_only"
+                            ? "slicer.support_placement.plate.hint"
+                            : "slicer.support_placement.everywhere.hint")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .pickerStyle(.segmented)
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(localized: "slicer.support_style").font(.subheadline)
+                    Picker("", selection: $slicing.supportStyle) {
+                        Text("Grid").tag("grid")
+                        Text("Snug").tag("snug")
+                        Text("Organic").tag("organic")
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                // 0 means "leave the slicer's own threshold alone", which is
+                // not the same as "no support" - so it is labelled, not left
+                // as a bare zero.
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Text(localized: "slicer.support_angle").font(.subheadline)
+                        Spacer()
+                        Text(slicing.supportThresholdAngle == 0
+                                ? L.t("slicer.support_angle.auto")
+                                : "\(slicing.supportThresholdAngle)°")
+                            .font(.subheadline.weight(.semibold))
+                            .monospacedDigit()
+                    }
+                    Slider(
+                        value: Binding(
+                            get: { Double(slicing.supportThresholdAngle) },
+                            set: { slicing.supportThresholdAngle = Int($0) }
+                        ),
+                        in: 0...80,
+                        step: 5
+                    )
+                }
             }
 
             VStack(alignment: .leading, spacing: 6) {

@@ -206,6 +206,13 @@
 "slicer.infill" = "نسبة الحشو";
 "slicer.perimeters" = "عدد الجدران";
 "slicer.supports" = "الدعامات";
+"slicer.support_placement" = "الدعامات تبدأ منين";
+"slicer.support_placement.everywhere" = "من أي مكان";
+"slicer.support_placement.plate" = "من السرير بس";
+"slicer.support_placement.everywhere.hint" = "الدعامة ممكن تطلع من على المجسم نفسه. بتوصل لكل الأجزاء المعلّقة، بس بتسيب أثر على السطح اللي وقفت عليه.";
+"slicer.support_placement.plate.hint" = "الدعامة بتطلع من السرير بس. أسطح المجسم بتفضل نضيفة، لكن أي جزء معلّق فوق جزء تاني مش هياخد دعامة.";
+"slicer.support_angle" = "زاوية الميل";
+"slicer.support_angle.auto" = "اللي السلايسر يشوفه";
 "slicer.support_style" = "نوع الدعامات";
 "slicer.adhesion" = "الالتصاق بالسرير";
 "slicer.adhesion.none" = "بدون";

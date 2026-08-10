@@ -252,6 +252,17 @@ class SliceRequest(BaseModel):
     perimeters: Optional[int] = None
     supports: bool = False
     support_style: Optional[str] = None  # grid | snug | organic
+    #: Where support may grow from: everywhere, or only up from the bed.
+    #:
+    #: "grid/snug/organic" is the *shape* of the support, which is what the
+    #: app used to offer on its own - and it is the less consequential of the
+    #: two choices. Support that starts on the model itself marks the surface
+    #: it sits on, so a part with an overhang above another feature comes out
+    #: differently depending on this, whatever the style.
+    support_placement: Optional[str] = None  # everywhere | build_plate_only
+    #: Overhang steeper than this gets support, in degrees from vertical.
+    #: None leaves the engine's own automatic threshold alone.
+    support_threshold_angle: Optional[int] = None
     adhesion: Optional[str] = None  # none | skirt | brim | raft
     brim_width: Optional[float] = None
 

@@ -221,6 +221,10 @@ struct SliceRequestPayload: Encodable, Equatable {
     var perimeters: Int?
     var supports: Bool = false
     var supportStyle: String?
+    /// everywhere | build_plate_only
+    var supportPlacement: String?
+    /// Overhang angle past which support is generated, in degrees.
+    var supportThresholdAngle: Int?
     var adhesion: String?
     var brimWidth: Double?
 
@@ -252,6 +256,8 @@ struct SliceRequestPayload: Encodable, Equatable {
         case infillPattern = "infill_pattern"
         case perimeters, supports
         case supportStyle = "support_style"
+        case supportPlacement = "support_placement"
+        case supportThresholdAngle = "support_threshold_angle"
         case adhesion
         case brimWidth = "brim_width"
         case nozzleTemperature = "nozzle_temperature"

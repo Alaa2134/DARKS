@@ -174,6 +174,12 @@ def build_prusa_overrides(request: SliceRequest) -> Dict[str, str]:
         out["support_material_auto"] = "1"
         if request.support_style and request.support_style in SUPPORT_STYLE_PRUSA:
             out["support_material_style"] = SUPPORT_STYLE_PRUSA[request.support_style]
+        if request.support_placement:
+            out["support_material_buildplate_only"] = (
+                "1" if request.support_placement == "build_plate_only" else "0"
+            )
+        if request.support_threshold_angle is not None:
+            out["support_material_threshold"] = str(int(request.support_threshold_angle))
 
     if request.adhesion:
         out.update(ADHESION_PRUSA.get(request.adhesion, {}))
@@ -201,8 +207,17 @@ def build_orca_overrides(request: SliceRequest) -> Dict[str, Any]:
         out["sparse_infill_density"] = f"{int(request.infill_percent)}%"
 
     out["enable_support"] = request.supports
-    if request.supports and request.support_style:
-        out["support_style"] = SUPPORT_STYLE_ORCA.get(request.support_style, request.support_style)
+    if request.supports:
+        if request.support_style:
+            out["support_style"] = SUPPORT_STYLE_ORCA.get(
+                request.support_style, request.support_style
+            )
+        if request.support_placement:
+            out["support_on_build_plate_only"] = (
+                request.support_placement == "build_plate_only"
+            )
+        if request.support_threshold_angle is not None:
+            out["support_threshold_angle"] = int(request.support_threshold_angle)
 
     if request.adhesion:
         out.update(ADHESION_ORCA.get(request.adhesion, {}))

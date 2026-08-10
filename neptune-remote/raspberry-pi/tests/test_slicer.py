@@ -414,3 +414,60 @@ class TestSlicerVerification:
 
         await engine.verify(force=True)
         assert counter.read_text().count("x") == 2
+
+
+class TestSupportPlacement:
+    """Where support may start from, which the app could not express at all.
+
+    Style - grid, snug, organic - is the shape of the support and the less
+    consequential of the two choices. Support that grows off the model marks
+    whatever surface it stood on, and no style setting undoes that.
+    """
+
+    def _request(self, **kwargs):
+        from app.schemas import SliceRequest
+
+        return SliceRequest(model_id="m", supports=True, **kwargs)
+
+    def test_build_plate_only_reaches_prusa(self):
+        from app.slicer.engine import build_prusa_overrides
+
+        out = build_prusa_overrides(self._request(support_placement="build_plate_only"))
+        assert out["support_material_buildplate_only"] == "1"
+
+    def test_everywhere_is_sent_explicitly_rather_than_left_to_a_default(self):
+        from app.slicer.engine import build_prusa_overrides
+
+        out = build_prusa_overrides(self._request(support_placement="everywhere"))
+        assert out["support_material_buildplate_only"] == "0"
+
+    def test_orca_gets_its_own_key_names(self):
+        from app.slicer.engine import build_orca_overrides
+
+        out = build_orca_overrides(
+            self._request(support_placement="build_plate_only", support_threshold_angle=55)
+        )
+        assert out["support_on_build_plate_only"] is True
+        assert out["support_threshold_angle"] == 55
+
+    def test_nothing_support_related_is_sent_when_support_is_off(self):
+        from app.schemas import SliceRequest
+        from app.slicer.engine import build_prusa_overrides
+
+        out = build_prusa_overrides(
+            SliceRequest(
+                model_id="m",
+                supports=False,
+                support_placement="build_plate_only",
+                support_threshold_angle=55,
+            )
+        )
+        assert out["support_material"] == "0"
+        assert "support_material_buildplate_only" not in out
+        assert "support_material_threshold" not in out
+
+    def test_an_unset_angle_leaves_the_engine_default_alone(self):
+        from app.slicer.engine import build_prusa_overrides
+
+        out = build_prusa_overrides(self._request())
+        assert "support_material_threshold" not in out

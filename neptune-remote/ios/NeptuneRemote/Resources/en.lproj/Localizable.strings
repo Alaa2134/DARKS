@@ -206,6 +206,13 @@
 "slicer.infill" = "Infill";
 "slicer.perimeters" = "Perimeters";
 "slicer.supports" = "Supports";
+"slicer.support_placement" = "Where support may start";
+"slicer.support_placement.everywhere" = "Everywhere";
+"slicer.support_placement.plate" = "From the bed only";
+"slicer.support_placement.everywhere.hint" = "Support may also grow off the model itself. It reaches every overhang, and it marks whatever surface it stood on.";
+"slicer.support_placement.plate.hint" = "Support only rises from the bed. The model's own surfaces stay clean, but an overhang above another feature gets none.";
+"slicer.support_angle" = "Overhang angle";
+"slicer.support_angle.auto" = "slicer default";
 "slicer.support_style" = "Support style";
 "slicer.adhesion" = "Bed adhesion";
 "slicer.adhesion.none" = "None";

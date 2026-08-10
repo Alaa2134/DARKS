@@ -29,6 +29,13 @@ final class SliceStore: ObservableObject {
     @Published var perimeters: Int = 3
     @Published var supports = false
     @Published var supportStyle = "grid"
+    /// Where support may start from. This is the choice that changes how the
+    /// part comes out: support growing off the model itself marks whatever
+    /// surface it stood on, and no support *style* fixes that.
+    @Published var supportPlacement = "everywhere"
+    /// Overhangs steeper than this get support. 0 means "leave the slicer's
+    /// own threshold alone" rather than "support nothing".
+    @Published var supportThresholdAngle: Int = 0
     @Published var adhesion = "skirt"
     @Published var nozzleTemperature: Int = 205
     @Published var bedTemperature: Int = 60
@@ -116,6 +123,10 @@ final class SliceStore: ObservableObject {
         payload.perimeters = perimeters
         payload.supports = supports
         payload.supportStyle = supports ? supportStyle : nil
+        payload.supportPlacement = supports ? supportPlacement : nil
+        payload.supportThresholdAngle = (supports && supportThresholdAngle > 0)
+            ? supportThresholdAngle
+            : nil
         payload.adhesion = adhesion
         payload.retractionLength = retractionLength
         payload.customOverrides = customOverrides
