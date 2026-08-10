@@ -196,6 +196,13 @@ actor BackendClient {
     /// Macros generated from the live printer.cfg. Read-only: the backend
     /// returns text and its reasoning, and installing it stays the user's own
     /// deliberate act.
+    /// Whether this printer is actually calibrated, read from its own config.
+    func calibrationStatus() async throws -> CalibrationStatus {
+        try await http.decode(
+            CalibrationStatus.self, from: try request("calibration/status", timeout: 30)
+        )
+    }
+
     func suggestedMacros() async throws -> MacroSuggestions {
         try await http.decode(
             MacroSuggestions.self, from: try request("config/macros/suggest", timeout: 30)

@@ -12,6 +12,7 @@ records why.
 
 from __future__ import annotations
 
+import contextlib
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -369,6 +370,13 @@ class WorkflowRunner:
         self.context_factory = context_factory
         self.active: Optional[Workflow] = None
         self.history: List[Workflow] = []
+        #: Called with each SCREWS_TILT_CALCULATE result so it can be kept.
+        #:
+        #: printer.cfg records nothing about the bed knobs - it is the one part
+        #: of levelling that leaves no trace - so unless the measurement is
+        #: remembered here, the honest answer to "is my bed level" is always
+        #: "no idea", even a minute after measuring it.
+        self.on_screws_measured: Optional[Callable[[Dict[str, Any]], None]] = None
 
     # ------------------------------------------------------------- lifecycle
     def start(self, kind: str, *, config: Any = None) -> Workflow:
@@ -550,8 +558,14 @@ class WorkflowRunner:
 
         if step.id in {"measure", "screws"} and output:
             result: ScrewsTiltResult = parse_screws_tilt(output)
-            workflow.data["screws"] = result.as_dict()
+            measurement = result.as_dict()
+            measurement["measured_at"] = time.time()
+            measurement["worst"] = result.worst.name if result.worst else ""
+            workflow.data["screws"] = measurement
             step.message = result.summary
+            if self.on_screws_measured is not None and not result.parse_failed:
+                with contextlib.suppress(Exception):
+                    self.on_screws_measured(measurement)
             # A level bed means the adjust step has nothing to do.
             if result.level:
                 for candidate in workflow.steps:

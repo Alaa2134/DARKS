@@ -232,6 +232,29 @@ class ParsedConfig:
         kinds = ("fan", "heater_fan", "controller_fan", "fan_generic", "temperature_fan")
         return [s for s in self.sections if s.kind.lower() in kinds]
 
+    def section_body(self, section: ConfigSection) -> str:
+        """The raw text of a section, header excluded.
+
+        The option parser keeps one line per key, which is right for
+        ``position_max: 330`` and useless for ``gcode:`` - a macro body is a
+        dozen indented lines and lands in ``options`` as an empty string. Any
+        question about what a macro *does* has to read the block itself.
+        """
+        lines = self.text.splitlines()
+        start = section.line  # 1-based header line; body begins after it
+        if start < 1 or start > len(lines):
+            return ""
+        end = len(lines)
+        for other in self.sections:
+            if other.line > section.line:
+                end = min(end, other.line - 1)
+        body = lines[start:end]
+        # Klipper's own SAVE_CONFIG block is not part of anybody's macro.
+        cut = next((i for i, line in enumerate(body) if line.startswith("#*#")), None)
+        if cut is not None:
+            body = body[:cut]
+        return "\n".join(body)
+
     # ----------------------------------------------------------- SAVE_CONFIG
     @property
     def autosave_values(self) -> Dict[str, Dict[str, str]]:

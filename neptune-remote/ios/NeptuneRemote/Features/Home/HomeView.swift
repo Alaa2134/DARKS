@@ -12,6 +12,9 @@ struct HomeView: View {
     @State private var showingPowerOffWarning = false
     @State private var showingPreheatSheet = false
     @State private var showingMachineDetail = false
+    /// The calibration wizard the card asked to open. Held here rather than in
+    /// the card so the destination is declared outside the lazy stack.
+    @State private var openingWorkflow: String?
 
     private var snapshot: PrinterSnapshot { printer.snapshot }
 
@@ -46,6 +49,17 @@ struct HomeView: View {
                 // Anything that needs attention, worst first. Empty when the
                 // printer is fine, so stale warnings clear themselves.
                 ConditionList()
+
+                // Whether the bed is actually calibrated - screws, Z offset,
+                // mesh - with a tap straight into each wizard.
+                //
+                // On the home screen and not behind More > Health, because
+                // "is my printer calibrated" is a question you have before you
+                // print, not one you go looking for a menu to answer. The card
+                // is absent entirely when everything is done.
+                if !(snapshot.isActive) {
+                    CalibrationCard { openingWorkflow = $0 }
+                }
 
                 // What the telemetry says, which the camera and Klipper both
                 // miss: a clog forming as a slow drift in layer time, the
@@ -142,9 +156,16 @@ struct HomeView: View {
             await printer.refreshNow()
             await printer.refreshPower()
             await printer.refreshBackendHealth()
+            await calibration.loadStatus()
+        }
+        .navigationDestination(item: $openingWorkflow) { kind in
+            WorkflowView(kind: kind)
         }
         .task {
             await printer.refreshBackendHealth()
+            // Reads printer.cfg through the backend, so it costs a Moonraker
+            // round trip - once when the screen appears, not on every poll.
+            await calibration.loadStatus()
         }
         .sheet(isPresented: $showingPreheatSheet) {
             PreheatSheet()

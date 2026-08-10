@@ -20,6 +20,11 @@ final class CalibrationStore: ObservableObject {
     /// installs one.
     @Published private(set) var macros: MacroSuggestions?
     @Published private(set) var isLoadingMacros = false
+    /// Whether the bed is actually calibrated, from the live printer.cfg.
+    ///
+    /// nil until asked, and nil again on failure - the home screen shows
+    /// nothing rather than claiming a printer it cannot read is fine.
+    @Published private(set) var status: CalibrationStatus?
 
     @Published private(set) var isLoading = false
     @Published private(set) var isGenerating = false
@@ -174,6 +179,19 @@ final class CalibrationStore: ObservableObject {
         }
     }
 
+    /// Refreshes the calibration status.
+    ///
+    /// Quiet on failure. This drives a card on the home screen, and a printer
+    /// that is briefly unreachable must not put an error banner over the
+    /// dashboard - the card simply is not there.
+    func loadStatus() async {
+        guard !settings.demoMode else {
+            status = Self.demoStatus
+            return
+        }
+        status = try? await printer.backend.calibrationStatus()
+    }
+
     /// Applies the measured Z correction.
     ///
     /// Goes through the printer's safety engine like every other command, and
@@ -186,6 +204,29 @@ final class CalibrationStore: ObservableObject {
     }
 
     func clearFirstLayer() { firstLayer = nil }
+
+    static let demoStatus = CalibrationStatus(
+        items: [
+            CalibrationItem(
+                id: "screws_tilt", state: "unknown", ok: false,
+                title: "استواء السرير من المسامير",
+                detail: "لسه ماتقاسش من التطبيق."
+            ),
+            CalibrationItem(
+                id: "z_offset", state: "done", ok: true,
+                title: "مسافة الفوهة عن السرير (Z offset)",
+                detail: "معايَرة ومحفوظة: 1.802 مم.", value: 1.802
+            ),
+            CalibrationItem(
+                id: "bed_mesh", state: "done", ok: true,
+                title: "خريطة السرير (Bed mesh)",
+                detail: "محفوظة: default."
+            )
+        ],
+        allDone: false,
+        nextID: "screws_tilt",
+        nextTitle: "استواء السرير من المسامير"
+    )
 }
 
 // MARK: - Demo data

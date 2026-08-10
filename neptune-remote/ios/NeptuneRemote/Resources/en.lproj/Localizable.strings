@@ -1506,3 +1506,10 @@
 "colors.macro.open" = "Generate it from your printer.cfg";
 "colors.waiting.title" = "The printer is waiting for a colour change";
 "colors.waiting.body" = "The nozzle is parked and lifted clear of the part. Pull the old spool out, push the new one in until the colour comes out clean, then press Resume. The printer will wait until you do.";
+
+/* MARK: - Calibration status card
+   The home-screen card that says whether the bed is calibrated. */
+"calibration.card.title" = "Bed calibration";
+"calibration.card.start_with" = "Start with:";
+"calibration.card.next" = "Start here";
+"calibration.card.order" = "The order is not arbitrary: a mesh measured over a tilted bed records the tilt, and levelling afterwards throws it away. Screws first, then the Z offset, then the mesh.";

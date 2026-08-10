@@ -14,6 +14,7 @@ from pydantic import BaseModel, Field
 from ..deps import get_state
 from ..klipper import patterns
 from ..vision import firstlayer
+from ..klipper.calibration_status import build_status as build_calibration_status
 from ..klipper.macros import suggest as suggest_macros_for
 from ..klipper.validator import NEPTUNE_3_PLUS, diff_configs, validate
 from ..safety.engine import SafetyBlocked
@@ -262,6 +263,27 @@ async def suggest_macros(state: AppState = Depends(get_state)) -> Dict[str, Any]
             detail=state.live_config_error or "printer.cfg unavailable",
         )
     return suggest_macros_for(config)
+
+
+@router.get("/calibration/status")
+async def calibration_status(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """Whether this printer is actually calibrated, and what to do first.
+
+    The wizards for all three of these have existed for a while. What did not
+    exist was an answer to the question people actually have - "is my printer
+    calibrated?" - which meant the only way to find out was to open each wizard
+    and run it.
+
+    Read from the live printer.cfg, plus the last bed screw measurement, which
+    is the one part of levelling the config records nothing about.
+    """
+    config = await state.refresh_live_config()
+    if config is None:
+        raise HTTPException(
+            status_code=503,
+            detail=state.live_config_error or "printer.cfg unavailable",
+        )
+    return build_calibration_status(config, state.last_screws_measurement())
 
 
 @router.get("/calibration/tests")

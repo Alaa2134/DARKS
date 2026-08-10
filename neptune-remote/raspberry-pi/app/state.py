@@ -88,6 +88,7 @@ TARGET_REACHED_TOLERANCE = 2.0
 STATE_KEY_TOTAL_HOURS = "printer.total_print_hours"
 STATE_KEY_TOTAL_PRINTS = "printer.total_prints"
 STATE_KEY_TOTAL_FILAMENT = "printer.total_filament_grams"
+STATE_KEY_LAST_SCREWS = "calibration.last_screws"
 
 
 class AppState:
@@ -151,6 +152,10 @@ class AppState:
         self.workflows = WorkflowRunner(
             self.safety, self.moonraker, context_factory=self.safety_context
         )
+        # printer.cfg records nothing about whether the bed knobs were ever
+        # turned, so the measurement is kept here or the answer to "is my bed
+        # level" is permanently "no idea".
+        self.workflows.on_screws_measured = self._remember_screws_measurement
         #: Parsed live printer.cfg, refreshed on demand and cached.
         self.live_config: Optional[ParsedConfig] = None
         self.live_config_text: str = ""
@@ -593,6 +598,15 @@ class AppState:
                 "long" if calibration.percent_off > 0 else "short",
                 calibration.samples,
             )
+
+    # ---------------------------------------------------------- calibration
+    def _remember_screws_measurement(self, measurement: Dict[str, Any]) -> None:
+        with contextlib.suppress(Exception):
+            self.db.set_state(STATE_KEY_LAST_SCREWS, measurement)
+
+    def last_screws_measurement(self) -> Optional[Dict[str, Any]]:
+        value = self.db.get_state(STATE_KEY_LAST_SCREWS)
+        return value if isinstance(value, dict) else None
 
     async def _ensure_extra_objects(self) -> None:
         """Ask Klipper once what else it has worth polling.

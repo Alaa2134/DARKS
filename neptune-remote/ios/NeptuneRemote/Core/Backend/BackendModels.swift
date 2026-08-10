@@ -720,6 +720,99 @@ struct BackendPrinterEvent: Decodable, Identifiable, Equatable {
     let filename: String
 }
 
+// MARK: - Calibration status
+
+/// One thing on this printer that either is or is not calibrated.
+///
+/// The app has had wizards for all three of these for a while. What it did not
+/// have was an answer to the question people actually ask, which is not "how do
+/// I calibrate" but "is my printer calibrated" - and finding out meant opening
+/// each wizard and running it.
+struct CalibrationItem: Decodable, Equatable, Identifiable {
+    /// Matches the workflow kind, so tapping a row opens the right wizard with
+    /// no second mapping table to drift out of step.
+    let id: String
+    /// done | missing | unknown | not_applicable
+    ///
+    /// "unknown" is its own state. A bed whose screws have never been measured
+    /// is not level and is not un-level, and claiming either would be inventing
+    /// something the printer never said.
+    let state: String
+    let ok: Bool
+    let title: String
+    let detail: String
+    /// Trouble beyond the headline - most importantly a saved mesh that nothing
+    /// loads, which reads as calibrated and never reaches the nozzle.
+    let warnings: [String]
+    let value: Double?
+    let measuredAt: Double?
+
+    enum CodingKeys: String, CodingKey {
+        case id, state, ok, value
+        case title = "title_ar"
+        case detail = "detail_ar"
+        case warnings = "warnings_ar"
+        case measuredAt = "measured_at"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        state = try container.decodeIfPresent(String.self, forKey: .state) ?? "unknown"
+        ok = try container.decodeIfPresent(Bool.self, forKey: .ok) ?? false
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        detail = try container.decodeIfPresent(String.self, forKey: .detail) ?? ""
+        warnings = try container.decodeIfPresent([String].self, forKey: .warnings) ?? []
+        value = try container.decodeIfPresent(Double.self, forKey: .value)
+        measuredAt = try container.decodeIfPresent(Double.self, forKey: .measuredAt)
+    }
+
+    init(id: String, state: String, ok: Bool, title: String, detail: String,
+         warnings: [String] = [], value: Double? = nil, measuredAt: Double? = nil) {
+        self.id = id
+        self.state = state
+        self.ok = ok
+        self.title = title
+        self.detail = detail
+        self.warnings = warnings
+        self.value = value
+        self.measuredAt = measuredAt
+    }
+}
+
+struct CalibrationStatus: Decodable, Equatable {
+    let items: [CalibrationItem]
+    let allDone: Bool
+    /// What to do first. One answer rather than a list: somebody unsure whether
+    /// their printer is calibrated is not helped by three choices.
+    let nextID: String?
+    let nextTitle: String
+
+    static let empty = CalibrationStatus(items: [], allDone: true, nextID: nil, nextTitle: "")
+
+    enum CodingKeys: String, CodingKey {
+        case items
+        case allDone = "all_done"
+        case nextID = "next_id"
+        case nextTitle = "next_title_ar"
+    }
+
+    init(items: [CalibrationItem], allDone: Bool, nextID: String?, nextTitle: String) {
+        self.items = items
+        self.allDone = allDone
+        self.nextID = nextID
+        self.nextTitle = nextTitle
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        items = try container.decodeIfPresent([CalibrationItem].self, forKey: .items) ?? []
+        allDone = try container.decodeIfPresent(Bool.self, forKey: .allDone) ?? true
+        nextID = try container.decodeIfPresent(String.self, forKey: .nextID)
+        nextTitle = try container.decodeIfPresent(String.self, forKey: .nextTitle) ?? ""
+    }
+}
+
 // MARK: - Generated macros
 
 /// One macro the backend built from the live printer.cfg, with its reasoning.

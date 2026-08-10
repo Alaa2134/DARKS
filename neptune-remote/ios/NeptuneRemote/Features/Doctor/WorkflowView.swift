@@ -11,6 +11,11 @@ struct WorkflowView: View {
 
     @EnvironmentObject private var doctor: DoctorStore
     @EnvironmentObject private var printer: PrinterStore
+    /// So the home screen's calibration card reflects what just happened. A
+    /// SAVE_CONFIG at the end of a wizard rewrites printer.cfg, and the card is
+    /// read from printer.cfg - without this it keeps saying "not calibrated"
+    /// after you have just calibrated it.
+    @EnvironmentObject private var calibration: CalibrationStore
     @Environment(\.dismiss) private var dismiss
 
     @State private var showingCancelConfirm = false
@@ -41,6 +46,9 @@ struct WorkflowView: View {
             .padding(Theme.spacing)
         }
         .background(Theme.pageFill)
+        .onChange(of: run?.finished ?? false) { _, finished in
+            if finished { Task { await calibration.loadStatus() } }
+        }
         .navigationTitle(run?.title ?? L.t("workflow.\(kind)"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
