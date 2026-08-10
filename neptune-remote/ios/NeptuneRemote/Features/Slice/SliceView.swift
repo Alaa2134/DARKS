@@ -69,12 +69,26 @@ struct SliceView: View {
             await slicing.loadProfiles()
             await files.loadModels()
         }
-        .fileImporter(
-            isPresented: $showingImporter,
-            allowedContentTypes: modelTypes,
-            allowsMultipleSelection: false
-        ) { result in
-            handleImport(result)
+        // A UIKit picker in a sheet, not .fileImporter - the same fix the
+        // library screen already carries, which this screen never got.
+        //
+        // .fileImporter binds its completion to the view that presented it,
+        // and this view is rebuilt every second by the printer status refresh.
+        // When the rebuild happens while the picker is open the callback goes
+        // with it: the file is selected, Open does nothing, and there is no
+        // error anywhere. DocumentPicker keeps its delegate on a coordinator
+        // UIKit retains, so a redraw behind the picker cannot detach it.
+        .sheet(isPresented: $showingImporter) {
+            DocumentPicker(
+                contentTypes: modelTypes,
+                allowsMultipleSelection: false,
+                onPick: { urls in
+                    showingImporter = false
+                    handleImport(.success(urls))
+                },
+                onCancel: { showingImporter = false }
+            )
+            .ignoresSafeArea()
         }
         .sheet(isPresented: $showingResult) {
             if let job = slicing.job {
@@ -620,6 +634,12 @@ struct SliceView: View {
     }
 
     private func handleImport(_ result: Result<[URL], Error>) {
+        // A failure used to be discarded by the pattern match, so a picker
+        // that errored looked exactly like one that was cancelled.
+        if case .failure(let error) = result {
+            files.lastError = APIError.from(error, host: settings.host)
+            return
+        }
         guard case .success(let urls) = result, let url = urls.first else { return }
         Task {
             if let model = await files.upload(modelURL: url) {

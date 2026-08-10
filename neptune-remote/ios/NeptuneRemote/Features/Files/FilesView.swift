@@ -50,21 +50,29 @@ struct FilesView: View {
         }
         .task { await reload() }
         .refreshable { await reload() }
-        .fileImporter(
-            isPresented: $showingImporter,
-            allowedContentTypes: importTypes,
-            allowsMultipleSelection: false
-        ) { result in
-            guard case .success(let urls) = result, let url = urls.first else { return }
-            Task {
-                let ext = url.pathExtension.lowercased()
-                if ["gcode", "gco", "g"].contains(ext) {
-                    _ = await files.upload(gcodeURL: url)
-                    await files.loadGCodes()
-                } else {
-                    _ = await files.upload(modelURL: url)
-                }
-            }
+        // Same picker as the other two screens, for the same reason: this view
+        // is rebuilt on every status refresh, and .fileImporter loses its
+        // callback when that happens while the picker is open.
+        .sheet(isPresented: $showingImporter) {
+            DocumentPicker(
+                contentTypes: importTypes,
+                allowsMultipleSelection: false,
+                onPick: { urls in
+                    showingImporter = false
+                    guard let url = urls.first else { return }
+                    Task {
+                        let ext = url.pathExtension.lowercased()
+                        if ["gcode", "gco", "g"].contains(ext) {
+                            _ = await files.upload(gcodeURL: url)
+                            await files.loadGCodes()
+                        } else {
+                            _ = await files.upload(modelURL: url)
+                        }
+                    }
+                },
+                onCancel: { showingImporter = false }
+            )
+            .ignoresSafeArea()
         }
         .sheet(isPresented: $showingShare) {
             if let shareURL { ShareSheet(items: [shareURL]) }
