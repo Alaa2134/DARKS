@@ -51,7 +51,11 @@ struct GCodeShortcut: Codable, Identifiable, Equatable, Hashable {
     /// command" is the same class of mistake as a print that dies on a macro
     /// nobody installed, just smaller.
     var requiredObject: String? {
-        switch command.split(separator: " ").first.map(String.init)?.uppercased() {
+        // Non-optional before the switch: matching a bare string literal
+        // against an Optional works, but it is the kind of subtlety that only
+        // shows up at compile time on somebody else's machine.
+        let head = String(command.split(separator: " ").first ?? "").uppercased()
+        switch head {
         case "BED_MESH_CALIBRATE": return "bed_mesh"
         case "SCREWS_TILT_CALCULATE": return "screws_tilt_adjust"
         case "QUAD_GANTRY_LEVEL": return "quad_gantry_level"
