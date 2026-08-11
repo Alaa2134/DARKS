@@ -192,6 +192,31 @@ final class PresetTests: XCTestCase {
         XCTAssertFalse(commands.contains("M112"))
     }
 
+    func testMachineSpecificShortcutsDeclareWhatTheyNeed() {
+        // Klipper only defines these commands when the matching section is in
+        // printer.cfg, so a shortcut strip that shows them unconditionally is
+        // offering "Unknown command" as a button.
+        let byCommand = Dictionary(
+            uniqueKeysWithValues: GCodeShortcut.predefined.map { ($0.command, $0) }
+        )
+        XCTAssertEqual(byCommand["QUAD_GANTRY_LEVEL"]?.requiredObject, "quad_gantry_level")
+        XCTAssertEqual(byCommand["SCREWS_TILT_CALCULATE"]?.requiredObject, "screws_tilt_adjust")
+        XCTAssertEqual(byCommand["BED_MESH_CALIBRATE"]?.requiredObject, "bed_mesh")
+        XCTAssertEqual(byCommand["Z_TILT_ADJUST"]?.requiredObject, "z_tilt")
+    }
+
+    func testUniversalShortcutsRequireNothing() {
+        // G28 and friends exist on every Klipper machine; gating them on a
+        // config section would hide the whole strip on a printer that simply
+        // has not finished reporting its objects yet.
+        let byCommand = Dictionary(
+            uniqueKeysWithValues: GCodeShortcut.predefined.map { ($0.command, $0) }
+        )
+        for command in ["G28", "G28 X", "M84", "M107", "TURN_OFF_HEATERS", "SAVE_CONFIG"] {
+            XCTAssertNil(byCommand[command]?.requiredObject, command)
+        }
+    }
+
     func testTemperaturePresetCodable() throws {
         let preset = TemperaturePreset(name: "Test", nozzle: 230, bed: 70)
         let decoded = try JSONDecoder().decode(

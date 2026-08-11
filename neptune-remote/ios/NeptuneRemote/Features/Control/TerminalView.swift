@@ -51,8 +51,13 @@ struct TerminalView: View {
                 ForEach(settings.gcodeFavourites) { shortcut in
                     shortcutChip(shortcut.command, isFavourite: true)
                 }
+                // Only the ones this machine actually has. QUAD_GANTRY_LEVEL
+                // does not exist on a bed-slinger and SCREWS_TILT_CALCULATE
+                // does not exist without [screws_tilt_adjust]; both answered
+                // "Unknown command" from a button that looked like every other
+                // button on the strip.
                 ForEach(GCodeShortcut.predefined) { shortcut in
-                    if !settings.isFavourite(shortcut.command) {
+                    if !settings.isFavourite(shortcut.command), supported(shortcut) {
                         shortcutChip(shortcut.command, isFavourite: false)
                     }
                 }
@@ -60,6 +65,18 @@ struct TerminalView: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
+    }
+
+    /// A command with no required object is always offered; one with a
+    /// requirement is offered only once the printer has reported it.
+    ///
+    /// Unknown capabilities mean "show it": before discovery finishes the
+    /// object list is empty, and hiding the whole strip until then would be a
+    /// worse lie than showing one button that might not apply.
+    private func supported(_ shortcut: GCodeShortcut) -> Bool {
+        guard let required = shortcut.requiredObject else { return true }
+        guard !printer.capabilities.objects.isEmpty else { return true }
+        return printer.capabilities.has(required)
     }
 
     private func shortcutChip(_ text: String, isFavourite: Bool) -> some View {

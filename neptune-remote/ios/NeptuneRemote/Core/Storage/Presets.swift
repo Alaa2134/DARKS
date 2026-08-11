@@ -42,7 +42,28 @@ struct GCodeShortcut: Codable, Identifiable, Equatable, Hashable {
         self.isFavourite = isFavourite
     }
 
+    /// The Klipper object a command needs before it exists at all.
+    ///
+    /// Klipper only defines BED_MESH_CALIBRATE when there is a `[bed_mesh]`
+    /// section, SCREWS_TILT_CALCULATE when there is `[screws_tilt_adjust]`, and
+    /// QUAD_GANTRY_LEVEL when there is `[quad_gantry_level]` - which a
+    /// bed-slinger never has. Offering a one-tap button that answers "Unknown
+    /// command" is the same class of mistake as a print that dies on a macro
+    /// nobody installed, just smaller.
+    var requiredObject: String? {
+        switch command.split(separator: " ").first.map(String.init)?.uppercased() {
+        case "BED_MESH_CALIBRATE": return "bed_mesh"
+        case "SCREWS_TILT_CALCULATE": return "screws_tilt_adjust"
+        case "QUAD_GANTRY_LEVEL": return "quad_gantry_level"
+        case "Z_TILT_ADJUST": return "z_tilt"
+        default: return nil
+        }
+    }
+
     /// Commands that are safe to expose as one-tap buttons on a Klipper machine.
+    ///
+    /// Not all of them apply to every machine - see `requiredObject`, and the
+    /// filtering in the terminal that uses it.
     static let predefined: [GCodeShortcut] = [
         GCodeShortcut(command: "G28", label: "Home all"),
         GCodeShortcut(command: "G28 X", label: "Home X"),
@@ -55,6 +76,7 @@ struct GCodeShortcut: Codable, Identifiable, Equatable, Hashable {
         GCodeShortcut(command: "BED_MESH_CALIBRATE", label: "Bed mesh calibrate"),
         GCodeShortcut(command: "SAVE_CONFIG", label: "Save config (restarts Klipper)"),
         GCodeShortcut(command: "QUAD_GANTRY_LEVEL", label: "Quad gantry level"),
+        GCodeShortcut(command: "Z_TILT_ADJUST", label: "Z tilt adjust"),
         GCodeShortcut(command: "SCREWS_TILT_CALCULATE", label: "Screws tilt calculate"),
         GCodeShortcut(command: "M115", label: "Firmware info"),
         GCodeShortcut(command: "STATUS", label: "Klipper status")
