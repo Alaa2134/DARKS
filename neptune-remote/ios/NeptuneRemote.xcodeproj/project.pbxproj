@@ -90,6 +90,7 @@
 		EA228AAAD34C613804980625 /* FixMyPrinterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FixMyPrinterView.swift"; sourceTree = "<group>"; };
 		15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GCodeInspectorView.swift"; sourceTree = "<group>"; };
 		BE9AA6C94BD29B05779850F6 /* MacroSuggestionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MacroSuggestionsView.swift"; sourceTree = "<group>"; };
+		386FD2486FD82AEA98A60CF5 /* ProbeCheckView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ProbeCheckView.swift"; sourceTree = "<group>"; };
 		A542E2A4CD878A6C9B34661E /* WorkflowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "WorkflowView.swift"; sourceTree = "<group>"; };
 		706AC3C3C3FDDDD172CC63B1 /* FilesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "FilesView.swift"; sourceTree = "<group>"; };
 		28A66B8EC5BB6C14F4353868 /* GCodeDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GCodeDetailView.swift"; sourceTree = "<group>"; };
@@ -362,6 +363,7 @@
 				EA228AAAD34C613804980625 /* FixMyPrinterView.swift */,
 				15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */,
 				BE9AA6C94BD29B05779850F6 /* MacroSuggestionsView.swift */,
+				386FD2486FD82AEA98A60CF5 /* ProbeCheckView.swift */,
 				A542E2A4CD878A6C9B34661E /* WorkflowView.swift */,
 			);
 			path = "Doctor";
@@ -681,6 +683,7 @@
 		EC00700C1125CBE6BD723BC2 /* FixMyPrinterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA228AAAD34C613804980625 /* FixMyPrinterView.swift */; };
 		ED89E2B28A2D8E37991C4768 /* GCodeInspectorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15EF99C018472B2DC9D5EAAB /* GCodeInspectorView.swift */; };
 		5E62E483E01404A3DF5A9960 /* MacroSuggestionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE9AA6C94BD29B05779850F6 /* MacroSuggestionsView.swift */; };
+		2AFA3ED00E9422BA6D95E5B5 /* ProbeCheckView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 386FD2486FD82AEA98A60CF5 /* ProbeCheckView.swift */; };
 		EF51A7E201473034CD98AF8D /* WorkflowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A542E2A4CD878A6C9B34661E /* WorkflowView.swift */; };
 		CD0FE67E15D87BA7B8F4AFF8 /* FilesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706AC3C3C3FDDDD172CC63B1 /* FilesView.swift */; };
 		D0F532A925A85B001A24B619 /* GCodeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28A66B8EC5BB6C14F4353868 /* GCodeDetailView.swift */; };
@@ -837,6 +840,7 @@
 				EC00700C1125CBE6BD723BC2 /* FixMyPrinterView.swift in Sources */,
 				ED89E2B28A2D8E37991C4768 /* GCodeInspectorView.swift in Sources */,
 				5E62E483E01404A3DF5A9960 /* MacroSuggestionsView.swift in Sources */,
+				2AFA3ED00E9422BA6D95E5B5 /* ProbeCheckView.swift in Sources */,
 				EF51A7E201473034CD98AF8D /* WorkflowView.swift in Sources */,
 				CD0FE67E15D87BA7B8F4AFF8 /* FilesView.swift in Sources */,
 				D0F532A925A85B001A24B619 /* GCodeDetailView.swift in Sources */,

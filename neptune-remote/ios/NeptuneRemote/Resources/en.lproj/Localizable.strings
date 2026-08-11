@@ -1513,3 +1513,32 @@
 "calibration.card.start_with" = "Start with:";
 "calibration.card.next" = "Start here";
 "calibration.card.order" = "The order is not arbitrary: a mesh measured over a tilted bed records the tilt, and levelling afterwards throws it away. Screws first, then the Z offset, then the mesh.";
+
+/* Cool down, then eject - the wait is the feature */
+"eject.cool_then_eject" = "Cool down, then eject";
+"eject.waiting.title" = "Waiting for the printer to cool";
+"eject.waiting.note" = "Heaters are off. The part is swept off on its own as soon as the bed is cold enough - you can walk away.";
+"eject.waiting.cancel" = "Stop waiting";
+"eject.cooling_rate" = "Cooling at %.1f° per minute";
+
+/* MARK: - Probe check
+   Why the probe is not working - four faults, told apart by two readings. */
+"probe.title" = "Probe check";
+"probe.intro" = "\"The probe doesn't work\" is four different faults, and Klipper reports all of them the same way: homing failed. Two readings tell them apart - what the probe says untouched, and what it says with something against it.";
+"probe.wiring.title" = "Wiring and polarity";
+"probe.wiring.explain" = "Leave the probe untouched with nothing in front of it, then press the button. Nothing moves - this only reads the sensor.";
+"probe.read_at_rest" = "Read it untouched";
+"probe.press_hint" = "Now hold a piece of metal against the sensor (an inductive probe will not see a finger), keep it there, and press the second button.";
+"probe.read_pressed" = "Read it pressed";
+"probe.accuracy.title" = "Repeatability";
+"probe.accuracy.explain" = "A probe can work perfectly and still not measure the same spot twice. PROBE_ACCURACY drops it ten times in one place and reports the spread - and that spread is what decides the right samples_tolerance, rather than a guess.";
+"probe.accuracy.run" = "Measure repeatability";
+"probe.accuracy.needs_home" = "Home the printer first - this test moves Z.";
+"probe.accuracy.range" = "Spread between highest and lowest";
+"probe.accuracy.deviation" = "Standard deviation";
+"probe.accuracy.median" = "Median";
+"probe.suggested_change" = "Suggested printer.cfg change";
+"probe.copy" = "Copy the change";
+"probe.apply_yourself" = "The app never writes printer.cfg on its own. Copy this in by hand, then FIRMWARE_RESTART.";
+"probe.subtitle" = "Homing failing? Start here - it separates four different faults.";
+"eject.blocked.heaters_on" = "The heaters are still on - it will not cool";

@@ -104,6 +104,61 @@ final class DoctorStore: ObservableObject {
         }
     }
 
+    // MARK: - Probe
+
+    /// The last wiring reading, and the last repeatability measurement.
+    ///
+    /// Kept apart because they answer different questions: the first is "is the
+    /// probe connected and the right way round", the second is "does it fire in
+    /// the same place twice". A probe can pass one and fail the other, and the
+    /// fixes have nothing to do with each other.
+    @Published private(set) var probeWiring: ProbeDiagnosis?
+    @Published private(set) var probeAccuracy: ProbeDiagnosis?
+    @Published private(set) var isCheckingProbe = false
+
+    /// Reads the probe. `pressed` is the second half of the test, taken while
+    /// something is held against the sensor.
+    ///
+    /// Nothing moves and nothing heats - it only reads a pin - so there is no
+    /// confirmation and no safety gate to pass.
+    func checkProbeWiring(pressed: Bool) async {
+        guard !settings.demoMode else {
+            lastMessage = L.t("demo.action.ignored")
+            return
+        }
+        isCheckingProbe = true
+        defer { isCheckingProbe = false }
+        do {
+            probeWiring = try await printer.backend.diagnoseProbe(pressed: pressed)
+            lastError = nil
+            Haptics.impact(.light)
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            Haptics.error()
+        }
+    }
+
+    /// Measures repeatability with PROBE_ACCURACY.
+    ///
+    /// This one does move: it drops the toolhead onto the bed ten times, so it
+    /// needs the printer homed first and it takes the better part of a minute.
+    func measureProbeAccuracy() async {
+        guard !settings.demoMode else {
+            lastMessage = L.t("demo.action.ignored")
+            return
+        }
+        isCheckingProbe = true
+        defer { isCheckingProbe = false }
+        do {
+            probeAccuracy = try await printer.backend.probeAccuracy()
+            lastError = nil
+            Haptics.success()
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            Haptics.error()
+        }
+    }
+
     @discardableResult
     func startWorkflow(_ kind: String) async -> Bool {
         guard !settings.demoMode else {

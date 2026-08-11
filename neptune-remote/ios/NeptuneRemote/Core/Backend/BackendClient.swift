@@ -196,6 +196,47 @@ actor BackendClient {
     /// Macros generated from the live printer.cfg. Read-only: the backend
     /// returns text and its reasoning, and installing it stays the user's own
     /// deliberate act.
+    // MARK: - Cool down, then eject
+
+    func ejectState() async throws -> EjectState {
+        try await http.decode(EjectState.self, from: try request("printer/eject"))
+    }
+
+    func armEject() async throws -> EjectState {
+        try await http.decode(
+            EjectState.self,
+            from: try request("printer/eject/arm", method: "POST", timeout: 30)
+        )
+    }
+
+    func cancelEjectArm() async throws {
+        _ = try await http.data(try request("printer/eject/arm", method: "DELETE"))
+    }
+
+    // MARK: - Probe
+
+    /// One half of the probe wiring test. Call once untouched, then again with
+    /// `pressed: true` while something is held against the probe.
+    func diagnoseProbe(pressed: Bool) async throws -> ProbeDiagnosis {
+        try await http.decode(
+            ProbeDiagnosis.self,
+            from: try request(
+                "doctor/probe/diagnose",
+                method: "POST",
+                query: [URLQueryItem(name: "pressed", value: pressed ? "true" : "false")],
+                timeout: 30
+            )
+        )
+    }
+
+    /// Measures repeatability. Moves Z, and needs the printer homed.
+    func probeAccuracy() async throws -> ProbeDiagnosis {
+        try await http.decode(
+            ProbeDiagnosis.self,
+            from: try request("doctor/probe/accuracy", method: "POST", timeout: 120)
+        )
+    }
+
     /// Whether this printer is actually calibrated, read from its own config.
     func calibrationStatus() async throws -> CalibrationStatus {
         try await http.decode(

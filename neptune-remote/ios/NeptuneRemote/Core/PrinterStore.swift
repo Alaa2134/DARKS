@@ -373,6 +373,7 @@ final class PrinterStore: ObservableObject {
         let previous = snapshot
         snapshot = new
         recordTemperature(new)
+        trackCooling(new)
         detectEvents(previous: previous, current: new)
         SharedStore.save(widgetSnapshot(from: new))
     }
@@ -711,6 +712,75 @@ final class PrinterStore: ObservableObject {
     /// Runs a macro Klipper reported. Nothing is invented: the name came from
     /// `[gcode_macro ...]` in the user's own config.
     @discardableResult
+    // MARK: - Cool down, then eject
+
+    /// The Pi's own answer about whether a sweep is armed and what is in the way.
+    ///
+    /// Deliberately not decided here. iOS suspends an app within seconds of it
+    /// leaving the screen, so a wait implemented on the phone only completes
+    /// while somebody is watching it - which is the one case where nobody
+    /// needed the feature. The Pi is already awake and polling once a second,
+    /// so it holds the arm and fires the macro; this is a view of that.
+    @Published private(set) var ejectState: EjectState = .idle
+    /// Bed degrees per minute, measured here from the temperatures already
+    /// streaming in. Display only - nothing is decided from it.
+    @Published private(set) var bedCoolingRate: Double?
+
+    private var coolingSamples: [(at: Date, bed: Double)] = []
+
+    /// How long until the bed is cold enough, from how fast it is actually
+    /// cooling. nil when it is already cold, or not cooling in any useful way:
+    /// an invented number would be worse than none, because the point of arming
+    /// is that the person walks away and trusts the app to call them.
+    var ejectWaitEstimate: TimeInterval? {
+        let remaining = snapshot.bedActual - ejectState.maxBedC
+        guard remaining > 0, let rate = bedCoolingRate, rate > 0.2 else { return nil }
+        return remaining / rate * 60
+    }
+
+    func refreshEjectState() async {
+        guard !settings.demoMode else { return }
+        guard let fresh = try? await backend.ejectState() else { return }
+        ejectState = fresh
+    }
+
+    /// Turns the heaters off on the printer and asks it to sweep once cold.
+    @discardableResult
+    func armEject() async -> Bool {
+        guard !settings.demoMode else { return false }
+        do {
+            ejectState = try await backend.armEject()
+            coolingSamples.removeAll()
+            bedCoolingRate = nil
+            Haptics.impact(.medium)
+            return true
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            Haptics.error()
+            return false
+        }
+    }
+
+    func cancelEjectArm() async {
+        guard !settings.demoMode else { return }
+        try? await backend.cancelEjectArm()
+        await refreshEjectState()
+    }
+
+    private func trackCooling(_ value: PrinterSnapshot) {
+        guard value.isOnline else { return }
+        let now = Date()
+        coolingSamples.append((at: now, bed: value.bedActual))
+        // Two minutes of history: long enough for a rate that is not noise,
+        // short enough to follow a curve that flattens as it nears the room.
+        coolingSamples.removeAll { now.timeIntervalSince($0.at) > 120 }
+
+        guard let first = coolingSamples.first, let last = coolingSamples.last else { return }
+        let minutes = last.at.timeIntervalSince(first.at) / 60
+        guard minutes > 0.4 else { return }
+        bedCoolingRate = (first.bed - last.bed) / minutes
+    }
+
     func runMacro(_ macro: PrinterCapabilities.MacroSpec, arguments: String = "") async -> Bool {
         let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
         let command = trimmed.isEmpty ? macro.name : "\(macro.name) \(trimmed)"

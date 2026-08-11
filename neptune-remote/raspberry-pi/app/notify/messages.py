@@ -161,6 +161,18 @@ TEMPLATES: Dict[str, Template] = {
         tags=("shield",),
     ),
     # ---- print lifecycle ---------------------------------------------------
+    "part_ejected": Template(
+        ar="القطعة اتزقت من على السرير",
+        en="The part was swept off the bed",
+        priority=Priority.DEFAULT,
+        tags=("white_check_mark", "package"),
+    ),
+    "eject_failed": Template(
+        ar="مقدرتش أزق القطعة",
+        en="Could not sweep the part off",
+        priority=Priority.HIGH,
+        tags=("warning",),
+    ),
     "print_started": Template(
         ar="بدأت الطباعة",
         en="Print started",

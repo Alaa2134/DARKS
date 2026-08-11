@@ -15,8 +15,14 @@ from ..deps import get_state
 from ..klipper import patterns
 from ..vision import firstlayer
 from ..klipper.calibration_status import build_status as build_calibration_status
+from ..klipper.probe_check import (
+    diagnose_accuracy as diagnose_probe_accuracy,
+    diagnose_wiring as diagnose_probe_wiring,
+    parse_probe_accuracy,
+)
 from ..klipper.macros import suggest as suggest_macros_for
 from ..klipper.validator import NEPTUNE_3_PLUS, diff_configs, validate
+from ..moonraker import MoonrakerError
 from ..safety.engine import SafetyBlocked
 from ..schemas import OKResponse
 from ..security import require_token
@@ -58,6 +64,70 @@ async def probe_query(state: AppState = Depends(get_state)) -> Dict[str, Any]:
             else "Could not read the probe"
         ),
     }
+
+
+@router.post("/doctor/probe/diagnose")
+async def probe_diagnose(
+    pressed: bool = False,
+    state: AppState = Depends(get_state),
+) -> Dict[str, Any]:
+    """Why the probe is not working, from what it actually reads.
+
+    Called twice: once with the probe untouched, then again with `pressed=true`
+    while the user holds something against it. Two readings separate four faults
+    that Klipper reports identically as "homing failed" - a probe stuck on, a
+    probe that never fires, an inverted pin, and one that is simply fine.
+
+    Read-only. Nothing moves, nothing heats, and the config change it suggests
+    is text for the user to apply.
+    """
+    reading = await state.query_probe()
+    config = await state.refresh_live_config()
+    probe_pin = ""
+    if config is not None:
+        section = config.probe_section
+        probe_pin = (section.get("pin") or "") if section else ""
+
+    if pressed:
+        # The first reading is remembered so the pair can be judged together;
+        # asking for it again would mean asking the user to let go.
+        result = diagnose_probe_wiring(state.probe_at_rest, reading, probe_pin=probe_pin)
+    else:
+        state.probe_at_rest = reading
+        result = diagnose_probe_wiring(reading, None, probe_pin=probe_pin)
+
+    return result.to_dict()
+
+
+@router.post("/doctor/probe/accuracy")
+async def probe_accuracy(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """Measure how repeatable the probe is, and what tolerance it can meet.
+
+    PROBE_ACCURACY drops the probe ten times in one spot. Its range is the thing
+    `samples_tolerance` has to live with, so this is the one honest way to pick
+    that number - and picking it without measuring is how this printer ended up
+    unable to home at all.
+
+    Moves Z, so it goes through the safety engine like every other command, and
+    it needs the printer homed first.
+    """
+    try:
+        output = await state.moonraker.run_gcode_and_collect(
+            "PROBE_ACCURACY", settle=1.0, count=120
+        )
+    except MoonrakerError as exc:
+        raise HTTPException(status_code=502, detail=exc.message) from exc
+
+    measurement = parse_probe_accuracy(output)
+    configured: Optional[float] = None
+    config = await state.refresh_live_config()
+    if config is not None and config.probe_section is not None:
+        configured = config.probe_section.get_float("samples_tolerance")
+
+    result = diagnose_probe_accuracy(measurement, configured)
+    payload = result.to_dict()
+    payload["raw"] = output[-2000:]
+    return payload
 
 
 @router.post("/doctor/endstops/query")

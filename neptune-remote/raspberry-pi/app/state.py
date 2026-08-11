@@ -35,6 +35,7 @@ from .hub import EventHub
 from .knowledge import translate_error
 from .doctor.engine import DiagnosticInput, DiagnosticsEngine
 from .doctor.workflows import WorkflowRunner
+from .eject import DEFAULT_MIN_EXTRUDE_C, MAX_BED_C, EjectWaiter
 from .gcode.validator import GCodeReport, analyse_gcode
 from .klipper.model import ParsedConfig, parse_config
 from .klipper.store import ConfigStore
@@ -163,8 +164,17 @@ class AppState:
         self.live_config_fetched_at: float = 0.0
         #: Probe / endstop readings, only ever set from a real query.
         self.probe_triggered: Optional[bool] = None
+        #: The probe's reading with nothing touching it, kept between the two
+        #: halves of the wiring test. Asking for it again during the second half
+        #: would mean asking the user to let go of the probe.
+        self.probe_at_rest: Optional[bool] = None
         self.endstop_states: Dict[str, str] = {}
         self.calibration_session: Optional[str] = None
+        # Waits for the printer to cool and then sweeps the part off. On the Pi
+        # rather than in the phone: iOS suspends an app seconds after it leaves
+        # the screen, so a wait implemented there only works while somebody is
+        # watching it - which is the one case where nobody needed it.
+        self.eject = EjectWaiter()
         self.testz_total_down: float = 0.0
         self._last_status_at: float = 0.0
 
@@ -482,6 +492,9 @@ class AppState:
 
         # ---- automatic power off --------------------------------------------
         await self._check_auto_power_off(status)
+
+        # ---- sweep the finished part off, once it is cold enough ------------
+        await self._check_armed_eject(status)
 
     # ----------------------------------------------------------- prediction
     async def apply_estimate(self, status: PrinterStatusResponse) -> None:
@@ -1210,6 +1223,78 @@ class AppState:
                 log.exception("Power poll failed")
             with contextlib.suppress(asyncio.TimeoutError):
                 await asyncio.wait_for(self._stopping.wait(), timeout=POWER_POLL_SECONDS)
+
+    # ------------------------------------------------------------- ejection
+    async def arm_eject(self) -> Dict[str, Any]:
+        """Turn the heaters off and wait for the printer to cool, then sweep.
+
+        Refused outright when the macro is not installed: arming a wait for
+        something that will end in "Unknown command" is worse than saying no,
+        because the answer arrives twenty minutes later when nobody is looking.
+        """
+        config = await self.refresh_live_config()
+        if config is None or not self._has_eject_macro(config):
+            raise ValueError(
+                "مفيش ماكرو EJECT_PART في printer.cfg. ركّبه الأول من شاشة الماكروهات."
+            )
+
+        extruder = config.section("extruder")
+        max_nozzle = DEFAULT_MIN_EXTRUDE_C
+        if extruder is not None:
+            max_nozzle = extruder.get_float("min_extrude_temp") or DEFAULT_MIN_EXTRUDE_C
+
+        # Nothing cools while a target is held, and after a cancelled print one
+        # usually is. This is the difference between a wait and a wait forever.
+        with contextlib.suppress(Exception):
+            await self.safety.execute("TURN_OFF_HEATERS", self.safety_context())
+
+        self.eject.start(max_nozzle_c=max_nozzle)
+        log.info("Eject armed; waiting for bed under %.0fC", MAX_BED_C)
+        return self.eject_status()
+
+    def eject_status(self) -> Dict[str, Any]:
+        config = self.live_config
+        return self.eject.to_dict(
+            self.last_status,
+            macro_installed=bool(config and self._has_eject_macro(config)),
+        )
+
+    @staticmethod
+    def _has_eject_macro(config: ParsedConfig) -> bool:
+        return any(
+            section.label.upper() == "EJECT_PART"
+            for section in config.sections_of_kind("gcode_macro")
+        )
+
+    async def _check_armed_eject(self, status: PrinterStatusResponse) -> None:
+        """Fire the sweep the moment this reading says it is safe.
+
+        Driven by the status poll rather than a timer, so the decision is always
+        made against a real temperature and never against an elapsed guess.
+        """
+        if not self.eject.should_fire(status):
+            return
+        try:
+            # force=True acknowledges warnings only - a block still blocks, and
+            # every reason this could be blocked was already checked against
+            # this same reading a moment ago.
+            await self.safety.execute("EJECT_PART", self.safety_context(), force=True)
+        except Exception as exc:                             # noqa: BLE001
+            message = getattr(exc, "message", None) or str(exc)
+            self.eject.record_fired(False, message)
+            log.error("Armed eject failed: %s", message)
+            await self._emit_event(
+                "eject_failed", "مقدرتش أزق القطعة", message, status.filename
+            )
+            return
+
+        self.eject.record_fired(True)
+        await self._emit_event(
+            "part_ejected",
+            "القطعة اتزقت",
+            "الطابعة بردت والقطعة اتزقت من على السرير. السرير فاضي للطبعة اللي بعدها.",
+            status.filename,
+        )
 
     async def _check_auto_power_off(self, status: PrinterStatusResponse) -> None:
         settings = self.config.auto_power_off

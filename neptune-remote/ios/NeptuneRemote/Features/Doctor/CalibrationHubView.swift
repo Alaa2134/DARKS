@@ -43,6 +43,32 @@ struct CalibrationHubView: View {
                     ProgressView().padding(.vertical, 60)
                 }
 
+                // Before any of the wizards above, because every one of them
+                // starts with G28 and every one of them fails the same way when
+                // the probe is the problem: "homing failed", with no clue which
+                // of four faults it was.
+                NavigationLink {
+                    ProbeCheckView()
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "sensor.tag.radiowaves.forward")
+                            .foregroundStyle(Theme.accent)
+                            .frame(width: 26)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(localized: "probe.title")
+                                .font(.subheadline.weight(.medium))
+                            Text(localized: "probe.subtitle")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.forward").font(.caption).foregroundStyle(.secondary)
+                    }
+                    .card()
+                }
+                .buttonStyle(.plain)
+
                 // Everything above is about the bed. These are about what the
                 // plastic looks like - flow, pressure advance, temperature -
                 // which nothing in this app measured before.

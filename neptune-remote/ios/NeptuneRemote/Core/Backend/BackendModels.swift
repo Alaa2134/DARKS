@@ -720,6 +720,141 @@ struct BackendPrinterEvent: Decodable, Identifiable, Equatable {
     let filename: String
 }
 
+/// Whether the printer is waiting to cool before sweeping the part off.
+///
+/// The wait is held by the Pi, not by the phone. `blockers` is the same list
+/// the backend decides on, not a parallel one computed here - a countdown that
+/// disagreed with the thing actually holding the toolhead would be worse than
+/// no countdown at all.
+struct EjectState: Decodable, Equatable {
+    let armed: Bool
+    let armedAt: Double?
+    /// Whether EJECT_PART is really in printer.cfg. Without it there is nothing
+    /// to arm, and the card says so instead of offering a button.
+    let macroInstalled: Bool
+    let maxBedC: Double
+    let maxNozzleC: Double
+    let blockers: [String]
+    /// ejected | cancelled | timeout | failed - what happened to the last arm,
+    /// which the person was probably not watching.
+    let lastOutcome: String
+    let lastMessage: String
+    let lastAt: Double?
+
+    static let idle = EjectState(
+        armed: false, armedAt: nil, macroInstalled: false,
+        maxBedC: 40, maxNozzleC: 170, blockers: [],
+        lastOutcome: "", lastMessage: "", lastAt: nil
+    )
+
+    enum CodingKeys: String, CodingKey {
+        case armed, blockers
+        case armedAt = "armed_at"
+        case macroInstalled = "macro_installed"
+        case maxBedC = "max_bed_c"
+        case maxNozzleC = "max_nozzle_c"
+        case lastOutcome = "last_outcome"
+        case lastMessage = "last_message"
+        case lastAt = "last_at"
+    }
+
+    init(armed: Bool, armedAt: Double?, macroInstalled: Bool, maxBedC: Double,
+         maxNozzleC: Double, blockers: [String], lastOutcome: String,
+         lastMessage: String, lastAt: Double?) {
+        self.armed = armed
+        self.armedAt = armedAt
+        self.macroInstalled = macroInstalled
+        self.maxBedC = maxBedC
+        self.maxNozzleC = maxNozzleC
+        self.blockers = blockers
+        self.lastOutcome = lastOutcome
+        self.lastMessage = lastMessage
+        self.lastAt = lastAt
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        armed = try container.decodeIfPresent(Bool.self, forKey: .armed) ?? false
+        armedAt = try container.decodeIfPresent(Double.self, forKey: .armedAt)
+        macroInstalled = try container.decodeIfPresent(Bool.self, forKey: .macroInstalled) ?? false
+        maxBedC = try container.decodeIfPresent(Double.self, forKey: .maxBedC) ?? 40
+        maxNozzleC = try container.decodeIfPresent(Double.self, forKey: .maxNozzleC) ?? 170
+        blockers = try container.decodeIfPresent([String].self, forKey: .blockers) ?? []
+        lastOutcome = try container.decodeIfPresent(String.self, forKey: .lastOutcome) ?? ""
+        lastMessage = try container.decodeIfPresent(String.self, forKey: .lastMessage) ?? ""
+        lastAt = try container.decodeIfPresent(Double.self, forKey: .lastAt)
+    }
+}
+
+// MARK: - Probe diagnosis
+
+/// How repeatable the probe is, from PROBE_ACCURACY.
+struct ProbeAccuracy: Decodable, Equatable {
+    let maximum: Double
+    let minimum: Double
+    let range: Double
+    let average: Double
+    let median: Double
+    let deviation: Double
+    /// good | loose | mechanical
+    let verdict: String
+    /// A samples_tolerance this probe can actually meet.
+    let recommendedTolerance: Double
+
+    enum CodingKeys: String, CodingKey {
+        case maximum, minimum, range, average, median, deviation, verdict
+        case recommendedTolerance = "recommended_tolerance"
+    }
+}
+
+/// What the probe is doing and why.
+///
+/// "The probe doesn't work" is four faults with four fixes, and Klipper reports
+/// them all as a failed home. Two readings - untouched, then pressed - are what
+/// tell them apart.
+struct ProbeDiagnosis: Decodable, Equatable {
+    /// working | stuck | dead | inverted | unreadable | unrepeatable
+    let fault: String
+    let ok: Bool
+    let title: String
+    let detail: String
+    let fixes: [String]
+    let atRest: Bool?
+    let pressed: Bool?
+    let accuracy: ProbeAccuracy?
+    /// A printer.cfg change to make, as section -> option -> value. Text only:
+    /// this app never writes printer.cfg on its own.
+    let suggestedConfig: [String: [String: String]]
+
+    /// Whether the second half of the wiring test has been done.
+    var isComplete: Bool { pressed != nil || fault != "working" }
+
+    enum CodingKeys: String, CodingKey {
+        case fault, ok, accuracy
+        case title = "title_ar"
+        case detail = "detail_ar"
+        case fixes = "fixes_ar"
+        case atRest = "at_rest"
+        case pressed
+        case suggestedConfig = "suggested_config"
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        fault = try container.decodeIfPresent(String.self, forKey: .fault) ?? "unreadable"
+        ok = try container.decodeIfPresent(Bool.self, forKey: .ok) ?? false
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        detail = try container.decodeIfPresent(String.self, forKey: .detail) ?? ""
+        fixes = try container.decodeIfPresent([String].self, forKey: .fixes) ?? []
+        atRest = try container.decodeIfPresent(Bool.self, forKey: .atRest)
+        pressed = try container.decodeIfPresent(Bool.self, forKey: .pressed)
+        accuracy = try container.decodeIfPresent(ProbeAccuracy.self, forKey: .accuracy)
+        suggestedConfig = try container.decodeIfPresent(
+            [String: [String: String]].self, forKey: .suggestedConfig
+        ) ?? [:]
+    }
+}
+
 // MARK: - Calibration status
 
 /// One thing on this printer that either is or is not calibrated.

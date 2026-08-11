@@ -185,3 +185,35 @@ async def printer_events(limit: int = 50, state: AppState = Depends(get_state)) 
     """Recent discrete events, for clients that reconnect after being suspended."""
     events = state.events[-max(1, min(limit, 200)) :]
     return {"events": [event.model_dump() for event in events]}
+
+
+# --------------------------------------------------------------------------- #
+# Cool down, then eject
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/printer/eject")
+async def eject_state(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """Whether a sweep is armed, and what is still standing in the way."""
+    return state.eject_status()
+
+
+@router.post("/printer/eject/arm")
+async def eject_arm(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """Turn the heaters off and sweep the part off once the bed is cold.
+
+    The waiting is the point. Adhesion is thermal, so the part only lets go as
+    the bed cools - and the app used to grey the button out and leave the
+    person to turn the heaters off elsewhere, guess how long, and come back.
+    """
+    try:
+        return await state.arm_eject()
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+
+
+@router.delete("/printer/eject/arm", response_model=OKResponse)
+async def eject_cancel(state: AppState = Depends(get_state)) -> OKResponse:
+    if not state.eject.cancel():
+        raise HTTPException(status_code=409, detail="مفيش انتظار شغال")
+    return OKResponse(ok=True, message="الانتظار اتلغى")

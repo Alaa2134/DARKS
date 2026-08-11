@@ -1512,3 +1512,32 @@
 "calibration.card.start_with" = "ابدأ بـ:";
 "calibration.card.next" = "ابدأ من هنا";
 "calibration.card.order" = "الترتيب ده مش عشوائي: الميش اللي بيتاخد فوق سرير مايل بيسجّل الميلان نفسه، ولو ظبطت المسامير بعده بيبقى ملغي. المسامير الأول، بعدين الـ Z offset، بعدين الميش.";
+
+/* Cool down, then eject - the wait is the feature */
+"eject.cool_then_eject" = "برّد وازق لوحده";
+"eject.waiting.title" = "مستني الطابعة تبرد";
+"eject.waiting.note" = "السخانات اتقفلت. أول ما السرير يبرد كفاية، القطعة هتتزق لوحدها من غير ما تعمل حاجة. تقدر تمشي.";
+"eject.waiting.cancel" = "بطّل الانتظار";
+"eject.cooling_rate" = "بيبرد بمعدل %.1f° في الدقيقة";
+
+/* MARK: - Probe check
+   ليه البروب مش شغال - أربع أعطال بتتفرق بقرايتين. */
+"probe.title" = "فحص البروب";
+"probe.intro" = "«البروب مش شغال» دي أربع أعطال مختلفة، وKlipper بيقول عليهم كلهم نفس الحاجة: الـ homing فشل. القرايتين اللي تحت بيفرقوا بينهم: البروب بيقول إيه وهو مش بيلمس حاجة، وبيقول إيه وانت بتلمسه.";
+"probe.wiring.title" = "التوصيل والقطبية";
+"probe.wiring.explain" = "متلمسش البروب ولا تحط حاجة قدامه، وبعدين اضغط الزرار. مفيش أي حركة هتحصل - بنقرا الحساس بس.";
+"probe.read_at_rest" = "اقرا وهو مستريح";
+"probe.press_hint" = "دلوقتي قرّب لوح معدن من الحساس (لو استقرائي مش هيحس بصباعك)، وسيبه قدامه، واضغط الزرار التاني وانت ماسكه.";
+"probe.read_pressed" = "اقرا وانت بتلمسه";
+"probe.accuracy.title" = "تكرارية القياس";
+"probe.accuracy.explain" = "الحساس ممكن يشتغل صح بس ميقيسش نفس المكان مرتين. PROBE_ACCURACY بينزّل البروب ١٠ مرات في نفس النقطة ويقولك الفرق بينهم - والفرق ده هو اللي بيحدد قيمة samples_tolerance المناسبة، مش تخمين.";
+"probe.accuracy.run" = "قيس التكرارية";
+"probe.accuracy.needs_home" = "لازم تعمل Home الأول - الاختبار ده بيحرّك المحور Z.";
+"probe.accuracy.range" = "الفرق بين أعلى وأقل قراءة";
+"probe.accuracy.deviation" = "الانحراف المعياري";
+"probe.accuracy.median" = "الوسيط";
+"probe.suggested_change" = "التعديل المقترح على printer.cfg";
+"probe.copy" = "انسخ التعديل";
+"probe.apply_yourself" = "التطبيق مش بيكتب في printer.cfg من نفسه. انسخ ده وحطه بإيدك، وبعدين FIRMWARE_RESTART.";
+"probe.subtitle" = "الـ homing بيفشل؟ ابدأ من هنا - بيفرق بين أربع أعطال مختلفة.";
+"eject.blocked.heaters_on" = "السخانات لسه شغالة - مش هيبرد كده";
