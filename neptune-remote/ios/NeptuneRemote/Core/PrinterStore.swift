@@ -374,6 +374,7 @@ final class PrinterStore: ObservableObject {
         snapshot = new
         recordTemperature(new)
         trackCooling(new)
+        refreshEjectStateIfItShouldHaveFired(new)
         detectEvents(previous: previous, current: new)
         SharedStore.save(widgetSnapshot(from: new))
     }
@@ -707,11 +708,6 @@ final class PrinterStore: ObservableObject {
         }
     }
 
-    // MARK: - Macros
-
-    /// Runs a macro Klipper reported. Nothing is invented: the name came from
-    /// `[gcode_macro ...]` in the user's own config.
-    @discardableResult
     // MARK: - Cool down, then eject
 
     /// The Pi's own answer about whether a sweep is armed and what is in the way.
@@ -767,6 +763,25 @@ final class PrinterStore: ObservableObject {
         await refreshEjectState()
     }
 
+    /// Ask the Pi again once this reading says the sweep should have run.
+    ///
+    /// The arm lives on the Pi, so the phone finds out it fired by asking. It
+    /// asks when the temperatures say the moment has arrived rather than on a
+    /// timer, and at most once every few seconds - a card that sat there saying
+    /// "waiting" over a bed that swept its part off ten minutes ago is the
+    /// failure this exists to avoid.
+    private func refreshEjectStateIfItShouldHaveFired(_ value: PrinterSnapshot) {
+        guard ejectState.armed, value.isOnline else { return }
+        guard value.bedActual <= ejectState.maxBedC,
+              value.nozzleActual <= ejectState.maxNozzleC else { return }
+        let now = Date()
+        guard now.timeIntervalSince(lastEjectPoll) > 4 else { return }
+        lastEjectPoll = now
+        Task { await refreshEjectState() }
+    }
+
+    private var lastEjectPoll = Date.distantPast
+
     private func trackCooling(_ value: PrinterSnapshot) {
         guard value.isOnline else { return }
         let now = Date()
@@ -781,6 +796,11 @@ final class PrinterStore: ObservableObject {
         bedCoolingRate = (first.bed - last.bed) / minutes
     }
 
+    // MARK: - Macros
+
+    /// Runs a macro Klipper reported. Nothing is invented: the name came from
+    /// `[gcode_macro ...]` in the user's own config.
+    @discardableResult
     func runMacro(_ macro: PrinterCapabilities.MacroSpec, arguments: String = "") async -> Bool {
         let trimmed = arguments.trimmingCharacters(in: .whitespacesAndNewlines)
         let command = trimmed.isEmpty ? macro.name : "\(macro.name) \(trimmed)"
