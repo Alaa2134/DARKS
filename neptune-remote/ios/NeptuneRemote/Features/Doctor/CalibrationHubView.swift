@@ -36,7 +36,12 @@ struct CalibrationHubView: View {
                         card(option)
                     }
                     .buttonStyle(.plain)
-                    .disabled(doctor.workflow.map { !$0.finished } ?? false)
+                    // Unavailable means the machine genuinely cannot run it -
+                    // the wizard's first command is one Klipper never defined
+                    // on this printer. The row stays visible with its reason,
+                    // because hiding it leaves someone hunting the menu for
+                    // something that was never possible here.
+                    .disabled(!option.available || (doctor.workflow.map { !$0.finished } ?? false))
                 }
 
                 if options.isEmpty {
@@ -155,9 +160,9 @@ struct CalibrationHubView: View {
 
     private func card(_ option: WorkflowOption) -> some View {
         HStack(spacing: 14) {
-            Image(systemName: option.icon)
+            Image(systemName: option.available ? option.icon : "slash.circle")
                 .font(.title3)
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(option.available ? Theme.accent : .secondary)
                 .frame(width: 30)
             VStack(alignment: .leading, spacing: 3) {
                 Text(localized: option.titleKey)
@@ -166,11 +171,25 @@ struct CalibrationHubView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+
+                // The reason, in the row, rather than a greyed-out button that
+                // says nothing. This is the difference between "the app is
+                // broken" and "my printer does not have that part".
+                ForEach(option.blockers, id: \.self) { blocker in
+                    Label(blocker, systemImage: "info.circle")
+                        .font(.caption2)
+                        .foregroundStyle(Theme.paused)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.top, 2)
+                }
             }
             Spacer(minLength: 0)
-            Image(systemName: "chevron.forward").font(.caption).foregroundStyle(.secondary)
+            if option.available {
+                Image(systemName: "chevron.forward").font(.caption).foregroundStyle(.secondary)
+            }
         }
         .card()
+        .opacity(option.available ? 1 : 0.65)
     }
 }
 

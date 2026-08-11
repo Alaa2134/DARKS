@@ -193,11 +193,15 @@ class WorkflowStartRequest(BaseModel):
 
 @router.get("/doctor/workflows")
 async def list_workflows(state: AppState = Depends(get_state)) -> Dict[str, Any]:
-    from ..doctor.workflows import WORKFLOW_TITLES
+    from ..doctor.workflows import describe as describe_workflows
 
+    # The live config decides which of these the machine can actually run. A
+    # wizard whose first step is a command Klipper never defined answers
+    # "Unknown command", which from the outside looks like a broken app.
+    config = await state.refresh_live_config()
     active = state.workflows.active
     return {
-        "available": [{"kind": k, "title": v} for k, v in WORKFLOW_TITLES.items()],
+        "available": describe_workflows(config),
         "active": active.as_dict() if active is not None else None,
     }
 

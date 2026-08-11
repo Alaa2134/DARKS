@@ -352,6 +352,59 @@ WORKFLOW_TITLES = {
 }
 
 
+#: The printer.cfg section each workflow cannot run without, and why.
+#:
+#: Every one of these workflows opens by sending a command that Klipper only
+#: defines when the matching section exists. Offering the Input Shaper wizard on
+#: a machine with no accelerometer means its first step answers "Unknown
+#: command: ACCELEROMETER_QUERY" - which reads, from the outside, exactly like
+#: the app being broken.
+WORKFLOW_REQUIREMENTS: Dict[str, tuple] = {
+    "z_offset": (
+        ("probe", "bltouch", "smart_effector", "eddy_current", "scanner"),
+        "مفيش بروب في printer.cfg، فمفيش Z offset يتعاير أوتوماتيك.",
+    ),
+    "screws_tilt": (
+        ("screws_tilt_adjust",),
+        "مفيش قسم [screws_tilt_adjust]، فمفيش قياس أوتوماتيك للمسامير.",
+    ),
+    "bed_mesh": (("bed_mesh",), "مفيش قسم [bed_mesh] في printer.cfg."),
+    "full_bed_calibration": (("bed_mesh",), "مفيش قسم [bed_mesh] في printer.cfg."),
+    "input_shaper": (
+        ("adxl345", "lis2dw", "mpu9250"),
+        "مفيش أكسيليروميتر (ADXL345 مثلاً) متوصل ومكتوب في printer.cfg. "
+        "من غيره مفيش حاجة تقيس الاهتزاز.",
+    ),
+    "safe_home": (("safe_z_home",), "مفيش قسم [safe_z_home]."),
+}
+
+
+def describe(config: Any = None) -> List[Dict[str, Any]]:
+    """Every workflow, and whether this printer can actually run it.
+
+    A workflow with an unmet requirement is still listed - hiding it would leave
+    someone hunting a menu for something that is simply not possible on their
+    machine - but it comes back with the reason attached.
+    """
+    entries: List[Dict[str, Any]] = []
+    for kind, title in WORKFLOW_TITLES.items():
+        blockers: List[str] = []
+        requirement = WORKFLOW_REQUIREMENTS.get(kind)
+        if requirement is not None and config is not None:
+            sections, reason = requirement
+            if not any(config.has(name) for name in sections):
+                blockers.append(reason)
+        entries.append(
+            {
+                "kind": kind,
+                "title": title,
+                "available": not blockers,
+                "blockers": blockers,
+            }
+        )
+    return entries
+
+
 # --------------------------------------------------------------------------- #
 # Runner
 # --------------------------------------------------------------------------- #

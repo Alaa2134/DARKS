@@ -260,12 +260,44 @@ struct WorkflowData: Decodable, Equatable {
 struct WorkflowOption: Decodable, Identifiable, Equatable, Hashable {
     let kind: String
     let title: String
+    /// Whether this machine can run it at all.
+    ///
+    /// Every wizard opens with a command Klipper only defines when a matching
+    /// printer.cfg section exists. The Input Shaper one starts with
+    /// ACCELEROMETER_QUERY, so on a printer with no accelerometer it answers
+    /// "Unknown command" - which from the outside is indistinguishable from
+    /// the app being broken.
+    let available: Bool
+    /// Why not, when it is not. Shown rather than hidden: hiding it leaves
+    /// someone hunting a menu for something their machine cannot do.
+    let blockers: [String]
 
     var id: String { kind }
 
     var icon: String { DoctorCatalog.icon(forWorkflow: kind) }
     var titleKey: String { "workflow.\(kind)" }
     var descriptionKey: String { "workflow.\(kind).description" }
+
+    enum CodingKeys: String, CodingKey {
+        case kind, title, available, blockers
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        kind = try container.decode(String.self, forKey: .kind)
+        title = try container.decodeIfPresent(String.self, forKey: .title) ?? ""
+        // A backend that predates the check reports neither field, and the
+        // honest reading of that is "no reason to think it cannot run".
+        available = try container.decodeIfPresent(Bool.self, forKey: .available) ?? true
+        blockers = try container.decodeIfPresent([String].self, forKey: .blockers) ?? []
+    }
+
+    init(kind: String, title: String, available: Bool = true, blockers: [String] = []) {
+        self.kind = kind
+        self.title = title
+        self.available = available
+        self.blockers = blockers
+    }
 }
 
 // MARK: - Bed screws
