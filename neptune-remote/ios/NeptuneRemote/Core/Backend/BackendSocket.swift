@@ -80,23 +80,28 @@ final class BackendSocket {
         if shouldReconnect { restart() }
     }
 
+    /// Opens the socket if one is not already open or on its way.
+    ///
+    /// Idempotent for the same reason the Moonraker socket is: this is called
+    /// from `reconfigure()`, which runs behind every settings change, and
+    /// reopening each time left the previous connection established at both
+    /// ends with nothing reading it.
     func connect() {
         shouldReconnect = true
+        guard task == nil, reconnectTask == nil else { return }
         open()
     }
 
     func disconnect() {
         shouldReconnect = false
         cancelTasks()
-        task?.cancel(with: .goingAway, reason: nil)
-        task = nil
+        closeSocket()
         isConnected = false
     }
 
     func restart() {
         cancelTasks()
-        task?.cancel(with: .goingAway, reason: nil)
-        task = nil
+        closeSocket()
         reconnectAttempt = 0
         if shouldReconnect { open() }
     }
@@ -108,8 +113,16 @@ final class BackendSocket {
         reconnectTask = nil
     }
 
+    /// Closes the socket rather than dropping the reference to it. URLSession
+    /// keeps a task alive until it completes or is cancelled.
+    private func closeSocket() {
+        task?.cancel(with: .goingAway, reason: nil)
+        task = nil
+    }
+
     private func open() {
         cancelTasks()
+        closeSocket()
         guard let url = config.backendWebSocketURL else { return }
 
         var request = URLRequest(url: url)
@@ -168,6 +181,9 @@ final class BackendSocket {
                 }
             } catch {
                 if Task.isCancelled { return }
+                // A socket that has already been replaced dying is not news, and
+                // acting on it here would tear down its healthy successor.
+                guard task === socket else { return }
                 isConnected = false
 
                 // A rejected token closes the socket cleanly with code 4401, so

@@ -20,6 +20,13 @@ final class PrinterStore: ObservableObject {
     @Published private(set) var temperatureHistory: [TemperatureSample] = []
     @Published private(set) var console: [ConsoleLine] = []
 
+    /// Whether the numbers on screen are old enough to stop presenting as live.
+    ///
+    /// Republished from the poll tick rather than computed in the views:
+    /// staleness is the one property that becomes true because *nothing*
+    /// happened, and a SwiftUI view has no reason to redraw for that.
+    @Published private(set) var isSnapshotStale = false
+
     @Published private(set) var moonrakerConnected = false
     @Published private(set) var backendConnected = false
 
@@ -297,6 +304,10 @@ final class PrinterStore: ObservableObject {
                 if !self.moonrakerConnected {
                     await self.refreshNow()
                 }
+                // Checked on the tick, because a reading goes stale by nothing
+                // arriving - there is no event to hang it off.
+                let stale = self.snapshot.isStale
+                if stale != self.isSnapshotStale { self.isSnapshotStale = stale }
                 try? await Task.sleep(nanoseconds: 4_000_000_000)
             }
         }

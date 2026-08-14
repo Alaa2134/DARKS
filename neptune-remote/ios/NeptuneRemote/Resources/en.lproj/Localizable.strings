@@ -19,6 +19,7 @@
 "status.online" = "Online";
 "status.offline" = "Offline";
 "status.connected" = "Connected";
+"status.stale" = "These numbers are old - last reading %@ ago. Nothing is arriving from the printer right now.";
 "status.disconnected" = "Disconnected";
 "status.ok" = "OK";
 "status.failed" = "Failed";

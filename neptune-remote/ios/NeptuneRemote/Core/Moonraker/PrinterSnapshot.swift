@@ -75,6 +75,27 @@ struct PrinterSnapshot: Equatable {
     var isActive: Bool { state.isActive }
     var isReady: Bool { klippy == .ready }
 
+    /// How long ago this reading arrived.
+    var age: TimeInterval { Date().timeIntervalSince(lastUpdate) }
+
+    /// Beyond this, a reading is history rather than telemetry.
+    ///
+    /// The socket pushes on change and the poll runs every four seconds, so a
+    /// gap this long means neither is getting through.
+    static let staleAfter: TimeInterval = 20
+
+    /// Whether these numbers are old enough that showing them as live would be
+    /// a lie.
+    ///
+    /// `lastUpdate` was being stamped in six places and read in none, so when
+    /// the connection dropped the app kept displaying the last temperatures it
+    /// had - indefinitely, and indistinguishably from live ones. A bed reading
+    /// three minutes old looks exactly like a bed reading one second old, and
+    /// the difference is whether it is safe to reach into the machine.
+    var isStale: Bool {
+        lastUpdate != .distantPast && age > Self.staleAfter
+    }
+
     var isHot: Bool { nozzleActual > 40 || bedActual > 35 }
 
     var hasHomedAll: Bool {

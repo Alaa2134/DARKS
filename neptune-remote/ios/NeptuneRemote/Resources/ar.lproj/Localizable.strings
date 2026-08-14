@@ -19,6 +19,7 @@
 "status.online" = "متصلة";
 "status.offline" = "غير متصلة";
 "status.connected" = "متصل";
+"status.stale" = "الأرقام دي قديمة — آخر قراءة من %@. الطابعة مش بتبعت حاجة دلوقتي.";
 "status.disconnected" = "غير متصل";
 "status.ok" = "سليم";
 "status.failed" = "فشل";

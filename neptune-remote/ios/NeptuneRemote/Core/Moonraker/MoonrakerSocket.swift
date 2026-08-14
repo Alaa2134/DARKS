@@ -65,23 +65,32 @@ final class MoonrakerSocket {
         }
     }
 
+    /// Opens the socket if one is not already open or on its way.
+    ///
+    /// Idempotent on purpose. `PrinterStore.reconfigure()` runs behind every
+    /// settings change - and there is one behind every jog step, every toggle,
+    /// every slider - and it calls this each time. When this method reopened
+    /// unconditionally, each of those taps left the previous socket connected
+    /// and unread: Moonraker held a client slot and kept pushing status into a
+    /// connection nothing was listening to, one more for every interaction.
     func connect() {
         shouldReconnect = true
+        // A pending reconnect counts as "on its way" - opening alongside it
+        // would produce exactly the pair of sockets this guard exists to stop.
+        guard task == nil, reconnectTask == nil else { return }
         openConnection()
     }
 
     func disconnect() {
         shouldReconnect = false
         cancelTasks()
-        task?.cancel(with: .goingAway, reason: nil)
-        task = nil
+        closeSocket()
         state = .idle
     }
 
     func restart() {
         cancelTasks()
-        task?.cancel(with: .goingAway, reason: nil)
-        task = nil
+        closeSocket()
         reconnectAttempt = 0
         if shouldReconnect { openConnection() }
     }
@@ -95,6 +104,16 @@ final class MoonrakerSocket {
         pingTask = nil
     }
 
+    /// Closes the socket rather than dropping the reference to it.
+    ///
+    /// URLSession keeps a task alive until it completes or is cancelled, so
+    /// simply overwriting `task` left the old connection established at both
+    /// ends with nobody reading it.
+    private func closeSocket() {
+        task?.cancel(with: .goingAway, reason: nil)
+        task = nil
+    }
+
     /// Index into `config.moonrakerWebSocketURLCandidates`. A socket that never
     /// reaches `connected` advances this, so a missing or misconfigured nginx
     /// vhost falls through to Moonraker's own port instead of retrying a dead
@@ -104,8 +123,15 @@ final class MoonrakerSocket {
     /// The endpoint the current attempt is using, for diagnostics.
     private(set) var activeURL: URL?
 
+    /// True once this attempt has reported a failure, so a socket that fails on
+    /// both the read side and the ping side is only counted once - otherwise the
+    /// candidate index advances twice and a working endpoint gets skipped.
+    private var hasFailedThisAttempt = false
+
     private func openConnection() {
         cancelTasks()
+        closeSocket()
+        hasFailedThisAttempt = false
         let candidates = config.moonrakerWebSocketURLCandidates
         guard !candidates.isEmpty else {
             state = .failed(L.t("error.invalid_url"))
@@ -242,6 +268,9 @@ final class MoonrakerSocket {
                 }
             } catch {
                 if Task.isCancelled { return }
+                // A socket that has already been replaced dying is not news, and
+                // acting on it here would tear down its healthy successor.
+                guard task === socket else { return }
                 handleFailure(error)
                 return
             }
@@ -303,6 +332,11 @@ final class MoonrakerSocket {
     // MARK: - Failure handling
 
     private func handleFailure(_ error: Error) {
+        // Both the receive loop and the ping timer report the same dead socket,
+        // and the first one to arrive is the one that counts.
+        guard !hasFailedThisAttempt else { return }
+        hasFailedThisAttempt = true
+
         // A socket that never got a single frame through was pointed at the
         // wrong endpoint; try the next candidate. One that had been connected
         // stays where it is - that endpoint is known good and simply dropped.
@@ -312,8 +346,12 @@ final class MoonrakerSocket {
         let message = APIError.from(error, host: config.host).localizedDescription
         state = .failed(message)
         onEvent?(.disconnected(message))
-        task?.cancel(with: .abnormalClosure, reason: nil)
-        task = nil
+        // The heartbeat belongs to the socket that just died. Left running, it
+        // would keep firing every twenty seconds against a nil task for as long
+        // as the reconnect backoff lasts.
+        pingTask?.cancel()
+        pingTask = nil
+        closeSocket()
         scheduleReconnect()
     }
 

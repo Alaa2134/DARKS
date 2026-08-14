@@ -29,6 +29,11 @@ struct PrinterFeedback: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            // Staleness goes at the top and cannot be dismissed, because it is a
+            // condition rather than an event: while it is true, every number
+            // below it is history. The bottom banners are for things that
+            // happened and are over.
+            .overlay(alignment: .top) { staleStrip }
             .overlay(alignment: .bottom) {
                 VStack(spacing: 8) {
                     if let error = printer.lastError {
@@ -75,6 +80,38 @@ struct PrinterFeedback: ViewModifier {
                 .animation(.easeOut(duration: 0.25), value: errors.latest)
                 .animation(.easeOut(duration: 0.25), value: printer.lastMessage)
             }
+    }
+
+    /// "These numbers are old." Shown whenever the last reading has aged past
+    /// the point where presenting it as live would be a lie.
+    ///
+    /// The app used to keep the last temperatures it had on screen forever after
+    /// the connection dropped, with nothing to distinguish a bed reading one
+    /// second old from one three minutes old - and the difference between those
+    /// two is whether it is safe to put your hand in the machine.
+    @ViewBuilder
+    private var staleStrip: some View {
+        if printer.isSnapshotStale {
+            HStack(spacing: 8) {
+                Image(systemName: "clock.badge.exclamationmark")
+                    .font(.caption)
+                Text(L.t("status.stale", Format.duration(printer.snapshot.age)))
+                    .font(.caption.weight(.medium))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .foregroundStyle(Theme.paused)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity)
+            .background(.regularMaterial)
+            .overlay(alignment: .bottom) {
+                Rectangle().fill(Theme.paused.opacity(0.4)).frame(height: 1)
+            }
+            .transition(.move(edge: .top).combined(with: .opacity))
+            .animation(.easeOut(duration: 0.25), value: printer.isSnapshotStale)
+            .accessibilityAddTraits(.isStaticText)
+        }
     }
 
     private func banner(
