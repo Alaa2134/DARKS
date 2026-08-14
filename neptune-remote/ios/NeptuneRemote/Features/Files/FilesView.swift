@@ -131,7 +131,10 @@ struct FilesView: View {
             }
 
             if files.isLoadingGCodes && files.gcodes.isEmpty {
-                HStack { Spacer(); ProgressView(); Spacer() }
+                // Rows the size of the rows that are coming, rather than a
+                // spinner in an empty space that says nothing about either.
+                SkeletonList(rows: 4)
+                    .transition(.opacity)
                     .listRowBackground(Color.clear)
             } else if filteredGCodes.isEmpty {
                 EmptyStateView(

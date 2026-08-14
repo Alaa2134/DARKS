@@ -1582,3 +1582,15 @@
 "placement.auto.already_best" = "الموديل بالفعل في أحسن اتجاه — سيبه زي ما هو.";
 "placement.compare.now" = "دلوقتي";
 "placement.compare.suggested" = "المقترح";
+
+
+/* Startup: which of the four waits is the slow one */
+"startup.reaching_pi" = "بوصل للراسبيري باي…";
+"startup.reaching_printer" = "بوصل لمونريكر…";
+"startup.waiting_klipper" = "مستني كليبر يجهز…";
+"startup.reading_config" = "بقرا إعدادات الطابعة…";
+"startup.ready" = "جاهز";
+"startup.offline" = "مش قادر أوصل للطابعة";
+"startup.step" = "خطوة %d من %d";
+"startup.offline.hint" = "الطابعة مش رادّة على العنوان ده. اتأكد إن كهرباء الباي شغالة، وإن Tailscale متصل على الموبايل.";
+"startup.auth.hint" = "العنوان وصل بس المفتاح مرفوض. راجع مفتاح الـAPI في الإعدادات.";

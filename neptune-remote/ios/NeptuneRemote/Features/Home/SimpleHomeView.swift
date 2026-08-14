@@ -68,9 +68,11 @@ struct SimpleHomeView: View {
         ScrollView {
             LazyVStack(spacing: Theme.spacing) {
                 if settings.demoMode { demoBanner }
-                if !printer.moonrakerConnected, !printer.backendConnected, !settings.demoMode {
-                    offlineBanner
-                }
+
+                // Replaces the old offline banner. That one could only say
+                // "not connected"; this says which of the four steps between
+                // opening the app and seeing the printer is the one stuck.
+                StartupCard()
                 stateCard
                 // Classified Klipper conditions, each with its own remedy. An
                 // unhomed axis appears here as a calm "needs Home" card rather
@@ -512,21 +514,4 @@ struct SimpleHomeView: View {
         .background(Theme.paused.opacity(0.15), in: RoundedRectangle(cornerRadius: Theme.smallCornerRadius, style: .continuous))
     }
 
-    private var offlineBanner: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "wifi.slash")
-                .foregroundStyle(Theme.danger)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(localized: "offline.title").font(.subheadline.weight(.semibold))
-                Text(localized: "offline.body").font(.caption).foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 0)
-            Button(L.t("offline.retry")) {
-                Task { await printer.refreshNow() }
-            }
-            .font(.caption.weight(.semibold))
-        }
-        .padding(12)
-        .background(Theme.danger.opacity(0.12), in: RoundedRectangle(cornerRadius: Theme.smallCornerRadius, style: .continuous))
-    }
 }

@@ -1583,3 +1583,15 @@
 "placement.auto.already_best" = "It is already the best way up - leave it alone.";
 "placement.compare.now" = "Now";
 "placement.compare.suggested" = "Suggested";
+
+
+/* Startup: which of the four waits is the slow one */
+"startup.reaching_pi" = "Reaching the Raspberry Pi…";
+"startup.reaching_printer" = "Reaching Moonraker…";
+"startup.waiting_klipper" = "Waiting for Klipper to be ready…";
+"startup.reading_config" = "Reading the printer's configuration…";
+"startup.ready" = "Ready";
+"startup.offline" = "Cannot reach the printer";
+"startup.step" = "Step %d of %d";
+"startup.offline.hint" = "Nothing is answering at this address. Check the Pi has power, and that Tailscale is connected on the phone.";
+"startup.auth.hint" = "The address answered but the key was refused. Check the API key in Settings.";

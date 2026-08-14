@@ -78,6 +78,8 @@
 		DAF5085D86C033A91BCF9067 /* OutageCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OutageCard.swift"; sourceTree = "<group>"; };
 		8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintChecklistView.swift"; sourceTree = "<group>"; };
 		9FB281C16A9C172E9CE5AACD /* PrinterFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterFeedback.swift"; sourceTree = "<group>"; };
+		15451918A1627CEC3D71BF0D /* Skeleton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Skeleton.swift"; sourceTree = "<group>"; };
+		B802387A806902841A679A3B /* StartupCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StartupCard.swift"; sourceTree = "<group>"; };
 		A75F726275E9D379775415A6 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Theme.swift"; sourceTree = "<group>"; };
 		F043F5846C70B972509C1D0B /* ControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ControlView.swift"; sourceTree = "<group>"; };
 		26EFEB7B000562E879446D60 /* JogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "JogView.swift"; sourceTree = "<group>"; };
@@ -342,6 +344,8 @@
 				DAF5085D86C033A91BCF9067 /* OutageCard.swift */,
 				8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */,
 				9FB281C16A9C172E9CE5AACD /* PrinterFeedback.swift */,
+				15451918A1627CEC3D71BF0D /* Skeleton.swift */,
+				B802387A806902841A679A3B /* StartupCard.swift */,
 				A75F726275E9D379775415A6 /* Theme.swift */,
 			);
 			path = "Common";
@@ -681,6 +685,8 @@
 		02044D9BC6A86140D57A31A7 /* OutageCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAF5085D86C033A91BCF9067 /* OutageCard.swift */; };
 		E0BEBD9BD843AD980A176AD1 /* PrintChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */; };
 		7D569945D205CF56F003C521 /* PrinterFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB281C16A9C172E9CE5AACD /* PrinterFeedback.swift */; };
+		3D77F800F1E87C48EE62457D /* Skeleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15451918A1627CEC3D71BF0D /* Skeleton.swift */; };
+		5846B2C855DF1259827A904C /* StartupCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B802387A806902841A679A3B /* StartupCard.swift */; };
 		35FCB473A4886F280BCAC397 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = A75F726275E9D379775415A6 /* Theme.swift */; };
 		2DF7C0DD8BBF48D7AFB1E93F /* ControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F043F5846C70B972509C1D0B /* ControlView.swift */; };
 		64E80F250A3F563C6F57F8EB /* JogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26EFEB7B000562E879446D60 /* JogView.swift */; };
@@ -843,6 +849,8 @@
 				02044D9BC6A86140D57A31A7 /* OutageCard.swift in Sources */,
 				E0BEBD9BD843AD980A176AD1 /* PrintChecklistView.swift in Sources */,
 				7D569945D205CF56F003C521 /* PrinterFeedback.swift in Sources */,
+				3D77F800F1E87C48EE62457D /* Skeleton.swift in Sources */,
+				5846B2C855DF1259827A904C /* StartupCard.swift in Sources */,
 				35FCB473A4886F280BCAC397 /* Theme.swift in Sources */,
 				2DF7C0DD8BBF48D7AFB1E93F /* ControlView.swift in Sources */,
 				64E80F250A3F563C6F57F8EB /* JogView.swift in Sources */,

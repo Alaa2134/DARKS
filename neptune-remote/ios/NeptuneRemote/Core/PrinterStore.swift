@@ -73,6 +73,71 @@ final class PrinterStore: ObservableObject {
         case .failed: return .disconnected
         }
     }
+    /// What the app is waiting for right now, in the order it waits for it.
+    ///
+    /// Getting from "app opened" to "printer on screen" is four separate waits
+    /// - reaching the Pi, reaching Moonraker, Klipper becoming ready, reading
+    /// printer.cfg - and any one of them can be the slow or broken one. The app
+    /// used to show the same nothing for all four, so a Pi that was off looked
+    /// exactly like a Klipper that was still starting, and both looked like an
+    /// app that had hung.
+    enum StartupStage: Equatable {
+        case reachingPi
+        case reachingPrinter
+        case waitingForKlipper
+        case readingConfig
+        case ready
+        case authenticationFailed
+        case offline
+
+        var isSettled: Bool {
+            self == .ready || self == .authenticationFailed || self == .offline
+        }
+
+        var localizationKey: String {
+            switch self {
+            case .reachingPi: return "startup.reaching_pi"
+            case .reachingPrinter: return "startup.reaching_printer"
+            case .waitingForKlipper: return "startup.waiting_klipper"
+            case .readingConfig: return "startup.reading_config"
+            case .ready: return "startup.ready"
+            case .authenticationFailed: return "connection.auth_failed"
+            case .offline: return "startup.offline"
+            }
+        }
+
+        /// The step number, for a progress bar that tracks something real
+        /// rather than an animation pretending to.
+        var step: Int {
+            switch self {
+            case .reachingPi: return 1
+            case .reachingPrinter: return 2
+            case .waitingForKlipper: return 3
+            case .readingConfig: return 4
+            case .ready: return 4
+            case .authenticationFailed, .offline: return 0
+            }
+        }
+
+        static let totalSteps = 4
+    }
+
+    var startupStage: StartupStage {
+        if settings.demoMode { return .ready }
+        if authenticationFailed { return .authenticationFailed }
+
+        // A failed socket that has stopped trying is offline, not connecting.
+        if case .failed = moonrakerSocket.state, !backendConnected { return .offline }
+
+        if !backendConnected && !moonrakerConnected { return .reachingPi }
+        if !moonrakerConnected { return .reachingPrinter }
+        if snapshot.klippy != .ready { return .waitingForKlipper }
+        // Capabilities are what every screen keys off, so the app is not
+        // actually usable until printer.cfg has been read.
+        if capabilities.discoveredAt == nil { return .readingConfig }
+        return .ready
+    }
+
     @Published private(set) var backendHealth: BackendHealth?
     @Published private(set) var power = PowerReading.unavailable
     /// True while at least one command is in flight. Buttons disable on it.

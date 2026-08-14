@@ -23,6 +23,11 @@ struct HomeView: View {
             LazyVStack(spacing: Theme.spacing) {
                 if settings.demoMode { demoBanner }
 
+                // First, because until this is done nothing below it means
+                // anything - and because "which of the four steps is stuck" is
+                // the question every other card leaves unanswered.
+                StartupCard()
+
                 // Above the printer state on purpose. If a print died while
                 // nobody was home, that is the first thing to know - and it
                 // outranks a state card that will happily read "standby",

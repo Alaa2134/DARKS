@@ -53,6 +53,11 @@ struct StatTile: View {
             Text(value)
                 .font(.title3.weight(.semibold))
                 .monospacedDigit()
+                // Digits roll rather than snap. A bed climbing to 60 reads as
+                // a machine warming up; the same numbers replaced instantly
+                // read as a screen redrawing, which is what it looked like.
+                .contentTransition(.numericText())
+                .animation(.neptune, value: value)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             if let subtitle {
@@ -80,7 +85,10 @@ struct InfoRow: View {
             Spacer(minLength: 12)
             Text(value)
                 .monospacedDigit()
+                .contentTransition(.numericText())
+                .animation(.neptune, value: value)
                 .foregroundStyle(tint ?? .primary)
+                .animation(.neptune, value: tint)
                 .multilineTextAlignment(.trailing)
         }
         .font(.subheadline)

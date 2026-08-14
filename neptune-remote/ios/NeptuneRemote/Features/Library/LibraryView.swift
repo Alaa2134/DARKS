@@ -204,7 +204,10 @@ struct LibraryView: View {
     @ViewBuilder
     private var browse: some View {
         if library.isLoading, library.items.isEmpty {
-            ProgressView().frame(maxWidth: .infinity).padding(.vertical, 60)
+            // Shaped like the grid it is about to become, so the screen fills
+            // in rather than appearing and the layout never jumps.
+            SkeletonGrid(tiles: 6)
+                .transition(.opacity)
         } else if library.items.isEmpty {
             EmptyStateView(
                 titleKey: "library.empty",
