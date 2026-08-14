@@ -11,7 +11,8 @@ import uuid
 from pathlib import Path
 from typing import Awaitable, Callable, Dict, List, Optional
 
-from ..schemas import AppliedColorChange, SliceJob, SliceJobSummary, SliceRequest
+from ..library import transform as transform_tools
+from ..schemas import AppliedColorChange, ModelTransform, SliceJob, SliceJobSummary, SliceRequest
 from ..storage import GCodeStore, ModelStore, safe_filename
 from .colors import apply_color_changes
 from .engine import BaseEngine, SlicerError, SUPPORTED_MODEL_EXTENSIONS
@@ -187,6 +188,45 @@ class SliceJobManager:
             height = f" (Z {item.z:.2f} mm)" if item.z is not None else ""
             job.logs.append(f"Colour change at layer {item.layer}{height}: {item.color}")
 
+    def _placed(
+        self,
+        identifier: str,
+        path: Path,
+        request: SliceRequest,
+        workdir: Path,
+    ) -> Path:
+        """The path the slicer should read for this model.
+
+        Unchanged when there is no transform, so the common case costs nothing.
+        Otherwise a turned copy is written into the job's own temporary
+        directory - the file in the library is never modified, which is what
+        makes a rotation something the user can take back.
+
+        A transform that cannot be applied is not fatal. Refusing to slice
+        because a stored rotation is malformed would strand a model the user
+        can otherwise print; the original is sliced instead and the reason is
+        logged.
+        """
+        spec = request.transforms.get(identifier)
+        if spec is None:
+            return path
+
+        placement = transform_tools.Transform.from_dict(spec.model_dump())
+        if placement.is_identity and not placement.drop_to_bed and not placement.center_on_bed:
+            return path
+
+        target = workdir / f"placed-{safe_filename(identifier)}.stl"
+        try:
+            written, _ = transform_tools.materialise(
+                path, target, placement, name=identifier
+            )
+            return written
+        except Exception as error:  # mesh, numpy or transform failure
+            log.warning(
+                "Could not place model %s (%s); slicing the original", identifier, error
+            )
+            return path
+
     async def _run(
         self,
         job: SliceJob,
@@ -212,7 +252,9 @@ class SliceJobManager:
                         raise SlicerError(
                             f"Model file for '{identifier}' disappeared before slicing started"
                         )
-                    model_paths.append(path)
+                    model_paths.append(
+                        self._placed(identifier, path, job.request, workdir)
+                    )
 
                 output_path = self.gcodes.unique_path(job.output_filename)
                 job.output_filename = output_path.name

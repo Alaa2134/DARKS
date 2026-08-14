@@ -1554,3 +1554,31 @@
 "probe.apply_yourself" = "التطبيق مش بيكتب في printer.cfg من نفسه. انسخ ده وحطه بإيدك، وبعدين FIRMWARE_RESTART.";
 "probe.subtitle" = "الـ homing بيفشل؟ ابدأ من هنا - بيفرق بين أربع أعطال مختلفة.";
 "eject.blocked.heaters_on" = "السخانات لسه شغالة - مش هيبرد كده";
+
+
+/* Placement: turning and sizing a model before it is sliced */
+"placement.title" = "التوجيه والمقاس";
+"placement.size" = "المقاسات بعد التعديل";
+"placement.measuring" = "بقيس الموديل…";
+"placement.rotate" = "التدوير";
+"placement.scale" = "المقاس";
+"placement.scale.percent" = "النسبة";
+"placement.mirror" = "عكس";
+"placement.mirror.explain" = "بيقلب الموديل على المحور. مفيد للقطع اللي ليها نسخة يمين وشمال — الموديل بيتقلب من جوّه كمان عشان يفضل مقفول صح.";
+"placement.degrees" = "%.0f°";
+"placement.reset" = "رجّع زي ما كان";
+"placement.reset.confirm" = "ترجّع الموديل لوضعه الأصلي؟";
+"placement.summary.none" = "زي ما هو";
+"placement.support.needed" = "محتاج دعامات على %.0f مم²";
+"placement.support.none" = "مش محتاج دعامات";
+"placement.support.area" = "%.0f مم² دعامات";
+"placement.base_area" = "قاعدة على السرير: %.0f مم²";
+"placement.height.short" = "ارتفاع %.0f مم";
+"placement.auto.title" = "التوجيه التلقائي";
+"placement.auto.explain" = "الباي بيلف الموديل فعليًا في كل اتجاه محتمل ويقيس كل واحد — مش بيخمّن. اللي بيكسب هو الاتجاه اللي محتاج أقل دعامات، وبعدين اللي قاعدته أكبر وارتفاعه أقل.";
+"placement.auto.run" = "دوّر على أحسن اتجاه";
+"placement.auto.again" = "دوّر تاني";
+"placement.auto.apply" = "طبّق الاتجاه ده";
+"placement.auto.already_best" = "الموديل بالفعل في أحسن اتجاه — سيبه زي ما هو.";
+"placement.compare.now" = "دلوقتي";
+"placement.compare.suggested" = "المقترح";

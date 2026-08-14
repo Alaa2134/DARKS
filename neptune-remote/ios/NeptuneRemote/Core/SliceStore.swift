@@ -143,10 +143,22 @@ final class SliceStore: ObservableObject {
 
     // MARK: - Request
 
+    /// How each model on the plate is turned and sized, keyed by model id.
+    ///
+    /// Owned by PlacementStore and copied here before slicing rather than read
+    /// through it: a slice request has to be a complete description of the job
+    /// at the moment it was sent, not a live reference to state that can change
+    /// while the job is queued.
+    var transforms: [String: ModelTransform] = [:]
+
     var request: SliceRequestPayload? {
         guard let model = selectedModel else { return nil }
         var payload = SliceRequestPayload(modelID: model.id)
         payload.extraModelIDs = plateModels.map(\.id).filter { $0 != model.id }
+        // How each model is turned, set by the placement screen. Only models
+        // that were actually moved appear here: sending an identity transform
+        // would make the Pi write a pointless copy of an unturned mesh.
+        payload.transforms = transforms
         payload.copies = max(1, copies)
         payload.mode = mode
         payload.printerProfile = printerProfile

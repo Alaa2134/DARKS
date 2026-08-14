@@ -1555,3 +1555,31 @@
 "probe.apply_yourself" = "The app never writes printer.cfg on its own. Copy this in by hand, then FIRMWARE_RESTART.";
 "probe.subtitle" = "Homing failing? Start here - it separates four different faults.";
 "eject.blocked.heaters_on" = "The heaters are still on - it will not cool";
+
+
+/* Placement: turning and sizing a model before it is sliced */
+"placement.title" = "Orientation & size";
+"placement.size" = "Size after changes";
+"placement.measuring" = "Measuring the model…";
+"placement.rotate" = "Rotation";
+"placement.scale" = "Size";
+"placement.scale.percent" = "Percentage";
+"placement.mirror" = "Mirror";
+"placement.mirror.explain" = "Flips the model across an axis. Useful for parts that come in a left and a right - the triangles are turned back the right way out too, so the model stays a closed solid.";
+"placement.degrees" = "%.0f°";
+"placement.reset" = "Reset";
+"placement.reset.confirm" = "Put the model back how it was?";
+"placement.summary.none" = "As exported";
+"placement.support.needed" = "Support needed over %.0f mm²";
+"placement.support.none" = "No support needed";
+"placement.support.area" = "%.0f mm² support";
+"placement.base_area" = "Base on the bed: %.0f mm²";
+"placement.height.short" = "%.0f mm tall";
+"placement.auto.title" = "Auto-orientation";
+"placement.auto.explain" = "The Pi actually turns the model every plausible way up and measures each one - it does not guess. The winner is the orientation needing least support, with a bigger base and a lower height breaking ties.";
+"placement.auto.run" = "Find the best way up";
+"placement.auto.again" = "Look again";
+"placement.auto.apply" = "Use this orientation";
+"placement.auto.already_best" = "It is already the best way up - leave it alone.";
+"placement.compare.now" = "Now";
+"placement.compare.suggested" = "Suggested";

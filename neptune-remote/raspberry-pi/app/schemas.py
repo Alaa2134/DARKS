@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 # --------------------------------------------------------------------------- #
@@ -186,6 +186,76 @@ class PowerActionResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# Model placement
+#
+# How a model is turned, sized and stood up before it reaches the slicer.
+# Defined before Slicing, which is where it is asked for, and before Library,
+# which is where it is remembered.
+# --------------------------------------------------------------------------- #
+
+
+class ModelTransform(BaseModel):
+    """Rotation, scale and mirror, relative to the file on disk.
+
+    The file itself is never modified: a transformed copy is written for the
+    slicer to read, and this is what says how to write it. Stored beside the
+    model, so the model stays turned the way the user left it.
+    """
+
+    #: Degrees about X, then Y, then Z. The order is fixed so the same values
+    #: always reproduce the same orientation.
+    rotation_deg: List[float] = Field(default_factory=lambda: [0.0, 0.0, 0.0])
+    #: Per-axis multiplier, so a model can be stretched as well as resized.
+    scale: List[float] = Field(default_factory=lambda: [1.0, 1.0, 1.0])
+    mirror: List[bool] = Field(default_factory=lambda: [False, False, False])
+    #: Sit the result on Z=0. Off only for a caller doing its own placement -
+    #: a model left hovering above the plate has its first layer printed in air.
+    drop_to_bed: bool = True
+    center_on_bed: bool = True
+
+    @field_validator("rotation_deg", "scale")
+    @classmethod
+    def _three_numbers(cls, value: List[float]) -> List[float]:
+        if len(value) != 3:
+            raise ValueError("لازم تكون ٣ قيم: X و Y و Z.")
+        return [float(item) for item in value]
+
+    @field_validator("mirror")
+    @classmethod
+    def _three_flags(cls, value: List[bool]) -> List[bool]:
+        if len(value) != 3:
+            raise ValueError("لازم تكون ٣ قيم: X و Y و Z.")
+        return [bool(item) for item in value]
+
+
+class OrientationReport(BaseModel):
+    """What an orientation costs, in the numbers that decide between them."""
+
+    #: Area that would sit flat on the bed, mm².
+    base_area: float = 0.0
+    #: Area that would need support, mm².
+    overhang_area: float = 0.0
+    height: float = 0.0
+    width: float = 0.0
+    depth: float = 0.0
+    needs_support: bool = False
+    #: True when the result is inside this printer's own build volume.
+    fits: bool = True
+    #: Plain Arabic, naming each axis that is over. Empty when it fits.
+    problems_ar: List[str] = Field(default_factory=list)
+
+
+class OrientationSuggestion(BaseModel):
+    """The way up the app recommends, with the evidence for it."""
+
+    transform: ModelTransform
+    suggested: OrientationReport
+    #: The same measurements for the model as it stands now, so the app can
+    #: show what the change actually buys rather than asking for trust.
+    current: OrientationReport
+
+
+# --------------------------------------------------------------------------- #
 # Colour changes
 #
 # Defined before Files because a G-code file carries its own colour plan, and
@@ -289,6 +359,13 @@ class SliceRequest(BaseModel):
     extra_model_ids: List[str] = Field(default_factory=list)
     #: Copies of everything on the plate. 1 leaves the arrangement alone.
     copies: int = 1
+
+    #: How each model is turned and sized, keyed by model id.
+    #:
+    #: A model named here is transformed into a temporary copy before slicing;
+    #: one that is not falls back to whatever transform is stored against it in
+    #: the library, and then to none. The original file is never modified.
+    transforms: Dict[str, ModelTransform] = Field(default_factory=dict)
     printer_profile: str = "neptune3plus_0.4"
     filament_profile: str = "pla"
     print_profile: str = "standard"

@@ -27,7 +27,12 @@ from ..library.models import (
     SearchResponse,
     SearchResult,
 )
-from ..schemas import OKResponse
+from ..schemas import (
+    ModelTransform,
+    OKResponse,
+    OrientationReport,
+    OrientationSuggestion,
+)
 from ..search.arabic import normalize
 from ..security import require_token
 from ..state import AppState
@@ -177,6 +182,154 @@ async def regenerate_thumbnail(item_id: str, state: AppState = Depends(get_state
             status_code=404, detail="Model not found, or it has no model file to render"
         )
     return item
+
+
+# --------------------------------------------------------------------------- #
+# Placement: how the model is turned before it is sliced
+# --------------------------------------------------------------------------- #
+
+
+async def _build_volume(state: AppState) -> tuple[float, float, float]:
+    """This printer's usable volume, read from its own printer.cfg.
+
+    Falls back to the Neptune 3 Plus figures only when the config cannot be
+    read at all - a fallback that is a last resort rather than an assumption,
+    because telling somebody their model fits when it does not is worse than
+    saying the size is unknown.
+    """
+    default = (320.0, 320.0, 400.0)
+    try:
+        config = await state.refresh_live_config()
+    except Exception:                                       # noqa: BLE001
+        return default
+    if config is None:
+        return default
+
+    sizes: List[float] = []
+    for axis, fallback in zip("xyz", default):
+        limits = config.axis_limits(axis)
+        low = limits.position_min if limits.position_min is not None else 0.0
+        high = limits.position_max
+        if high is None:
+            sizes.append(fallback)
+            continue
+        # position_min is usually negative: it is homing overtravel, not
+        # printable space, so the usable size starts at zero.
+        sizes.append(float(high) - max(float(low), 0.0))
+    return (sizes[0], sizes[1], sizes[2])
+
+
+def _report(score: Any, volume: tuple) -> OrientationReport:
+    """Turn a measured orientation into the shape the app reads."""
+    from ..library.transform import fits_on_bed
+
+    size = (score.footprint[0], score.footprint[1], score.height)
+    fits, problems = fits_on_bed(
+        size, width=volume[0], depth=volume[1], height=volume[2]
+    )
+    return OrientationReport(
+        base_area=round(score.base_area, 2),
+        overhang_area=round(score.overhang_area, 2),
+        height=round(score.height, 3),
+        width=round(score.footprint[0], 3),
+        depth=round(score.footprint[1], 3),
+        needs_support=score.needs_support,
+        fits=fits,
+        problems_ar=problems,
+    )
+
+
+@router.post("/library/{item_id}/orient", response_model=OrientationSuggestion)
+async def suggest_orientation(
+    item_id: str,
+    transform: Optional[ModelTransform] = Body(default=None),
+    state: AppState = Depends(get_state),
+) -> OrientationSuggestion:
+    """Work out the way up that needs the least support.
+
+    Scored against the real mesh rather than guessed: every candidate is
+    actually turned and measured. The answer comes back with the measurements
+    for the model as it stands too, so the app can show what the change buys
+    instead of asking the user to trust it.
+
+    Nothing is saved here. Applying the suggestion is a separate call, because
+    an orientation is a decision and this is only advice.
+    """
+    from ..library import transform as transform_tools
+    from ..library.mesh import load
+
+    path = state.models.path_for(item_id)
+    if path is None or not path.is_file():
+        raise HTTPException(status_code=404, detail="Model file not found")
+
+    volume = await _build_volume(state)
+
+    try:
+        mesh = load(path)
+        # Measure where it stands now - including any transform already saved
+        # against it, so "current" means what the user is actually looking at.
+        starting = transform_tools.Transform.from_dict(
+            transform.model_dump() if transform else None
+        )
+        current_mesh = transform_tools.apply(mesh, starting)
+        current = transform_tools.score_orientation(current_mesh)
+
+        placement, score = transform_tools.auto_orient(
+            current_mesh, max_height=volume[2]
+        )
+    except transform_tools.TransformError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except Exception as error:                              # noqa: BLE001
+        raise HTTPException(
+            status_code=422, detail=f"مش قادر أقرا الموديل: {error}"
+        ) from error
+
+    # The suggestion is relative to where the model already is, so it composes
+    # with whatever the user had already set rather than discarding it.
+    return OrientationSuggestion(
+        transform=ModelTransform(
+            rotation_deg=list(placement.rotation_deg),
+            scale=list(starting.scale),
+            mirror=list(starting.mirror),
+        ),
+        suggested=_report(score, volume),
+        current=_report(current, volume),
+    )
+
+
+@router.post("/library/{item_id}/transform", response_model=OrientationReport)
+async def measure_transform(
+    item_id: str,
+    transform: ModelTransform = Body(...),
+    state: AppState = Depends(get_state),
+) -> OrientationReport:
+    """Measure a proposed transform without saving or slicing anything.
+
+    This is what the app calls while the user is dragging a rotation dial: it
+    answers "how tall is it now, does it still fit, does it still need
+    support" from the real geometry.
+    """
+    from ..library import transform as transform_tools
+    from ..library.mesh import load
+
+    path = state.models.path_for(item_id)
+    if path is None or not path.is_file():
+        raise HTTPException(status_code=404, detail="Model file not found")
+
+    volume = await _build_volume(state)
+    try:
+        placed = transform_tools.apply(
+            load(path), transform_tools.Transform.from_dict(transform.model_dump())
+        )
+        score = transform_tools.score_orientation(placed)
+    except transform_tools.TransformError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except Exception as error:                              # noqa: BLE001
+        raise HTTPException(
+            status_code=422, detail=f"مش قادر أقرا الموديل: {error}"
+        ) from error
+
+    return _report(score, volume)
 
 
 # --------------------------------------------------------------------------- #

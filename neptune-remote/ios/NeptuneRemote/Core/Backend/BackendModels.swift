@@ -124,6 +124,102 @@ struct BackendModelFile: Decodable, Identifiable, Equatable, Hashable {
     }
 }
 
+// MARK: - Placement
+
+/// How a model is turned and sized before it reaches the slicer.
+///
+/// The file in the library is never modified. This is what gets sent with a
+/// slice request, and the Pi writes a transformed copy for the slicer to read -
+/// which is what makes a rotation something you can take back.
+struct ModelTransform: Codable, Equatable {
+    /// Degrees about X, then Y, then Z. The order is fixed, so the same values
+    /// always reproduce the same orientation.
+    var rotationDeg: [Double] = [0, 0, 0]
+    /// Per-axis multiplier, so a model can be stretched as well as resized.
+    var scale: [Double] = [1, 1, 1]
+    var mirror: [Bool] = [false, false, false]
+    /// Sit the result on the bed afterwards. The app always wants this: a model
+    /// left hovering has its first layer printed in mid-air.
+    var dropToBed: Bool = true
+    var centerOnBed: Bool = true
+
+    static let identity = ModelTransform()
+
+    var isIdentity: Bool {
+        rotationDeg == [0, 0, 0] && scale == [1, 1, 1] && mirror == [false, false, false]
+    }
+
+    /// Uniform scale, when all three axes agree. Nil for a stretched model,
+    /// which is the signal the UI needs to show three fields instead of one.
+    var uniformScale: Double? {
+        guard scale.count == 3, scale[0] == scale[1], scale[1] == scale[2] else { return nil }
+        return scale[0]
+    }
+
+    static func uniform(_ factor: Double) -> ModelTransform {
+        ModelTransform(scale: [factor, factor, factor])
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case scale, mirror
+        case rotationDeg = "rotation_deg"
+        case dropToBed = "drop_to_bed"
+        case centerOnBed = "center_on_bed"
+    }
+}
+
+/// What an orientation costs, measured against the real mesh.
+struct OrientationReport: Codable, Equatable {
+    /// Area that would sit flat on the bed, mm². Bigger sticks better.
+    var baseArea: Double = 0
+    /// Area that would need support, mm². This is the number to minimise.
+    var overhangArea: Double = 0
+    var height: Double = 0
+    var width: Double = 0
+    var depth: Double = 0
+    var needsSupport: Bool = false
+    /// Whether the result is inside this printer's own build volume.
+    var fits: Bool = true
+    /// Plain Arabic, naming each axis that is over. Empty when it fits.
+    var problemsAr: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case height, width, depth, fits
+        case baseArea = "base_area"
+        case overhangArea = "overhang_area"
+        case needsSupport = "needs_support"
+        case problemsAr = "problems_ar"
+    }
+}
+
+/// The way up the Pi recommends, with the evidence for it.
+///
+/// `current` is the same measurement for the model as it stands, so the app can
+/// show what the change actually buys rather than asking to be trusted.
+struct OrientationSuggestion: Codable, Equatable {
+    var transform: ModelTransform
+    var suggested: OrientationReport
+    var current: OrientationReport
+
+    /// How much support area the suggestion removes, as a fraction of what is
+    /// there now. Nil when there was no support needed to begin with - the
+    /// honest answer to "how much better" when the answer is "it already was".
+    var overhangReduction: Double? {
+        guard current.overhangArea > 0 else { return nil }
+        let saved = current.overhangArea - suggested.overhangArea
+        return max(0, saved / current.overhangArea)
+    }
+
+    /// Whether turning the model is actually worth doing.
+    var isWorthApplying: Bool {
+        if !current.fits && suggested.fits { return true }
+        guard let reduction = overhangReduction else {
+            return suggested.baseArea > current.baseArea * 1.2
+        }
+        return reduction > 0.1
+    }
+}
+
 /// A layer the print stops at so the filament can be swapped.
 ///
 /// One nozzle, several colours: the printer stops, you change the spool, it
@@ -298,6 +394,12 @@ struct SliceRequestPayload: Encodable, Equatable {
     /// than producing a file that would stop dead at the first swap.
     var colorChanges: [ColorChange] = []
 
+    /// How each model is turned and sized, keyed by model id.
+    ///
+    /// Sent with the slice rather than saved against the model, so the same
+    /// model can go on the plate twice at two different angles.
+    var transforms: [String: ModelTransform] = [:]
+
     var outputName: String?
     var uploadToMoonraker: Bool = true
     var startPrintAfterUpload: Bool = false
@@ -342,6 +444,7 @@ struct SliceRequestPayload: Encodable, Equatable {
         case speedProfileOverrides = "speed_profile_overrides"
         case customOverrides = "custom_overrides"
         case colorChanges = "color_changes"
+        case transforms
         case outputName = "output_name"
         case uploadToMoonraker = "upload_to_moonraker"
         case startPrintAfterUpload = "start_print_after_upload"

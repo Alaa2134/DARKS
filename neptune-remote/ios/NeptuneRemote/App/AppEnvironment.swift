@@ -18,6 +18,7 @@ final class AppEnvironment: ObservableObject {
     let doctor: DoctorStore
     let alerts: AlertStore
     let calibration: CalibrationStore
+    let placement: PlacementStore
     let liveActivity: LiveActivityController
     /// Every store's failures, in one stream, so the root can show them.
     let errors = ErrorSink()
@@ -48,6 +49,7 @@ final class AppEnvironment: ObservableObject {
         doctor = DoctorStore(settings: settings, printer: printer)
         alerts = AlertStore(settings: settings, printer: printer)
         calibration = CalibrationStore(settings: settings, printer: printer)
+        placement = PlacementStore(settings: settings, printer: printer)
         liveActivity = LiveActivityController()
 
         // Wired here rather than inside each store: a store should not have to
@@ -68,6 +70,7 @@ final class AppEnvironment: ObservableObject {
         errors.observe(doctor.$lastError)
         errors.observe(alerts.$lastError)
         errors.observe(calibration.$lastError)
+        errors.observe(placement.$lastError)
 
         printer.onSliceProgress = { [weak self] progress in
             self?.slicing.apply(progressEvent: progress)

@@ -6,6 +6,7 @@ struct SliceView: View {
     @EnvironmentObject private var printer: PrinterStore
     @EnvironmentObject private var files: FilesStore
     @EnvironmentObject private var slicing: SliceStore
+    @EnvironmentObject private var placement: PlacementStore
 
     @State private var showingImporter = false
     @State private var showingResult = false
@@ -271,8 +272,62 @@ struct SliceView: View {
                     buildVolume: buildVolume
                 )
             }
+
+            placementLink
         }
         .card()
+    }
+
+    /// Into the orientation screen, and back with what it decided.
+    ///
+    /// Sits under the preview because orientation is the first decision about a
+    /// print rather than a setting buried among the others: it decides which
+    /// faces need support, how tall the print stands, and which way the layer
+    /// lines run - and therefore where the part breaks.
+    @ViewBuilder
+    private var placementLink: some View {
+        if let model = slicing.selectedModel {
+            NavigationLink {
+                PlacementView(modelID: model.id, modelName: model.filename)
+            } label: {
+                HStack(spacing: 10) {
+                    Image(systemName: "rotate.3d")
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(localized: "placement.title")
+                            .font(.subheadline.weight(.medium))
+                        // The summary is what tells you the rotation survived
+                        // after you left the screen.
+                        Text(placementSummary(for: model.id))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.forward")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 4)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func placementSummary(for modelID: String) -> String {
+        let transform = placement.transform(for: modelID)
+        if transform.isIdentity { return L.t("placement.summary.none") }
+
+        var parts: [String] = []
+        let axes = ["X", "Y", "Z"]
+        for (index, degrees) in transform.rotationDeg.enumerated() where degrees != 0 {
+            parts.append("\(axes[min(index, 2)]) \(Int(degrees))\u{00B0}")
+        }
+        if let scale = transform.uniformScale, scale != 1 {
+            parts.append("\(Int(scale * 100))%")
+        }
+        if transform.mirror.contains(true) {
+            parts.append(L.t("placement.mirror"))
+        }
+        return parts.joined(separator: " \u{00B7} ")
     }
 
     /// The build volume to draw the model against.
@@ -562,6 +617,10 @@ struct SliceView: View {
 
     private var sliceButton: some View {
         Button {
+            // Copied across at the moment of slicing rather than held as a
+            // live reference: a slice request has to describe the job as it was
+            // when it was sent, not track state that can change while it queues.
+            slicing.transforms = placement.payload(for: plateModelIDs)
             Task { await slicing.startSlicing() }
         } label: {
             HStack {
@@ -580,6 +639,13 @@ struct SliceView: View {
         }
         .buttonStyle(.plain)
         .disabled(slicing.isSlicing || slicing.selectedModel == nil)
+    }
+
+    /// Every model going onto this plate, main and extras.
+    private var plateModelIDs: [String] {
+        var identifiers = slicing.selectedModel.map { [$0.id] } ?? []
+        identifiers.append(contentsOf: slicing.plateModels.map(\.id))
+        return identifiers
     }
 
     private var progressCard: some View {

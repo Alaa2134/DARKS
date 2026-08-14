@@ -68,6 +68,47 @@ extension BackendClient {
         _ = try await raw(path: "library/\(id)", method: "DELETE", timeout: 30)
     }
 
+    // MARK: - Placement
+
+    /// Ask the Pi which way up this model should go.
+    ///
+    /// Measured against the real mesh, not guessed: every candidate orientation
+    /// is actually turned and scored. `transform` is where the model stands
+    /// now, so the answer composes with a resize the user has already made
+    /// rather than throwing it away.
+    ///
+    /// Nothing is saved. Applying the suggestion is the caller's decision.
+    func suggestOrientation(
+        id: String,
+        transform: ModelTransform = .identity
+    ) async throws -> OrientationSuggestion {
+        try await decode(
+            OrientationSuggestion.self,
+            path: "library/\(id)/orient",
+            method: "POST",
+            body: try await http.encodeBody(transform),
+            // A big mesh is a lot of triangles to turn twenty-four ways.
+            timeout: 90
+        )
+    }
+
+    /// Measure a transform without saving or slicing anything.
+    ///
+    /// What the app calls while a rotation dial is being dragged: how tall is
+    /// it now, does it still fit, does it still need support.
+    func measureTransform(
+        id: String,
+        transform: ModelTransform
+    ) async throws -> OrientationReport {
+        try await decode(
+            OrientationReport.self,
+            path: "library/\(id)/transform",
+            method: "POST",
+            body: try await http.encodeBody(transform),
+            timeout: 60
+        )
+    }
+
     func regenerateThumbnail(id: String) async throws -> LibraryItem {
         try await decode(
             LibraryItem.self, path: "library/\(id)/regenerate-thumbnail",
