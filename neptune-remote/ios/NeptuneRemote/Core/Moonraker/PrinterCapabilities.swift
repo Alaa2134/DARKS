@@ -388,6 +388,22 @@ struct PrinterCapabilities: Equatable {
     var hasIdleTimeout: Bool { has("idle_timeout") }
     var hasDisplayStatus: Bool { has("display_status") }
     var hasScrewsTiltAdjust: Bool { has("screws_tilt_adjust") }
+
+    /// Whether Klipper will accept `SET_KINEMATIC_POSITION`.
+    ///
+    /// This is the way out of a printer that cannot home - a dead probe, a
+    /// broken endstop - where every move is refused with "Must home axis first"
+    /// and there is no way to raise the nozzle off the bed to go and look at the
+    /// thing that is broken.
+    ///
+    /// Klipper registers the command from `[force_move]`, and only when that
+    /// section says `enable_force_move: True`. Both are checked, because
+    /// offering a button that comes back "Unknown command" is worse than not
+    /// offering it: this printer has already ended a print that way once.
+    var canSetKinematicPosition: Bool {
+        guard let section = settings["force_move"]?.objectValue else { return false }
+        return section["enable_force_move"]?.boolValue == true
+    }
     var hasZTiltAdjust: Bool { has("z_tilt") }
     var hasQuadGantryLevel: Bool { has("quad_gantry_level") }
 

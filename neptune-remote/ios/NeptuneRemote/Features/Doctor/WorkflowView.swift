@@ -26,9 +26,10 @@ struct WorkflowView: View {
         ScrollView {
             VStack(spacing: Theme.spacing) {
                 if let error = doctor.lastError {
-                    ErrorBanner(message: error.localizedDescription) {
-                        doctor.lastError = nil
-                    }
+                    ErrorBanner(
+                        message: error.localizedDescription,
+                        onDismiss: { doctor.lastError = nil }
+                    )
                 }
 
                 if let run {

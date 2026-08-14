@@ -385,14 +385,21 @@ final class MJPEGStream: ObservableObject {
         let delegate = MJPEGConnectionDelegate(
             maxPixelSize: maxPixelSize,
             maxFrameRate: maxFrameRate,
+            // The weak reference is resolved here, on the delegate queue, and
+            // the Task captures the resulting strong local. Reaching for `self?`
+            // inside the Task instead would be capturing a weak variable into
+            // concurrently-executing code, which the compiler rejects.
             onFrame: { [weak self] frame, dropped in
-                Task { @MainActor in self?.deliver(frame, dropped: dropped) }
+                guard let self else { return }
+                Task { @MainActor in self.deliver(frame, dropped: dropped) }
             },
             onReject: { [weak self] key in
-                Task { @MainActor in self?.reject(key) }
+                guard let self else { return }
+                Task { @MainActor in self.reject(key) }
             },
             onFinish: { [weak self] error in
-                Task { @MainActor in self?.finish(error) }
+                guard let self else { return }
+                Task { @MainActor in self.finish(error) }
             }
         )
         // The session retains its delegate until it is invalidated, which
@@ -451,8 +458,9 @@ final class MJPEGStream: ObservableObject {
                 forName: UIApplication.didEnterBackgroundNotification,
                 object: nil, queue: .main
             ) { [weak self] _ in
+                guard let self else { return }
                 Task { @MainActor in
-                    guard let self, self.wantsToRun else { return }
+                    guard self.wantsToRun else { return }
                     self.isSuspendedForBackground = true
                     self.teardown()
                 }
@@ -463,8 +471,9 @@ final class MJPEGStream: ObservableObject {
                 forName: UIApplication.willEnterForegroundNotification,
                 object: nil, queue: .main
             ) { [weak self] _ in
+                guard let self else { return }
                 Task { @MainActor in
-                    guard let self, self.wantsToRun, self.isSuspendedForBackground else { return }
+                    guard self.wantsToRun, self.isSuspendedForBackground else { return }
                     self.isSuspendedForBackground = false
                     self.retryCount = 0
                     self.connect()

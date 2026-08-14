@@ -5,6 +5,7 @@ struct JogView: View {
     @EnvironmentObject private var printer: PrinterStore
 
     @State private var showingColdExtrusionAlert = false
+    @State private var showingAssumePositionConfirm = false
 
     private let steps: [Double] = [0.1, 1, 5, 10, 50]
     private let feedrates: [Double] = [600, 1500, 3000, 6000, 9000]
@@ -20,6 +21,9 @@ struct JogView: View {
                 positionCard
                 jogPad
                 homingCard
+                // Only when homing has not happened, which is the only time it
+                // is any use and the only time it is defensible.
+                if !unhomedAxes.isEmpty { unhomedEscapeCard }
                 extruderCard
             }
             .padding(.horizontal)
@@ -180,6 +184,104 @@ struct JogView: View {
             }
         }
         .card()
+    }
+
+    // MARK: - When homing will not work
+
+    private var unhomedAxes: [String] {
+        guard snapshot.isReady, !snapshot.isActive else { return [] }
+        return ["x", "y", "z"].filter { !snapshot.isHomed($0) }
+    }
+
+    /// The way out of a printer that cannot home.
+    ///
+    /// When the probe is dead, `G28` fails, and after that Klipper refuses every
+    /// move - so the nozzle cannot be raised off the bed to go and look at the
+    /// probe that caused it. The app inherited that deadlock and made it worse
+    /// by greying its own buttons out on top of it: a machine you cannot touch
+    /// because the part that says where it is has broken.
+    ///
+    /// `SET_KINEMATIC_POSITION` asserts a position instead of measuring one.
+    /// That is not homing and is not presented as homing - the number is a
+    /// claim, and a wrong claim will drive the toolhead somewhere that does not
+    /// exist. What makes it safe enough to offer is the direction: each axis is
+    /// declared at the bottom of its own travel, so the only way left to go is
+    /// away from the bed.
+    private var unhomedEscapeCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            SectionHeader("control.unhomed.title", systemImage: "exclamationmark.arrow.circlepath")
+
+            Text(localized: "control.unhomed.explain")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Label(
+                L.t("control.unhomed.axes", unhomedAxes.map { $0.uppercased() }.joined(separator: "، ")),
+                systemImage: "location.slash"
+            )
+            .font(.caption.weight(.medium))
+            .foregroundStyle(Theme.paused)
+
+            if printer.capabilities.canSetKinematicPosition {
+                Text(localized: "control.unhomed.warning")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.danger)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Button {
+                    showingAssumePositionConfirm = true
+                } label: {
+                    Label(L.t("control.unhomed.assume"), systemImage: "hand.raised")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .disabled(printer.isBusy)
+            } else {
+                // The command is not registered on this printer, so the button
+                // would come back "Unknown command" - which is how a print on
+                // this machine has already been lost once. Say what to add
+                // instead; the app does not write printer.cfg.
+                Text(localized: "control.unhomed.needs_force_move")
+                    .font(.caption)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(verbatim: "[force_move]\nenable_force_move: True")
+                    .font(.system(.caption, design: .monospaced))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8))
+            }
+        }
+        .card()
+        .confirmationDialog(
+            L.t("control.unhomed.confirm.title"),
+            isPresented: $showingAssumePositionConfirm,
+            titleVisibility: .visible
+        ) {
+            Button(L.t("control.unhomed.assume"), role: .destructive) {
+                Task { await assumeBottomOfTravel() }
+            }
+            Button(L.t("common.cancel"), role: .cancel) {}
+        } message: {
+            Text(localized: "control.unhomed.confirm.message")
+        }
+    }
+
+    /// Declares every unhomed axis to be at the bottom of its configured travel.
+    ///
+    /// The bottom rather than the middle or the current reading, because it is
+    /// the one claim that cannot send the toolhead further down: whatever the
+    /// truth is, the printer now believes it has no room left in the direction
+    /// that breaks things.
+    private func assumeBottomOfTravel() async {
+        func floor(_ axis: String) -> Double? {
+            guard unhomedAxes.contains(axis) else { return nil }
+            return printer.capabilities.axisLimits[axis]?.min ?? 0
+        }
+        await printer.assumePosition(x: floor("x"), y: floor("y"), z: floor("z"))
     }
 
     private var extruderCard: some View {

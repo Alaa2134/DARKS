@@ -1235,6 +1235,48 @@ final class PrinterStore: ObservableObject {
         return ok
     }
 
+    /// Tells Klipper where the toolhead is, without homing it.
+    ///
+    /// The way out of a printer that cannot home. When the probe is dead the
+    /// endstop never fires, `G28` fails, and from then on Klipper refuses every
+    /// move - so the nozzle cannot be raised off the bed to go and look at the
+    /// probe that caused it. That is a machine you cannot touch because the part
+    /// that tells you where it is has broken.
+    ///
+    /// `SET_KINEMATIC_POSITION` breaks the deadlock by asserting a position
+    /// rather than measuring one. Klipper then believes it and will move. Which
+    /// is exactly why this is not homing and is not offered as homing: the
+    /// number is the user's claim, not a measurement, and if it is wrong the
+    /// printer will happily drive to a place that does not exist.
+    ///
+    /// The safety that is left is the one that still means something: the axis
+    /// is declared at the *bottom* of its travel, so the only unrestricted
+    /// direction is away from the bed.
+    @discardableResult
+    func assumePosition(x: Double?, y: Double?, z: Double?) async -> Bool {
+        guard capabilities.canSetKinematicPosition else {
+            lastError = .unsafeOperation([L.t("control.force_move.not_enabled")])
+            Haptics.warning()
+            return false
+        }
+        guard !snapshot.isActive else {
+            lastError = .unsafeOperation([L.t("condition.home.printing")])
+            Haptics.warning()
+            return false
+        }
+
+        var parts: [String] = ["SET_KINEMATIC_POSITION"]
+        if let x { parts.append(String(format: "X=%.3f", x)) }
+        if let y { parts.append(String(format: "Y=%.3f", y)) }
+        if let z { parts.append(String(format: "Z=%.3f", z)) }
+        guard parts.count > 1 else { return false }
+
+        Haptics.impact(.medium)
+        let ok = await send(gcode: parts.joined(separator: " "))
+        if ok { await refreshNow() }
+        return ok
+    }
+
     // MARK: - Capability discovery
 
     /// Re-reads printer.cfg through Klipper and rebuilds the capability model.

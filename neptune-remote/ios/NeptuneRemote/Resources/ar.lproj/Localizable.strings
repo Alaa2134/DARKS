@@ -1207,6 +1207,15 @@
 "light.none.hint" = "التطبيق بيتحكم بس في الإضاءة اللي الطابعة نفسها بتقول عليها: [neopixel] أو [led] أو [output_pin] اسمه فيه كلمة نور. ضيف واحدة في printer.cfg وشغّل FIRMWARE_RESTART والمفتاح هيظهر هنا لوحده.";
 "control.axis_unknown" = "لم يتم العثور على حدود حركة لـ %@ في printer.cfg";
 "control.axis_not_homed" = "%@ لم يتم تصفيره";
+"control.unhomed.title" = "الهومنج مش راضي يتم؟";
+"control.unhomed.explain" = "لما الهومنج يفشل — بروب باظ أو نهاية شوط مش شغالة — كليبر بيرفض أي حركة بعد كده، فمش هتقدر ترفع النوزل من على السرير عشان تروح تبص على السبب نفسه. الزرار ده بيكسر الدايرة دي.";
+"control.unhomed.axes" = "محاور من غير هومنج: %@";
+"control.unhomed.warning" = "ده مش هومنج. إنت بتقول لكليبر «افترض إن المحاور دي في أول مشوارها» — هو هيصدّقك ويتحرك على أساس كلامك. عشان كده كل محور بيتحط في أول مداه، يعني الاتجاه الوحيد المفتوح هو بعيد عن السرير. تحرّك بخطوات صغيرة وعينك عليه.";
+"control.unhomed.assume" = "افترض إن المحاور في أول مداها";
+"control.unhomed.confirm.title" = "تأكيد الحركة بدون هومنج";
+"control.unhomed.confirm.message" = "بعد الأمر ده الطابعة هتتحرك من غير ما تكون عارفة مكانها الحقيقي. استخدمه عشان ترفع النوزل وتفحص البروب بس، وبعد ما تصلّح المشكلة اعمل G28 عادي.";
+"control.unhomed.needs_force_move" = "الأمر ده مش متفعّل على الطابعة دي. ضيف السطرين دول في printer.cfg واعمل إعادة تشغيل للفيرموير. التطبيق مش بيكتب في printer.cfg، فده هتعمله بإيدك:";
+"control.force_move.not_enabled" = "SET_KINEMATIC_POSITION مش متفعّل — محتاج [force_move] مع enable_force_move: True في printer.cfg.";
 "control.axis_at_limit" = "%@ عند حده المضبوط بالفعل (%.1f إلى %.1f مم)";
 "control.move_clamped" = "تم تقصيرها إلى %.2f مم على %@ للبقاء داخل الحدود المضبوطة";
 "control.extrude_clamped" = "تم تقصيرها إلى %.0f مم - max_extrude_only_distance";

@@ -1207,6 +1207,15 @@
 "light.none.hint" = "The app only switches lights the printer reports: a [neopixel], a [led], or an [output_pin] whose name says light. Add one to printer.cfg, run FIRMWARE_RESTART, and the switch appears here on its own.";
 "control.axis_unknown" = "No travel limits were found for %@ in printer.cfg";
 "control.axis_not_homed" = "%@ is not homed";
+"control.unhomed.title" = "Homing will not complete?";
+"control.unhomed.explain" = "When homing fails - a dead probe, an endstop that never fires - Klipper refuses every move after that, so the nozzle cannot be raised off the bed to go and look at the thing that caused it. This breaks that deadlock.";
+"control.unhomed.axes" = "Not homed: %@";
+"control.unhomed.warning" = "This is not homing. You are telling Klipper to assume these axes are at the start of their travel, and it will believe you and move on that basis. That is why each axis is declared at the bottom of its own range: the only direction left open is away from the bed. Move in small steps and watch it.";
+"control.unhomed.assume" = "Assume the axes are at the bottom";
+"control.unhomed.confirm.title" = "Move without homing";
+"control.unhomed.confirm.message" = "After this the printer will move without knowing where it really is. Use it to raise the nozzle and inspect the probe, then home normally with G28 once the fault is fixed.";
+"control.unhomed.needs_force_move" = "This printer has not enabled that command. Add these two lines to printer.cfg and restart the firmware. The app does not write printer.cfg, so this one is yours to make:";
+"control.force_move.not_enabled" = "SET_KINEMATIC_POSITION is not enabled - it needs [force_move] with enable_force_move: True in printer.cfg.";
 "control.axis_at_limit" = "%@ is already at its configured limit (%.1f to %.1f mm)";
 "control.move_clamped" = "Shortened to %.2f mm on %@ to stay inside the configured travel";
 "control.extrude_clamped" = "Shortened to %.0f mm - max_extrude_only_distance";
