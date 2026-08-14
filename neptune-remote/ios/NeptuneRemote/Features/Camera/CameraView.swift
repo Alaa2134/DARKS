@@ -7,7 +7,9 @@ struct CameraView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var printer: PrinterStore
 
-    @StateObject private var stream = MJPEGStream()
+    // The one screen where the picture is the point, so it gets the full frame
+    // rate and enough pixels to zoom into a first layer.
+    @StateObject private var stream = MJPEGStream(maxPixelSize: 1600, maxFrameRate: 20)
     @State private var isFullscreen = false
     @State private var snapshotImage: UIImage?
     @State private var showingShare = false
@@ -153,6 +155,13 @@ struct CameraView: View {
             )
             InfoRow(titleKey: "camera.kind", value: L.t(settings.cameraKind.localizationKey))
             InfoRow(titleKey: "camera.frames", value: "\(stream.framesReceived)")
+            // Skipped frames are normal and worth showing: they are the app
+            // deliberately not decoding a picture it was about to paint over.
+            // A number that climbs while the image is smooth means the camera
+            // is simply sending faster than the screen needs.
+            if stream.framesDropped > 0 {
+                InfoRow(titleKey: "camera.frames.dropped", value: "\(stream.framesDropped)")
+            }
             if settings.cameraKind == .mjpeg {
                 Text(localized: "camera.zoom.hint")
                     .font(.caption2)
@@ -401,7 +410,7 @@ struct CameraWebView: UIViewRepresentable {
 
 struct CameraPreviewCard: View {
     @EnvironmentObject private var settings: AppSettings
-    @StateObject private var stream = MJPEGStream()
+    @StateObject private var stream = MJPEGStream(maxPixelSize: 640, maxFrameRate: 8)
 
     // Was its own copy, and one that did not know about the backend relay:
     // picking an IP camera worked on the camera screen and showed nothing here.

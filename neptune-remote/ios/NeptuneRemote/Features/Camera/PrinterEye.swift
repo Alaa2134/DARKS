@@ -38,7 +38,10 @@ struct PrinterEye: View {
     var height: CGFloat = 150
 
     @EnvironmentObject private var settings: AppSettings
-    @StateObject private var stream = MJPEGStream()
+    // A 170-point card. Decoding a 4K frame for it would be fifteen sixteenths
+    // of the work thrown away, and eight frames a second is more than enough to
+    // see that a print is still going.
+    @StateObject private var stream = MJPEGStream(maxPixelSize: 640, maxFrameRate: 8)
 
     private var cameraURL: URL? { CameraSource.url(for: settings) }
 

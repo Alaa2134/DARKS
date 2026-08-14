@@ -332,7 +332,10 @@
 "camera.connecting" = "جاري الاتصال بالكاميرا…";
 "camera.not_configured" = "لم يتم إعداد الكاميرا";
 "camera.demo_placeholder" = "الوضع التجريبي - لا توجد كاميرا";
-"camera.error.not_mjpeg" = "هذا الرابط ليس بث MJPEG";
+"camera.error.not_mjpeg" = "الرابط ده مش بث MJPEG. لو الكاميرا بتتكلم RTSP، حطّها في camera.rtsp_url في config.yaml على الباي وخلّي نوع الكاميرا «كاميرا IP عن طريق الباي».";
+"camera.error.single_image" = "الرابط ده بيرجّع صورة واحدة مش بث متواصل. غيّر نوع الكاميرا لـ «لقطات متتابعة».";
+"camera.error.stalled" = "الكاميرا وقفت تبعت صور — بحاول أوصل تاني…";
+"camera.frames.dropped" = "إطارات اتخطّت";
 "camera.overlay" = "الطابعة";
 "camera.none.title" = "لا توجد كاميرا";
 "camera.none.message" = "أضف كاميرا لمتابعة الطباعة عن بعد. crowsnest يأتي مع MainsailOS ويوفر بث MJPEG.";

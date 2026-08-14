@@ -332,7 +332,10 @@
 "camera.connecting" = "Connecting to the camera…";
 "camera.not_configured" = "Camera not configured";
 "camera.demo_placeholder" = "Demo mode - no live camera";
-"camera.error.not_mjpeg" = "That URL is not an MJPEG stream";
+"camera.error.not_mjpeg" = "That URL is not an MJPEG stream. If the camera speaks RTSP, put it in camera.rtsp_url in config.yaml on the Pi and set the camera kind to \"IP camera via the Pi\".";
+"camera.error.single_image" = "That URL returns a single image, not a stream. Set the camera kind to \"Repeated snapshots\".";
+"camera.error.stalled" = "The camera stopped sending - reconnecting…";
+"camera.frames.dropped" = "Frames skipped";
 "camera.overlay" = "Printer";
 "camera.none.title" = "No camera configured";
 "camera.none.message" = "Add a camera to watch your prints remotely. crowsnest ships with MainsailOS and serves an MJPEG stream.";
