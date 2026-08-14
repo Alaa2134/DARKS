@@ -75,7 +75,23 @@ final class PrinterStore: ObservableObject {
     }
     @Published private(set) var backendHealth: BackendHealth?
     @Published private(set) var power = PowerReading.unavailable
+    /// True while at least one command is in flight. Buttons disable on it.
+    ///
+    /// Derived from a depth counter rather than assigned directly. It used to be
+    /// a plain boolean set to `true` on entry and `false` on exit, which is only
+    /// correct for one command at a time: with two overlapping - a pause landing
+    /// while a temperature set is still going - the first to finish cleared the
+    /// flag and re-enabled every button while the second was still on its way.
     @Published private(set) var isBusy = false
+    private var busyDepth = 0
+
+    /// Commands currently on their way to the printer, by name.
+    ///
+    /// `isBusy` cannot prevent a double send on its own: SwiftUI applies
+    /// `.disabled` on the next render, and two taps inside one frame both start
+    /// their Task before that render happens. Cancelling a print twice is not
+    /// harmless - the second CANCEL_PRINT lands on the next print.
+    private var inFlight: Set<String> = []
 
     /// The one-shot Home payload pushed by the backend over `/ws`.
     /// Nil until the first frame arrives (or when the backend is unreachable).
@@ -910,8 +926,16 @@ final class PrinterStore: ObservableObject {
     /// invisible.
     @discardableResult
     func startPrint(filename: String) async -> Bool {
-        isBusy = true
-        defer { isBusy = false }
+        // Keyed by file: two taps on Print are one print, but starting a
+        // different file while the first request is still in flight is a
+        // different intent and is left alone.
+        let key = "print:\(filename)"
+        guard !inFlight.contains(key) else { return false }
+        inFlight.insert(key)
+        defer { inFlight.remove(key) }
+
+        beginBusy()
+        defer { endBusy() }
 
         if settings.demoMode {
             demo.startPrint(filename: filename)
@@ -991,30 +1015,38 @@ final class PrinterStore: ObservableObject {
     // not defined, the Moonraker API is the correct fallback.
 
     func pausePrint() async {
-        if settings.demoMode { demo.pause(); Haptics.impact(.medium); return }
-        if let macro = capabilities.macro(named: "PAUSE") {
-            await runMacro(macro)
-            return
+        await once("pause") {
+            if settings.demoMode { demo.pause(); Haptics.impact(.medium); return }
+            if let macro = capabilities.macro(named: "PAUSE") {
+                await runMacro(macro)
+                return
+            }
+            await run { try await self.moonraker.pausePrint() }
         }
-        await run { try await self.moonraker.pausePrint() }
     }
 
     func resumePrint() async {
-        if settings.demoMode { demo.resume(); Haptics.impact(.medium); return }
-        if let macro = capabilities.macro(named: "RESUME") {
-            await runMacro(macro)
-            return
+        await once("resume") {
+            if settings.demoMode { demo.resume(); Haptics.impact(.medium); return }
+            if let macro = capabilities.macro(named: "RESUME") {
+                await runMacro(macro)
+                return
+            }
+            await run { try await self.moonraker.resumePrint() }
         }
-        await run { try await self.moonraker.resumePrint() }
     }
 
     func cancelPrint() async {
-        if settings.demoMode { demo.cancel(); Haptics.warning(); return }
-        if let macro = capabilities.macro(named: "CANCEL_PRINT") {
-            await runMacro(macro)
-            return
+        // Guarded because a second CANCEL_PRINT does not cancel the same print
+        // twice - it lands on whatever is running by the time it arrives.
+        await once("cancel") {
+            if settings.demoMode { demo.cancel(); Haptics.warning(); return }
+            if let macro = capabilities.macro(named: "CANCEL_PRINT") {
+                await runMacro(macro)
+                return
+            }
+            await run { try await self.moonraker.cancelPrint() }
         }
-        await run { try await self.moonraker.cancelPrint() }
     }
 
     func emergencyStop() async {
@@ -1025,29 +1057,65 @@ final class PrinterStore: ObservableObject {
     }
 
     func restartFirmware() async {
-        if settings.demoMode { demo.firmwareRestart(); return }
-        await run { try await self.moonraker.restartFirmware() }
+        await once("firmware_restart") {
+            if settings.demoMode { demo.firmwareRestart(); return }
+            await run { try await self.moonraker.restartFirmware() }
+        }
     }
 
     func restartKlipper() async {
-        if settings.demoMode { demo.firmwareRestart(); return }
-        await run { try await self.moonraker.restartKlipper() }
+        await once("klipper_restart") {
+            if settings.demoMode { demo.firmwareRestart(); return }
+            await run { try await self.moonraker.restartKlipper() }
+        }
     }
 
     func restartMoonraker() async {
-        guard !settings.demoMode else { return }
-        await run { try await self.moonraker.restartService("moonraker") }
+        await once("moonraker_restart") {
+            guard !settings.demoMode else { return }
+            await run { try await self.moonraker.restartService("moonraker") }
+        }
     }
 
     private func run(_ operation: @escaping () async throws -> Void) async {
-        isBusy = true
-        defer { isBusy = false }
+        beginBusy()
+        defer { endBusy() }
         do {
             try await operation()
             lastError = nil
         } catch {
             handle(error)
         }
+    }
+
+    // MARK: - Busy accounting
+
+    private func beginBusy() {
+        busyDepth += 1
+        isBusy = true
+    }
+
+    private func endBusy() {
+        busyDepth = max(0, busyDepth - 1)
+        isBusy = busyDepth > 0
+    }
+
+    /// Runs `operation` unless a command with the same name is already on its
+    /// way, in which case the second call is dropped.
+    ///
+    /// This is the guard `.disabled(printer.isBusy)` cannot be: the flag reaches
+    /// the button one render later than the tap that should have been refused.
+    ///
+    /// Deliberately not applied to the emergency stop. An extra E-stop costs
+    /// nothing and a refused one could cost a printer, so that path stays
+    /// unguarded on purpose.
+    @discardableResult
+    private func once(_ key: String, _ operation: () async -> Void) async -> Bool {
+        guard !inFlight.contains(key) else { return false }
+        inFlight.insert(key)
+        defer { inFlight.remove(key) }
+        await operation()
+        return true
     }
 
     private func handle(_ error: Error) {
@@ -1110,8 +1178,8 @@ final class PrinterStore: ObservableObject {
     }
 
     func powerOn() async {
-        isBusy = true
-        defer { isBusy = false }
+        beginBusy()
+        defer { endBusy() }
 
         if settings.demoMode {
             demo.setPower(on: true)
@@ -1139,8 +1207,8 @@ final class PrinterStore: ObservableObject {
             return false
         }
 
-        isBusy = true
-        defer { isBusy = false }
+        beginBusy()
+        defer { endBusy() }
 
         if settings.demoMode {
             demo.setPower(on: false)
