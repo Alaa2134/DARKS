@@ -246,3 +246,63 @@ final class PlacementTests: XCTestCase {
         XCTAssertEqual(entry["rotation_deg"] as? [Double], [0, 90, 0])
     }
 }
+
+/// The startup narrator's own logic. Pure, so it is tested directly rather than
+/// through a live socket.
+final class StartupStageTests: XCTestCase {
+
+    func testTheStepsAreInTheOrderTheyActuallyHappen() {
+        XCTAssertEqual(PrinterStore.StartupStage.reachingPi.step, 1)
+        XCTAssertEqual(PrinterStore.StartupStage.reachingPrinter.step, 2)
+        XCTAssertEqual(PrinterStore.StartupStage.waitingForKlipper.step, 3)
+        XCTAssertEqual(PrinterStore.StartupStage.readingConfig.step, 4)
+    }
+
+    func testReadyIsTheLastStepRatherThanAFifth() {
+        // The bar has to be full when the app is usable, not one notch short.
+        XCTAssertEqual(
+            PrinterStore.StartupStage.ready.step,
+            PrinterStore.StartupStage.totalSteps
+        )
+    }
+
+    func testAFailureIsNotPlacedOnTheProgressBarAtAll() {
+        // Offline is not "step zero of four" - it is not on the sequence at
+        // all. A failure shown as progress reads as something still happening.
+        XCTAssertEqual(PrinterStore.StartupStage.offline.step, 0)
+        XCTAssertEqual(PrinterStore.StartupStage.authenticationFailed.step, 0)
+    }
+
+    func testOnlyTheEndStatesAreSettled() {
+        XCTAssertTrue(PrinterStore.StartupStage.ready.isSettled)
+        XCTAssertTrue(PrinterStore.StartupStage.offline.isSettled)
+        XCTAssertTrue(PrinterStore.StartupStage.authenticationFailed.isSettled)
+
+        // These four are still moving, so the card keeps its spinner.
+        XCTAssertFalse(PrinterStore.StartupStage.reachingPi.isSettled)
+        XCTAssertFalse(PrinterStore.StartupStage.reachingPrinter.isSettled)
+        XCTAssertFalse(PrinterStore.StartupStage.waitingForKlipper.isSettled)
+        XCTAssertFalse(PrinterStore.StartupStage.readingConfig.isSettled)
+    }
+
+    func testEveryStageNamesAStringTheAppCanShow() {
+        let stages: [PrinterStore.StartupStage] = [
+            .reachingPi, .reachingPrinter, .waitingForKlipper,
+            .readingConfig, .ready, .authenticationFailed, .offline
+        ]
+        for stage in stages {
+            XCTAssertFalse(stage.localizationKey.isEmpty)
+            // A key that resolves to itself is a key with no translation.
+            XCTAssertNotEqual(L.t(stage.localizationKey), stage.localizationKey)
+        }
+    }
+
+    @MainActor
+    func testDemoModeIsAlwaysReady() {
+        let settings = AppSettings()
+        settings.demoMode = true
+        let store = PrinterStore(settings: settings, notifications: NotificationManager())
+
+        XCTAssertEqual(store.startupStage, .ready)
+    }
+}

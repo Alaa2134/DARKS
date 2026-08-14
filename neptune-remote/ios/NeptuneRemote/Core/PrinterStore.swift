@@ -81,7 +81,7 @@ final class PrinterStore: ObservableObject {
     /// used to show the same nothing for all four, so a Pi that was off looked
     /// exactly like a Klipper that was still starting, and both looked like an
     /// app that had hung.
-    enum StartupStage: Equatable {
+    enum StartupStage: Hashable {
         case reachingPi
         case reachingPrinter
         case waitingForKlipper

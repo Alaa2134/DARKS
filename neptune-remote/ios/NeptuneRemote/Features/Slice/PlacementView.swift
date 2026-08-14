@@ -20,7 +20,6 @@ struct PlacementView: View {
 
     @EnvironmentObject private var placement: PlacementStore
     @EnvironmentObject private var printer: PrinterStore
-    @Environment(\.dismiss) private var dismiss
 
     @State private var scalePercent: Double = 100
     @State private var showingReset = false
