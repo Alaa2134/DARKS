@@ -144,3 +144,78 @@ async def acknowledge_outage(
     if not state.outage.acknowledge(record_id):
         raise HTTPException(status_code=404, detail="No outage with that id")
     return {"ok": True, "outage": state.outage.status()}
+
+
+# --------------------------------------------------------------------------- #
+# Carrying on after a power cut
+#
+# The Pi already knows a print died and at which layer, and it can already build
+# a file that starts from a given layer. Nothing joined the two, so the app said
+# "الكهربا قطعت عند الطبقة ٢١٤" and left the user to find the file, count to 214
+# and set it up by hand - the one moment they are least inclined to.
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/alerts/outage/resume")
+async def outage_resume_plan(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """What it would take to carry on with the print the power cut killed.
+
+    Reported rather than done: resuming onto a part that is still stuck to the
+    bed - or was knocked off while the power was out - is a decision that needs
+    eyes on the machine. This only says whether it is possible, and from where.
+    """
+    record = _resumable_outage(state)
+    if record is None:
+        return {"available": False, "reason_ar": "مفيش طباعة اتقطعت محتاجة استكمال."}
+
+    snapshot = record.snapshot
+    layer = int(snapshot.current_layer or 0)
+    if layer <= 0:
+        return {
+            "available": False,
+            "reason_ar": "الطباعة وقفت قبل ما تخلص أول طبقة، فمفيش حاجة تتكمّل.",
+            "filename": snapshot.filename,
+        }
+
+    path = state.gcodes.path_for(snapshot.filename)
+    if not path.is_file():
+        return {
+            "available": False,
+            # The file lives on Moonraker for a print started from Mainsail.
+            # Saying so beats a 404 that reads like the feature is broken.
+            "reason_ar": (
+                f"«{snapshot.filename}» مش موجود على الباي نفسه. الاستكمال بيشتغل "
+                "على الملفات اللي اتقطعت من التطبيق."
+            ),
+            "filename": snapshot.filename,
+            "layer": layer,
+        }
+
+    return {
+        "available": True,
+        "outage_id": record.id,
+        "filename": snapshot.filename,
+        # One layer back: the layer the printer was *on* when the power went is
+        # the layer that did not finish, and starting on top of half a layer
+        # leaves a seam and a gap. Redoing it costs one layer of plastic.
+        "layer": max(0, layer - 1),
+        "recorded_layer": layer,
+        "z": snapshot.z_height,
+        "nozzle_temp": snapshot.nozzle_target,
+        "bed_temp": snapshot.bed_target,
+        "detected_at": record.detected_at,
+        "cause_ar": record.cause,
+    }
+
+
+def _resumable_outage(state: AppState):
+    """The newest interruption that killed a print, acknowledged or not.
+
+    Acknowledged records still count: dismissing the card is how you say "I have
+    seen it", not "I have dealt with it", and the print is often only picked up
+    the next morning.
+    """
+    for record in reversed(state.outage.records):
+        if record.was_printing and record.snapshot and record.snapshot.filename:
+            return record
+    return None

@@ -226,6 +226,98 @@ class TestOutageEndpoints:
         record_id = body["records"][0]["id"]
         assert client.post(f"/api/alerts/outage/{record_id}/acknowledge").status_code == 200
 
+    # ----------------------------------------------------------------- resume
+    #
+    # The Pi knew a print died and at which layer, and it could already build a
+    # file starting from a layer. Nothing joined the two, so the app said "the
+    # power went at layer 214" and left the user to find the file and count.
+
+    def _cut_power(self, client: TestClient, **snapshot):
+        from app.power.outage import Detection, PrintSnapshot
+
+        services(client).outage.open_outage(
+            Detection(cause="printer_power", detail="device gone"),
+            PrintSnapshot(**snapshot),
+        )
+
+    def test_nothing_to_resume_on_a_fresh_install(self, client: TestClient):
+        body = client.get("/api/alerts/outage/resume").json()
+
+        assert body["available"] is False
+        assert body["reason_ar"]
+
+    def test_a_cut_print_offers_to_carry_on(self, client: TestClient, tmp_path):
+        state = services(client)
+        target = state.gcodes.path_for("benchy.gcode")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(";LAYER:0\nG1 X0 Y0\n", encoding="utf-8")
+
+        self._cut_power(
+            client,
+            filename="benchy.gcode",
+            current_layer=214,
+            total_layer=900,
+            nozzle_target=210,
+            bed_target=60,
+            z_height=42.8,
+        )
+
+        body = client.get("/api/alerts/outage/resume").json()
+
+        assert body["available"] is True
+        assert body["filename"] == "benchy.gcode"
+        # One layer back: the layer it was on is the one that did not finish,
+        # and starting on top of half a layer leaves a seam.
+        assert body["layer"] == 213
+        assert body["recorded_layer"] == 214
+        assert body["nozzle_temp"] == 210
+
+    def test_a_print_that_died_on_the_first_layer_has_nothing_to_resume(
+        self, client: TestClient
+    ):
+        self._cut_power(client, filename="benchy.gcode", current_layer=0)
+
+        body = client.get("/api/alerts/outage/resume").json()
+
+        assert body["available"] is False
+        assert "أول طبقة" in body["reason_ar"]
+
+    def test_a_file_that_is_not_on_the_pi_says_so_rather_than_404ing(
+        self, client: TestClient
+    ):
+        # A print started from Mainsail lives in Moonraker's own folder. Saying
+        # that beats an error that reads like the feature is broken.
+        self._cut_power(client, filename="from-mainsail.gcode", current_layer=100)
+
+        body = client.get("/api/alerts/outage/resume").json()
+
+        assert body["available"] is False
+        assert "from-mainsail.gcode" in body["reason_ar"]
+        assert body["layer"] == 100
+
+    def test_an_acknowledged_outage_can_still_be_resumed(self, client: TestClient):
+        # Dismissing the card means "I have seen it", not "I have dealt with
+        # it" - the print is usually picked up the next morning.
+        state = services(client)
+        target = state.gcodes.path_for("kit.gcode")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(";LAYER:0\n", encoding="utf-8")
+
+        self._cut_power(client, filename="kit.gcode", current_layer=50)
+        record_id = client.get("/api/alerts/outage").json()["records"][0]["id"]
+        client.post(f"/api/alerts/outage/{record_id}/acknowledge")
+
+        assert client.get("/api/alerts/outage/resume").json()["available"] is True
+
+    def test_a_print_that_was_not_running_is_not_offered(self, client: TestClient):
+        from app.power.outage import Detection
+
+        services(client).outage.open_outage(
+            Detection(cause="printer_power", detail="idle"), None
+        )
+
+        assert client.get("/api/alerts/outage/resume").json()["available"] is False
+
 
 # --------------------------------------------------------------------------- #
 # The wiring: events actually reach the notification service
