@@ -1622,3 +1622,32 @@
 "preview.feature.bridge" = "Bridges and overhangs";
 "preview.feature.travel" = "Travel (nothing extruded)";
 "preview.feature.unknown" = "Unclassified";
+
+
+/* Resuming a stopped print, and printing only a piece */
+"resume.title" = "Resume the print";
+"resume.explain" = "The print stopped and the part is still on the bed? Klipper has no memory of it - the file starts at layer one and there is no way to say start at 340. The Pi rewrites the file: everything below the layer you pick is removed and replaced with a preamble that puts the machine back into the state it stopped in.";
+"resume.layers" = "Which layers";
+"resume.start_layer" = "Start at";
+"resume.end_layer" = "Stop after";
+"resume.layer_number" = "%d of %d";
+"resume.only_a_piece" = "Print only a piece";
+"resume.only_a_piece.hint" = "For the top half of a part that failed, or one section of something tall.";
+"resume.checking" = "Checking whether this layer can be resumed from…";
+"resume.possible" = "This layer can be resumed from";
+"resume.blocked" = "This layer cannot be resumed from";
+"resume.height" = "Layer height";
+"resume.z_measured" = "The Z homing point is clear of the part, so the printer will measure its own height.";
+"resume.z_asserted" = "The Z homing point is inside the part, so Z will not be homed - the height is asserted instead. Check the nozzle is clear before you start.";
+"resume.temperatures" = "Temperatures";
+"resume.temperatures.found" = "The file was running at %d° nozzle and %d° bed.";
+"resume.changed_filament" = "I changed the filament";
+"resume.changed_filament.hint" = "If a different material is loaded, set the temperatures it needs.";
+"resume.prime" = "Prime before starting";
+"resume.prime.hint" = "A nozzle left open for a day has partly drained, and the first millimetres of the layer would be missing without this.";
+"resume.build" = "Build the resume file";
+"resume.building" = "Writing the file…";
+"resume.will_not_start" = "The file is written and handed to the printer. It will not start on its own - you start it, after looking at the machine.";
+"resume.not_uploaded" = "The file was written on the Pi but Moonraker would not take it. You can upload it from the files screen.";
+"resume.next_step" = "Open Files, pick this file, and start the print once you are sure the bed and the part are where they should be.";
+"resume.open" = "Resume from this layer";

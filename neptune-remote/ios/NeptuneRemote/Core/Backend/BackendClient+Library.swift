@@ -68,6 +68,34 @@ extension BackendClient {
         _ = try await raw(path: "library/\(id)", method: "DELETE", timeout: 30)
     }
 
+    // MARK: - Resuming
+
+    /// What resuming at this layer would involve. Nothing is written.
+    func resumePlan(name: String, layer: Int) async throws -> ResumePlan {
+        try await decode(
+            ResumePlan.self,
+            path: "gcodes/local/\(name)/resume/\(layer)",
+            timeout: 120
+        )
+    }
+
+    /// Write the resumed file and hand it to the printer.
+    ///
+    /// Never starts the print. Resuming onto a part that is still on the bed is
+    /// something to press Print on deliberately, after looking at the machine.
+    func buildResume(
+        name: String,
+        payload: ResumeRequestPayload
+    ) async throws -> ResumeResult {
+        try await decode(
+            ResumeResult.self,
+            path: "gcodes/local/\(name)/resume",
+            method: "POST",
+            body: try await http.encodeBody(payload),
+            timeout: 300
+        )
+    }
+
     // MARK: - Toolpath preview
 
     /// How many layers a sliced file has, how high each one is, and how wide

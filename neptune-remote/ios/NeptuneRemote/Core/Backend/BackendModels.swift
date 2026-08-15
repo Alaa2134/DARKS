@@ -125,6 +125,85 @@ struct BackendModelFile: Decodable, Identifiable, Equatable, Hashable {
     }
 }
 
+// MARK: - Resuming a print
+
+/// What resuming a file at a layer would involve.
+///
+/// Asked for before anything is written, because the answer decides whether the
+/// option is offered at all: a Z homing point inside the part still on the bed
+/// is a nozzle through a print.
+struct ResumePlan: Codable, Equatable {
+    var filename: String = ""
+    var layer: Int = 0
+    var layerCount: Int = 0
+    var z: Double?
+    /// What the file itself was using at that layer, so the form can be filled
+    /// in rather than asked about.
+    var nozzleTemp: Double?
+    var bedTemp: Double?
+    var fanPercent: Double?
+    /// True when the probe point is clear of the part and Z can be measured.
+    var canHomeZ: Bool = false
+    var blockersAr: [String] = []
+    var warningsAr: [String] = []
+
+    var isPossible: Bool { blockersAr.isEmpty }
+
+    enum CodingKeys: String, CodingKey {
+        case filename, layer, z
+        case layerCount = "layer_count"
+        case nozzleTemp = "nozzle_temp"
+        case bedTemp = "bed_temp"
+        case fanPercent = "fan_percent"
+        case canHomeZ = "can_home_z"
+        case blockersAr = "blockers_ar"
+        case warningsAr = "warnings_ar"
+    }
+}
+
+/// The resumed file that was written, and what to know about it.
+struct ResumeResult: Decodable, Equatable {
+    var ok: Bool = false
+    var filename: String = ""
+    var size: Int = 0
+    /// False means the file is on the Pi and usable, but Moonraker would not
+    /// take it - which is worth saying rather than reporting a flat failure.
+    var uploaded: Bool = false
+    var message: String = ""
+    var warningsAr: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case ok, filename, size, uploaded, message
+        case warningsAr = "warnings_ar"
+    }
+}
+
+/// Write a file that starts at `startLayer`.
+///
+/// With no `endLayer` this is a resume. With one it is "print this piece" - the
+/// top half of something that failed at 80%, or one section of a tall part.
+struct ResumeRequestPayload: Encodable, Equatable {
+    var startLayer: Int
+    var endLayer: Int?
+    /// Overridden for a different spool. Resuming a day later with different
+    /// filament is the ordinary case, not the exception.
+    var nozzleTemp: Double?
+    var bedTemp: Double?
+    var primeMM: Double = 8
+    var outputName: String?
+    var uploadToMoonraker: Bool = true
+
+    enum CodingKeys: String, CodingKey {
+        case startLayer = "start_layer"
+        case endLayer = "end_layer"
+        case nozzleTemp = "nozzle_temp"
+        case bedTemp = "bed_temp"
+        case primeMM = "prime_mm"
+        case outputName = "output_name"
+        case uploadToMoonraker = "upload_to_moonraker"
+    }
+}
+
 // MARK: - Toolpath preview
 
 /// What the nozzle was doing, in the five kinds a phone screen can tell apart.

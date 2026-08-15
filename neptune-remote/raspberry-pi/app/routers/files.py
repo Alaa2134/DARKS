@@ -12,6 +12,12 @@ from fastapi.responses import FileResponse, Response
 from ..deps import get_state
 from ..moonraker import MoonrakerError
 from ..gcode.preview import PreviewError, load_or_build_index, read_layer
+from ..gcode.resume import (
+    ResumeError,
+    assess as assess_resume,
+    build_resumed_file,
+    state_at_layer,
+)
 from ..schemas import (
     AppliedColorChange,
     GCodeFile,
@@ -21,6 +27,9 @@ from ..schemas import (
     PreviewLayer,
     PreviewSegment,
     PreviewSummary,
+    ResumePlan,
+    ResumeRequest,
+    ResumeResponse,
     UploadResponse,
 )
 from ..security import require_token
@@ -300,6 +309,168 @@ async def gcode_preview_layer(
             PreviewSegment(feature=segment.feature, points=segment.points)
             for segment in result.segments
         ],
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Resuming, and printing a piece
+#
+# A print stops - power cut, filament out, a cancel a day ago - and the part is
+# still stuck to the bed exactly where it was left. Klipper has no memory of it:
+# the file starts at layer one and there is no way to say "start at 340". So the
+# file is rewritten.
+# --------------------------------------------------------------------------- #
+
+
+async def _z_home_point(state: AppState) -> Optional[tuple[float, float]]:
+    """Where this printer homes Z, from its own [safe_z_home].
+
+    The whole safety question turns on this: Z homing drives the nozzle down at
+    a fixed point, and after a resume that point may be inside the part already
+    on the bed.
+    """
+    try:
+        config = await state.refresh_live_config()
+    except Exception:                                       # noqa: BLE001
+        return None
+    if config is None:
+        return None
+    section = config.safe_z_home
+    if section is None:
+        return None
+    raw = section.get("home_xy_position")
+    if not raw:
+        return None
+    try:
+        parts = [float(piece.strip()) for piece in str(raw).split(",")[:2]]
+    except ValueError:
+        return None
+    return (parts[0], parts[1]) if len(parts) == 2 else None
+
+
+async def _force_move_enabled(state: AppState) -> bool:
+    try:
+        config = await state.refresh_live_config()
+    except Exception:                                       # noqa: BLE001
+        return False
+    if config is None:
+        return False
+    section = config.section("force_move")
+    if section is None:
+        return False
+    return str(section.get("enable_force_move", "")).strip().lower() in {
+        "true", "1", "yes"
+    }
+
+
+@router.get("/gcodes/local/{name}/resume/{layer}", response_model=ResumePlan)
+async def resume_plan(
+    name: str, layer: int, state: AppState = Depends(get_state)
+) -> ResumePlan:
+    """What resuming at this layer would involve - before anything is written.
+
+    Asked first because the answer decides whether the option is offered at
+    all, and because the temperatures it reports back are what the app fills
+    the form with.
+    """
+    path = _local_gcode(state, name)
+    try:
+        index = load_or_build_index(path, _preview_cache_dir(state))
+        machine = state_at_layer(path, index, layer)
+    except (PreviewError, ResumeError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    safety = assess_resume(
+        index,
+        z_home_point=await _z_home_point(state),
+        force_move_enabled=await _force_move_enabled(state),
+        state=machine,
+    )
+
+    return ResumePlan(
+        filename=path.name,
+        layer=layer,
+        layer_count=index.layer_count,
+        z=machine.z,
+        nozzle_temp=machine.nozzle_temp,
+        bed_temp=machine.bed_temp,
+        fan_percent=machine.fan_percent,
+        can_home_z=safety.can_home_z,
+        blockers_ar=safety.blockers_ar,
+        warnings_ar=safety.warnings_ar,
+    )
+
+
+@router.post("/gcodes/local/{name}/resume", response_model=ResumeResponse)
+async def build_resume(
+    name: str, request: ResumeRequest, state: AppState = Depends(get_state)
+) -> ResumeResponse:
+    """Write a file that starts at `start_layer`, and hand it to the printer.
+
+    Never starts the print. Resuming onto a part that is still on the bed is
+    something to press Print on deliberately, after looking at the machine.
+    """
+    path = _local_gcode(state, name)
+    try:
+        index = load_or_build_index(path, _preview_cache_dir(state))
+        machine = state_at_layer(path, index, request.start_layer)
+        safety = assess_resume(
+            index,
+            z_home_point=await _z_home_point(state),
+            force_move_enabled=await _force_move_enabled(state),
+            state=machine,
+        )
+
+        suffix = (
+            f"part{request.start_layer + 1}-{request.end_layer + 1}"
+            if request.end_layer is not None
+            else f"resume{request.start_layer + 1}"
+        )
+        output = state.gcodes.unique_path(
+            request.output_name or f"{Path(path.name).stem}_{suffix}.gcode"
+        )
+
+        build_resumed_file(
+            path, output, index,
+            start_layer=request.start_layer,
+            end_layer=request.end_layer,
+            safety=safety,
+            state=machine,
+            nozzle_temp=request.nozzle_temp,
+            bed_temp=request.bed_temp,
+            prime_mm=request.prime_mm,
+        )
+    except (PreviewError, ResumeError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    size = output.stat().st_size
+    uploaded = False
+    if request.upload_to_moonraker:
+        try:
+            await state.moonraker.upload_gcode(
+                output.name, output.read_bytes(), start_print=False
+            )
+            uploaded = True
+        except MoonrakerError as error:
+            # The file is written and usable either way, so this is reported
+            # rather than raised - losing it over a failed upload would mean
+            # scanning the whole source file again.
+            return ResumeResponse(
+                ok=True,
+                filename=output.name,
+                size=size,
+                uploaded=False,
+                message=f"الملف اتعمل بس مارفعش لمونريكر: {error.message}",
+                warnings_ar=safety.warnings_ar,
+            )
+
+    return ResumeResponse(
+        ok=True,
+        filename=output.name,
+        size=size,
+        uploaded=uploaded,
+        message="الملف جاهز. راجع الطابعة قبل ما تبدأ الطباعة.",
+        warnings_ar=safety.warnings_ar,
     )
 
 

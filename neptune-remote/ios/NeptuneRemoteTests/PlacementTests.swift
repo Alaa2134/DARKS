@@ -332,7 +332,8 @@ final class ToolpathPreviewTests: XCTestCase {
         let segment = try JSONDecoder().decode(PreviewSegment.self, from: json)
 
         XCTAssertEqual(segment.feature, .unknown)
-        XCTAssertEqual(segment.coordinates.count, 1)
+        // Four values is two points, and the geometry survives the unknown name.
+        XCTAssertEqual(segment.coordinates.count, 2)
     }
 
     func testAnOddPointCountDropsTheStrayValueInsteadOfCrashing() {

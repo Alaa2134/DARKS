@@ -237,6 +237,77 @@ class PreviewLayer(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# Resuming a print, and printing a piece of one
+# --------------------------------------------------------------------------- #
+
+
+class ResumePlan(BaseModel):
+    """What resuming this file at this layer would involve.
+
+    Asked for before anything is written, because the answer decides whether
+    the option is offered at all: a Z homing point inside the part on the bed
+    is a nozzle through a print.
+    """
+
+    filename: str = ""
+    layer: int = 0
+    layer_count: int = 0
+    z: Optional[float] = None
+    #: Temperatures the file itself was using at that layer, so the app can
+    #: offer them as the default rather than asking.
+    nozzle_temp: Optional[float] = None
+    bed_temp: Optional[float] = None
+    fan_percent: Optional[float] = None
+    #: True when the probe point is clear of the part and Z can be measured.
+    can_home_z: bool = False
+    #: Empty when the resume is possible. Non-empty means it is not.
+    blockers_ar: List[str] = Field(default_factory=list)
+    warnings_ar: List[str] = Field(default_factory=list)
+
+    @property
+    def is_possible(self) -> bool:
+        return not self.blockers_ar
+
+
+class ResumeResponse(BaseModel):
+    """The file that was written, and what to know about it.
+
+    Its own type rather than the generic upload response: that one requires a
+    size and carries no message, and both matter here - the caller needs to be
+    told when the file was written but could not be handed to Moonraker.
+    """
+
+    ok: bool = True
+    filename: str = ""
+    size: int = 0
+    #: True when Moonraker accepted it. False means the file is on the Pi and
+    #: usable, but has to be uploaded another way.
+    uploaded: bool = False
+    message: str = ""
+    warnings_ar: List[str] = Field(default_factory=list)
+
+
+class ResumeRequest(BaseModel):
+    """Write a file that starts at `start_layer`.
+
+    With no `end_layer` this is a resume. With one it is "print this piece" -
+    the top half of something that failed at 80%, or one section of a tall part.
+    """
+
+    start_layer: int = Field(ge=0)
+    end_layer: Optional[int] = Field(default=None, ge=0)
+    #: Override the temperatures for a different spool. Resuming a day later
+    #: with a different filament is the ordinary case, not the exception.
+    nozzle_temp: Optional[float] = Field(default=None, ge=0, le=350)
+    bed_temp: Optional[float] = Field(default=None, ge=0, le=150)
+    #: Filament to push before the first move, refilling a nozzle that has been
+    #: sitting open.
+    prime_mm: float = Field(default=8.0, ge=0, le=50)
+    output_name: Optional[str] = None
+    upload_to_moonraker: bool = True
+
+
+# --------------------------------------------------------------------------- #
 # Model placement
 #
 # How a model is turned, sized and stood up before it reaches the slicer.

@@ -44,6 +44,7 @@ struct ToolpathPreviewView: View {
                 } else if store.hasContent {
                     canvasCard
                     scrubberCard
+                    resumeLink
                     legendCard
                 } else if store.lastError == nil {
                     EmptyStateView(
@@ -211,6 +212,44 @@ struct ToolpathPreviewView: View {
         }
         .frame(height: 10)
         .accessibilityLabel(L.t("preview.color_change_count", changes.count))
+    }
+
+    // MARK: - Carrying on from here
+
+    /// Resume from the layer currently on screen.
+    ///
+    /// This is why the preview and the resume belong together: you scrub until
+    /// you find the last layer that actually printed, and the button carries
+    /// that number through - rather than asking you to remember it and type it
+    /// into a different screen.
+    private var resumeLink: some View {
+        NavigationLink {
+            ResumePrintView(
+                filename: filename,
+                startingLayer: store.selectedLayer,
+                layerCount: store.layerCount
+            )
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "arrow.trianglehead.clockwise")
+                    .font(.title3)
+                    .foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localized: "resume.open")
+                        .font(.subheadline.weight(.medium))
+                    Text(L.t("resume.layer_number", store.selectedLayer + 1, store.layerCount))
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.forward")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .card()
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Legend
