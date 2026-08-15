@@ -921,6 +921,24 @@ async def create_collection(
     return state.library.create_collection(name_ar, name_en, icon)
 
 
+@router.patch("/collections/{collection_id}", response_model=Collection)
+async def rename_collection(
+    collection_id: str,
+    name_ar: str = Body("", embed=True),
+    name_en: str = Body("", embed=True),
+    icon: str = Body("", embed=True),
+    state: AppState = Depends(get_state),
+) -> Collection:
+    updated = state.library.rename_collection(
+        collection_id, name_ar=name_ar, name_en=name_en, icon=icon
+    )
+    if updated is None:
+        raise HTTPException(
+            status_code=404, detail="المجموعة دي مش موجودة أو مش بتتعدّل."
+        )
+    return updated
+
+
 @router.delete("/collections/{collection_id}", response_model=OKResponse)
 async def delete_collection(collection_id: str, state: AppState = Depends(get_state)) -> OKResponse:
     if not state.library.delete_collection(collection_id):

@@ -376,6 +376,45 @@ def test_builtin_collection_cannot_be_deleted(store: LibraryStore):
     assert store.delete_collection("favourites") is False
 
 
+def test_a_project_can_be_renamed(store: LibraryStore):
+    # An imported archive is named after whatever the person who packed it
+    # typed, so renaming is what turns it into a project.
+    collection = store.create_collection("kit")
+
+    renamed = store.rename_collection(collection.id, name_ar="طقم الرف")
+
+    assert renamed is not None
+    assert renamed.name_ar == "طقم الرف"
+    assert store.collection(collection.id).name_ar == "طقم الرف"
+
+
+def test_renaming_keeps_what_was_not_given(store: LibraryStore):
+    collection = store.create_collection("kit", "Kit", icon="shippingbox")
+
+    renamed = store.rename_collection(collection.id, name_ar="طقم")
+
+    assert renamed.name_en == "Kit"
+    assert renamed.icon == "shippingbox"
+
+
+def test_renaming_does_not_lose_the_parts(store: LibraryStore, stl_file: Path):
+    item = store.create_item(payload=LibraryItemCreate(name_ar="قطعة"), model_file=stl_file)
+    collection = store.create_collection("kit")
+    store.add_to_collection(collection.id, item.id)
+
+    store.rename_collection(collection.id, name_ar="طقم")
+
+    assert collection.id in store.get_item(item.id).collections
+
+
+def test_a_builtin_collection_cannot_be_renamed(store: LibraryStore):
+    assert store.rename_collection("favourites", name_ar="المفضلة بتاعتي") is None
+
+
+def test_renaming_something_that_is_not_there_says_so(store: LibraryStore):
+    assert store.rename_collection("nope", name_ar="x") is None
+
+
 def test_categories_include_counts(store: LibraryStore, stl_file: Path):
     store.create_item(payload=LibraryItemCreate(name_ar="أ", category="stands"), model_file=stl_file)
     categories = {entry.id: entry for entry in store.categories()}

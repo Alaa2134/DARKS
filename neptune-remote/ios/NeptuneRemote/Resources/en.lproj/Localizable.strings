@@ -1711,3 +1711,19 @@
 "import.works.direct" = "Any direct link to an STL, 3MF or OBJ file.";
 "import.works.zip" = "A link to a ZIP holding several parts - they arrive as one project, not as separate models.";
 "import.works.pages" = "Printables and MakerWorld pages need a login, so download the file there and paste its direct link. Thingiverse works once its key is set in config.yaml on the Pi.";
+
+/* Projects */
+"library.section.projects" = "Projects";
+"project.title" = "Project";
+"project.parts" = "Project parts";
+"project.part_count" = "Parts";
+"project.part_count_short" = "%d part(s)";
+"project.tallest" = "Tallest part";
+"project.slice_all" = "Slice the whole project at once";
+"project.slice_all.note" = "Every part is sliced into one file: one heat-up, one prime - and one failure that takes all of them, which is why the plate is worth a look first.";
+"project.rename" = "Rename the project";
+"project.name" = "Project name";
+"project.delete" = "Delete the project";
+"project.delete.confirm" = "Only the grouping is deleted - the parts stay in the library.";
+"project.remove_part" = "Remove this part from the project";
+"project.empty" = "This project has no parts.";

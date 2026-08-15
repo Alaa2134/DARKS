@@ -423,6 +423,90 @@ final class LibraryStore: ObservableObject {
         await refreshItem(id: item.id)
     }
 
+    // MARK: - Projects
+    //
+    // A project is a collection with parts in it. The distinction the app makes
+    // is only in how it is shown: built-in collections are filters ("things I
+    // liked"), while the rest are projects - a set of parts that were meant to
+    // be printed together, which is exactly what an imported archive is.
+
+    var projects: [LibraryCollection] {
+        collections.filter { !$0.builtin && $0.itemCount > 0 }
+    }
+
+    func collection(id: String) -> LibraryCollection? {
+        collections.first { $0.id == id }
+    }
+
+    /// The parts of a project, in the order they were added to the library.
+    ///
+    /// Read from what is already loaded rather than asked for: the list is on
+    /// screen anyway, and a second round trip to learn what the app has in hand
+    /// is a spinner for nothing.
+    func parts(of collectionID: String) -> [LibraryItem] {
+        items.filter { $0.collections.contains(collectionID) }
+    }
+
+    @discardableResult
+    func createProject(named name: String) async -> LibraryCollection? {
+        guard !settings.demoMode else { return nil }
+        do {
+            let created = try await printer.backend.createCollection(
+                nameAR: name, icon: "shippingbox"
+            )
+            collections.append(created)
+            Haptics.success()
+            return created
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            return nil
+        }
+    }
+
+    func renameProject(_ id: String, to name: String) async {
+        guard !settings.demoMode else { return }
+        do {
+            let updated = try await printer.backend.renameCollection(id: id, nameAR: name)
+            if let index = collections.firstIndex(where: { $0.id == id }) {
+                collections[index] = updated
+            }
+            Haptics.success()
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+        }
+    }
+
+    /// Delete the project, never its parts.
+    ///
+    /// Deleting the models with it would be the one mistake nobody can undo, so
+    /// this removes only the grouping - the parts stay in the library.
+    func deleteProject(_ id: String) async {
+        guard !settings.demoMode else { return }
+        do {
+            try await printer.backend.deleteCollection(id: id)
+            collections.removeAll { $0.id == id }
+            await load(force: true)
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+        }
+    }
+
+    func removeFromProject(_ item: LibraryItem, project: String) async {
+        guard !settings.demoMode else { return }
+        do {
+            try await printer.backend.removeFromCollection(
+                collectionID: project, itemID: item.id
+            )
+            await refreshItem(id: item.id)
+            // The count on the card comes from the Pi, so it is re-read rather
+            // than decremented here - a number the app maintains by itself is a
+            // number that drifts.
+            collections = (try? await printer.backend.collections()) ?? collections
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+        }
+    }
+
     func ratePrint(historyID: Int, item: LibraryItem?, rating: String, profile: [String: String]) async {
         guard !settings.demoMode else { return }
         let payload = PrintRatingPayload(

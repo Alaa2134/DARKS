@@ -334,6 +334,31 @@ extension BackendClient {
         try await decode([LibraryCollection].self, path: "collections")
     }
 
+    func createCollection(nameAR: String, icon: String = "folder") async throws -> LibraryCollection {
+        try await decode(
+            LibraryCollection.self,
+            path: "collections",
+            method: "POST",
+            body: try await http.encodeBody(["name_ar": nameAR, "icon": icon])
+        )
+    }
+
+    /// Rename a project. Empty fields are left as they were.
+    func renameCollection(
+        id: String, nameAR: String, icon: String = ""
+    ) async throws -> LibraryCollection {
+        try await decode(
+            LibraryCollection.self,
+            path: "collections/\(id)",
+            method: "PATCH",
+            body: try await http.encodeBody(["name_ar": nameAR, "icon": icon])
+        )
+    }
+
+    func deleteCollection(id: String) async throws {
+        _ = try await raw(path: "collections/\(id)", method: "DELETE", timeout: 30)
+    }
+
     func addToCollection(collectionID: String, itemID: String) async throws {
         _ = try await raw(path: "collections/\(collectionID)/items/\(itemID)", method: "POST")
     }

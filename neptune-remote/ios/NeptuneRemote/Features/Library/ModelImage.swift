@@ -138,5 +138,17 @@ extension View {
         navigationDestination(for: String.self) { identifier in
             ModelDetailView(itemID: identifier)
         }
+        .navigationDestination(for: ProjectRoute.self) { route in
+            ProjectView(projectID: route.id)
+        }
     }
+}
+
+/// A project pushed by id.
+///
+/// Its own type rather than another `String` route: a bare string already means
+/// "a model", and two destinations reading the same type is how a tap on a
+/// project ends up opening a model that does not exist.
+struct ProjectRoute: Hashable {
+    let id: String
 }

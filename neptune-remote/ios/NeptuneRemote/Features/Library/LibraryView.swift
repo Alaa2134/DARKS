@@ -229,6 +229,9 @@ struct LibraryView: View {
         } else {
             categoryChips
 
+            if !library.projects.isEmpty, library.selectedCategory == nil {
+                projectsShelf
+            }
             if !library.favourites.isEmpty, library.selectedCategory == nil {
                 shelf(titleKey: "library.section.favourites", icon: "star.fill", items: library.favourites)
             }
@@ -290,6 +293,46 @@ struct LibraryView: View {
             .foregroundStyle(selected ? .white : .primary)
         }
         .buttonStyle(.plain)
+    }
+
+    /// Projects, above the models.
+    ///
+    /// A ZIP of eight parts used to land as eight unrelated tiles, and the only
+    /// thing that said they belonged together disappeared on import. This is
+    /// where they stay together.
+    private var projectsShelf: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            SectionHeader("library.section.projects", systemImage: "shippingbox")
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ForEach(library.projects) { project in
+                        NavigationLink(value: ProjectRoute(id: project.id)) {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Image(systemName: project.icon)
+                                    .font(.title3)
+                                    .foregroundStyle(Theme.accent)
+                                Text(project.displayName)
+                                    .font(.subheadline.weight(.medium))
+                                    .lineLimit(1)
+                                Text(L.t("project.part_count_short", project.itemCount))
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(width: 130, alignment: .leading)
+                            .padding(12)
+                            .background(
+                                Theme.cardFill,
+                                in: RoundedRectangle(
+                                    cornerRadius: Theme.smallCornerRadius, style: .continuous
+                                )
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 2)
+            }
+        }
     }
 
     private func shelf(titleKey: String, icon: String, items: [LibraryItem]) -> some View {

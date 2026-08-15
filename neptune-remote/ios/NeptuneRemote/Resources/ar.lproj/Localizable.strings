@@ -1710,3 +1710,19 @@
 "import.works.direct" = "أي رابط مباشر لملف STL أو 3MF أو OBJ.";
 "import.works.zip" = "رابط ملف ZIP فيه كذا قطعة — بيدخلوا المكتبة كمشروع واحد مش قطع متفرقة.";
 "import.works.pages" = "صفحات Printables وMakerWorld محتاجة تسجيل دخول، فنزّل الملف منها والصق رابطه المباشر. Thingiverse بيشتغل لو حطيت المفتاح في config.yaml على الراسبيري.";
+
+/* المشاريع */
+"library.section.projects" = "مشاريع";
+"project.title" = "مشروع";
+"project.parts" = "قطع المشروع";
+"project.part_count" = "عدد القطع";
+"project.part_count_short" = "%d قطعة";
+"project.tallest" = "أطول قطعة";
+"project.slice_all" = "قطّع المشروع كله مرة واحدة";
+"project.slice_all.note" = "كل القطع بتتقطّع في ملف واحد: تسخين واحد وبرايم واحد — وفشل واحد بياخدهم كلهم، عشان كده بص على ترتيب السرير الأول.";
+"project.rename" = "غيّر اسم المشروع";
+"project.name" = "اسم المشروع";
+"project.delete" = "امسح المشروع";
+"project.delete.confirm" = "هيتمسح التجميع بس — القطع نفسها هتفضل في المكتبة.";
+"project.remove_part" = "شيل القطعة من المشروع";
+"project.empty" = "المشروع ده مفيهوش قطع.";

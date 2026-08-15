@@ -477,6 +477,35 @@ class LibraryStore:
         )
         return Collection(id=collection_id, name_ar=name_ar, name_en=name_en, icon=icon, created_at=now)
 
+    def collection(self, collection_id: str) -> Optional[Collection]:
+        for entry in self.list_collections():
+            if entry.id == collection_id:
+                return entry
+        return None
+
+    def rename_collection(
+        self, collection_id: str, *, name_ar: str = "", name_en: str = "", icon: str = ""
+    ) -> Optional[Collection]:
+        """Rename a project, or change its icon.
+
+        A project imported from an archive is named after the archive, which is
+        whatever the person who packed it typed. Renaming is the difference
+        between a library of projects and a library of filenames.
+        """
+        existing = self.collection(collection_id)
+        if existing is None or existing.builtin:
+            return None
+        self.db.execute(
+            "UPDATE collections SET name_ar = ?, name_en = ?, icon = ? WHERE id = ?",
+            (
+                name_ar.strip() or existing.name_ar,
+                name_en.strip() or existing.name_en,
+                icon.strip() or existing.icon,
+                collection_id,
+            ),
+        )
+        return self.collection(collection_id)
+
     def delete_collection(self, collection_id: str) -> bool:
         row = self.db.query_one("SELECT builtin FROM collections WHERE id = ?", (collection_id,))
         if row is None or bool(row["builtin"]):

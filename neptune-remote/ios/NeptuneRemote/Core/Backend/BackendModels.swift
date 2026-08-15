@@ -624,6 +624,21 @@ struct ImportResult: Decodable, Equatable {
         case needsKey = "needs_key"
         case notesAr = "notes_ar"
     }
+
+    /// Written out rather than synthesised. A property's default value is *not*
+    /// used by the generated decoder - a missing key throws - so a response
+    /// that leaves out a field the Pi had no reason to send would fail to
+    /// decode entirely.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        ok = try container.decodeIfPresent(Bool.self, forKey: .ok) ?? true
+        items = try container.decodeIfPresent([LibraryItem].self, forKey: .items) ?? []
+        collectionID = try container.decodeIfPresent(String.self, forKey: .collectionID) ?? ""
+        collectionName = try container.decodeIfPresent(String.self, forKey: .collectionName) ?? ""
+        sourceURL = try container.decodeIfPresent(String.self, forKey: .sourceURL) ?? ""
+        needsKey = try container.decodeIfPresent(String.self, forKey: .needsKey) ?? ""
+        notesAr = try container.decodeIfPresent([String].self, forKey: .notesAr) ?? []
+    }
 }
 
 /// What an orientation costs, measured against the real mesh.
