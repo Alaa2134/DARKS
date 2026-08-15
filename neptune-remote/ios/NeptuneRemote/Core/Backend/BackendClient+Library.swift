@@ -108,6 +108,22 @@ extension BackendClient {
         try await raw(path: "library/backups/\(filename)/download", timeout: 900)
     }
 
+    // MARK: - Plate arrangement
+
+    /// Work out where a set of models goes on this printer's bed.
+    ///
+    /// Footprints are measured after each model's rotation and scale, because
+    /// a rotated part casts a different shadow on the plate than the file did.
+    func arrangePlate(_ payload: ArrangeRequestPayload) async throws -> ArrangeResponse {
+        try await decode(
+            ArrangeResponse.self,
+            path: "library/arrange",
+            method: "POST",
+            body: try await http.encodeBody(payload),
+            timeout: 120
+        )
+    }
+
     // MARK: - Mesh health
 
     /// Check a model before slicing it.

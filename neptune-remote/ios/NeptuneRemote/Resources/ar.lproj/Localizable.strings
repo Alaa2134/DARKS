@@ -1681,3 +1681,15 @@
 "backup.restored" = "الاسترجاع خلص";
 "backup.restart_needed" = "قاعدة البيانات اترجّعت. أعد تشغيل خدمة نبتون على الباي عشان التغيير يبان.";
 "backup.delete.confirm" = "تمسح النسخة دي؟";
+
+
+/* Plate arrangement: seeing and placing parts on the bed */
+"plate.title" = "ترتيب السرير";
+"plate.bed" = "السرير من فوق";
+"plate.arranging" = "برتّب القطع على السرير…";
+"plate.drag_hint" = "اسحب أي قطعة عشان تحركها. التحذير بيظهر وإيدك لسه على الشاشة، مش بعد ٤ ساعات طباعة.";
+"plate.problems" = "الترتيب ده مش هيمشي";
+"plate.ready" = "الترتيب سليم";
+"plate.auto" = "رتّب تلقائي";
+"plate.reset" = "رجّع للنص";
+"plate.part.accessibility" = "قطعة %@ عند %d، %d مليمتر من نص السرير";

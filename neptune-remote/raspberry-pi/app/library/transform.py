@@ -88,6 +88,12 @@ class Transform:
     drop_to_bed: bool = True
     #: Centre the footprint over the origin. The slicer arranges from there.
     center_on_bed: bool = True
+    #: Where on the bed this model goes, in mm from the bed centre.
+    #:
+    #: Applied last, after centring. PrusaSlicer's command line has no
+    #: per-object placement flag - the only way to say "this one goes there" is
+    #: to move the mesh before handing it over, which is what this does.
+    offset_xy: Tuple[float, float] = (0.0, 0.0)
 
     @property
     def is_identity(self) -> bool:
@@ -95,6 +101,7 @@ class Transform:
             self.rotation_deg == (0.0, 0.0, 0.0)
             and self.scale == (1.0, 1.0, 1.0)
             and self.mirror == (False, False, False)
+            and self.offset_xy == (0.0, 0.0)
         )
 
     def validated(self) -> "Transform":
@@ -110,6 +117,9 @@ class Transform:
         for value in self.rotation_deg:
             if not math.isfinite(value):
                 raise TransformError("زاوية التدوير مش رقم صحيح.")
+        for value in self.offset_xy:
+            if not math.isfinite(value):
+                raise TransformError("مكان القطعة على السرير مش رقم صحيح.")
         return self
 
     def as_dict(self) -> dict:
@@ -119,6 +129,7 @@ class Transform:
             "mirror": list(self.mirror),
             "drop_to_bed": self.drop_to_bed,
             "center_on_bed": self.center_on_bed,
+            "offset_xy": list(self.offset_xy),
         }
 
     @classmethod
@@ -140,12 +151,19 @@ class Transform:
         except (TypeError, IndexError):
             mirror = (False, False, False)
 
+        raw_offset = data.get("offset_xy") or (0.0, 0.0)
+        try:
+            offset = (float(raw_offset[0]), float(raw_offset[1]))
+        except (TypeError, ValueError, IndexError):
+            offset = (0.0, 0.0)
+
         return cls(
             rotation_deg=triple("rotation_deg", (0.0, 0.0, 0.0)),
             scale=triple("scale", (1.0, 1.0, 1.0)),
             mirror=mirror,
             drop_to_bed=bool(data.get("drop_to_bed", True)),
             center_on_bed=bool(data.get("center_on_bed", True)),
+            offset_xy=offset,
         )
 
 
@@ -263,6 +281,15 @@ def apply(mesh: Mesh, transform: Transform) -> Mesh:
             center=transform.center_on_bed,
             drop=transform.drop_to_bed,
         )
+
+    # Placement goes last, on top of the centring, so a position always means
+    # the same thing regardless of where the model happened to be exported.
+    if transform.offset_xy != (0.0, 0.0):
+        shift = np.array(
+            [transform.offset_xy[0], transform.offset_xy[1], 0.0], dtype=np.float64
+        )
+        result = Mesh(triangles=result.triangles + shift)
+
     return result
 
 

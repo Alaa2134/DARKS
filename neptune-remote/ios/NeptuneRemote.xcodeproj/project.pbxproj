@@ -129,6 +129,7 @@
 		1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeshLoader.swift"; sourceTree = "<group>"; };
 		686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelViewer3D.swift"; sourceTree = "<group>"; };
 		79CB0E02482881511DBD859A /* PlacementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlacementView.swift"; sourceTree = "<group>"; };
+		661AFE1068491A78983D067D /* PlateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PlateView.swift"; sourceTree = "<group>"; };
 		3BBBFBC77375184B1869E813 /* PrintModeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintModeView.swift"; sourceTree = "<group>"; };
 		D059FD0859BB8B49C0145A78 /* SliceAdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SliceAdvancedView.swift"; sourceTree = "<group>"; };
 		0F08420DFDF39810CB872AFA /* SliceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SliceView.swift"; sourceTree = "<group>"; };
@@ -476,6 +477,7 @@
 				1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */,
 				686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */,
 				79CB0E02482881511DBD859A /* PlacementView.swift */,
+				661AFE1068491A78983D067D /* PlateView.swift */,
 				3BBBFBC77375184B1869E813 /* PrintModeView.swift */,
 				D059FD0859BB8B49C0145A78 /* SliceAdvancedView.swift */,
 				0F08420DFDF39810CB872AFA /* SliceView.swift */,
@@ -744,6 +746,7 @@
 		BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FF4493E64AA0B2C70F23064 /* MeshLoader.swift */; };
 		33C1FB3B750E7C3BA2670230 /* ModelViewer3D.swift in Sources */ = {isa = PBXBuildFile; fileRef = 686E8D5B092800C6644C2E3C /* ModelViewer3D.swift */; };
 		3222A7D95509BED3CF6B30C6 /* PlacementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79CB0E02482881511DBD859A /* PlacementView.swift */; };
+		A86121D05F9641A51596CEC8 /* PlateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 661AFE1068491A78983D067D /* PlateView.swift */; };
 		3D04B669AB54FC7CF07C628C /* PrintModeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3BBBFBC77375184B1869E813 /* PrintModeView.swift */; };
 		1AE0D50AA08201DCF02A31A5 /* SliceAdvancedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D059FD0859BB8B49C0145A78 /* SliceAdvancedView.swift */; };
 		040033D320CD824F1AD5E4EA /* SliceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F08420DFDF39810CB872AFA /* SliceView.swift */; };
@@ -912,6 +915,7 @@
 				BB768835AE55D58897CF08CE /* MeshLoader.swift in Sources */,
 				33C1FB3B750E7C3BA2670230 /* ModelViewer3D.swift in Sources */,
 				3222A7D95509BED3CF6B30C6 /* PlacementView.swift in Sources */,
+				A86121D05F9641A51596CEC8 /* PlateView.swift in Sources */,
 				3D04B669AB54FC7CF07C628C /* PrintModeView.swift in Sources */,
 				1AE0D50AA08201DCF02A31A5 /* SliceAdvancedView.swift in Sources */,
 				040033D320CD824F1AD5E4EA /* SliceView.swift in Sources */,

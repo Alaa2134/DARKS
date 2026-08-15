@@ -28,6 +28,8 @@ from ..library.models import (
     SearchResult,
 )
 from ..schemas import (
+    ArrangeRequest,
+    ArrangeResponse,
     BackupInfo,
     BackupManifestInfo,
     BackupResult,
@@ -37,6 +39,7 @@ from ..schemas import (
     OKResponse,
     OrientationReport,
     OrientationSuggestion,
+    PlatePlacement,
     RestoreRequest,
     RestoreResult,
 )
@@ -484,6 +487,118 @@ def _report(score: Any, volume: tuple) -> OrientationReport:
         needs_support=score.needs_support,
         fits=fits,
         problems_ar=problems,
+    )
+
+
+@router.post("/library/arrange", response_model=ArrangeResponse)
+async def arrange_plate(
+    request: ArrangeRequest, state: AppState = Depends(get_state)
+) -> ArrangeResponse:
+    """Work out where a set of models goes on this printer's bed.
+
+    Footprints are measured *after* each model's rotation and scale, because a
+    rotated part casts a different shadow on the plate than the file did.
+
+    Declared before `/library/{item_id}` - FastAPI matches in declaration order
+    and a literal path has to come first or the parameterised one swallows it.
+    """
+    from ..library import transform as transform_tools
+    from ..library.mesh import load
+    from ..slicer.arrange import (
+        ArrangeError,
+        ArrangeResult,
+        Placement,
+        auto_arrange,
+        check,
+    )
+
+    volume = await _build_volume(state)
+    bed_width, bed_depth = volume[0], volume[1]
+
+    footprints: List[tuple] = []
+    for model_id in request.model_ids:
+        path = state.models.path_for(model_id)
+        if path is None or not path.is_file():
+            raise HTTPException(
+                status_code=404, detail=f"الموديل «{model_id}» مش موجود."
+            )
+        spec = request.transforms.get(model_id)
+        placement = transform_tools.Transform.from_dict(
+            spec.model_dump() if spec else None
+        )
+        try:
+            # Measured without the offset: the arrangement is about to decide
+            # where it goes, so where it currently sits is not an input.
+            sized = transform_tools.apply(
+                load(path),
+                transform_tools.Transform(
+                    rotation_deg=placement.rotation_deg,
+                    scale=placement.scale,
+                    mirror=placement.mirror,
+                ),
+            )
+        except Exception as error:                          # noqa: BLE001
+            raise HTTPException(
+                status_code=422, detail=f"مش قادر أقرا «{model_id}»: {error}"
+            ) from error
+        size = sized.size
+        footprints.append((model_id, float(size[0]), float(size[1])))
+
+
+    if request.check_only:
+        # Judge the plate as it stands. Positions come from the transforms the
+        # app already holds, because rearranging here would undo the drag the
+        # user just made and answer a question nobody asked.
+        placements = []
+        for model_id, width, depth in footprints:
+            spec = request.transforms.get(model_id)
+            offset = list(spec.offset_xy) if spec else [0.0, 0.0]
+            placements.append(
+                Placement(
+                    model_id=model_id, width=width, depth=depth,
+                    x=float(offset[0]), y=float(offset[1]),
+                )
+            )
+        result = ArrangeResult(placements=placements)
+    else:
+        try:
+            result = auto_arrange(
+                footprints,
+                bed_width=bed_width,
+                bed_depth=bed_depth,
+                spacing=request.spacing,
+                margin=request.margin,
+            )
+        except ArrangeError as error:
+            raise HTTPException(status_code=422, detail=str(error)) from error
+
+    # Checked against what will actually be printed, either way, so the answer
+    # the app shows is about this plate rather than about a promise.
+    problems = list(result.problems_ar)
+    problems += check(
+        result.placements,
+        bed_width=bed_width,
+        bed_depth=bed_depth,
+        spacing=request.spacing,
+        margin=request.margin,
+    )
+
+    return ArrangeResponse(
+        placements=[
+            PlatePlacement(
+                model_id=placement.model_id,
+                width=round(placement.width, 3),
+                depth=round(placement.depth, 3),
+                x=round(placement.x, 3),
+                y=round(placement.y, 3),
+            )
+            for placement in result.placements
+        ],
+        problems_ar=problems,
+        unplaced=result.unplaced,
+        ok=not problems and not result.unplaced,
+        bed_width=bed_width,
+        bed_depth=bed_depth,
     )
 
 

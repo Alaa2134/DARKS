@@ -79,6 +79,21 @@ lands and CI must be checked after.
   library item, never replaces the original).
 - iOS: `MeshHealth`, `MeshRepairResult`, health card on `PlacementView`.
 
+### Plate arrangement (S3)
+- `raspberry-pi/app/slicer/arrange.py` — shelf packing on bounding rectangles,
+  overlap and bed-edge checks, `bed_size_from_limits`. Stable rather than
+  optimal: the same parts always come out the same way, so the plate does not
+  reshuffle itself when the screen is reopened.
+- `Transform.offset_xy` moves the mesh before the slicer sees it — PrusaSlicer's
+  CLI has no per-object placement flag, so that is the only way to say "this one
+  goes there". A non-zero offset also makes `engine.py` skip `--arrange`.
+- `POST /api/library/arrange`, with `check_only` for the post-drag verdict:
+  rearranging there would undo the drag and answer a question nobody asked.
+- iOS: `PlatePlacement`, `ArrangeRequestPayload`, `ArrangeResponse`,
+  `PlacementStore.setPosition/platePayload`, `PlateView` (bed drawn to real
+  proportions, drag to place, live problems), linked from `SliceView` only when
+  there is more than one part.
+
 ### Library backup (L4)
 - `raspberry-pi/app/library/backup.py` — `.tar.gz` of the database (through
   SQLite's own backup API, because a WAL database's newest commits are not in
@@ -108,7 +123,7 @@ lands and CI must be checked after.
 
 ## Current state
 
-- Backend: **1144 tests passing**.
+- Backend: **1178 tests passing**.
 - iOS: **~300 tests**. Last full CI run (`f931fd3`) compiled the whole app and
   ran 295 tests with **one failure — a wrong assertion in my own test**
   (`[0,0,1,1]` is two points, not one). Fixed, not yet re-run.
@@ -119,16 +134,20 @@ lands and CI must be checked after.
 ## Next step
 
 1. Confirm CI green for the resume + mesh-repair batch.
-2. **S3 — visual plate arrangement.** `extra_model_ids`/`copies` exist in
-   `SliceRequest` but the user cannot see the bed or position anything. Needs:
-   bed drawn from `printer.cfg` limits, drag to place, overlap and out-of-bounds
-   warnings, simple bin-packing as a starting arrangement, offsets passed to the
-   engine with `--dont-arrange`.
-3. **L1 — import from a URL** (Printables first — open API; Thingiverse needs a
+2. **L1 — import from a URL** (Printables first — open API; Thingiverse needs a
    key in `config.yaml` on the Pi only). A ZIP of several STLs should become one
    project, not several entries.
-4. **iOS screen for backup/restore.** The backend and API are done; there is no
-   UI for it yet. Belongs in Settings or More → System.
+3. **S5 — per-object settings**, or **L2 — a model as a project rather than a
+   single file**. Both are open; L2 is the more useful of the two day to day.
+
+## Two mistakes worth not repeating
+
+- I used `BackupInfo`/`deleteBackup` without checking they were free. They were
+  not. **grep for a name before using it** — `verify_project.py` does not
+  compile Swift, so only CI catches a collision, and that is a 4-minute loop.
+- Fixing that, a blanket string replace over a file I had not read renamed the
+  *existing* method too, because its signature was textually identical to mine.
+  **Never blanket-replace in a file you have not read.**
 
 ---
 

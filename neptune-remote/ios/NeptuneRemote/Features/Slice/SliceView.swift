@@ -233,6 +233,28 @@ struct SliceView: View {
                 .font(.caption2)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+
+            // Only once there is more than one thing to place. A single part is
+            // arranged by putting it in the middle, and a screen for that is a
+            // screen with nothing to decide on it.
+            if !slicing.plateModels.isEmpty {
+                NavigationLink {
+                    PlateView(modelIDs: plateModelIDs)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "squareshape.split.2x2")
+                            .foregroundStyle(Theme.accent)
+                        Text(localized: "plate.title")
+                            .font(.subheadline.weight(.medium))
+                        Spacer(minLength: 0)
+                        Image(systemName: "chevron.forward")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.top, 4)
+                }
+                .buttonStyle(.plain)
+            }
         }
     }
 

@@ -1682,3 +1682,15 @@
 "backup.restored" = "Restore finished";
 "backup.restart_needed" = "The database was restored. Restart the Neptune service on the Pi for it to take effect.";
 "backup.delete.confirm" = "Delete this backup?";
+
+
+/* Plate arrangement: seeing and placing parts on the bed */
+"plate.title" = "Plate arrangement";
+"plate.bed" = "The bed, from above";
+"plate.arranging" = "Working out where each part goes…";
+"plate.drag_hint" = "Drag a part to move it. The warning arrives while your finger is still on the screen, not four hours into a print.";
+"plate.problems" = "This arrangement will not print";
+"plate.ready" = "The arrangement is sound";
+"plate.auto" = "Arrange automatically";
+"plate.reset" = "Back to the centre";
+"plate.part.accessibility" = "Part %@ at %d, %d millimetres from the bed centre";

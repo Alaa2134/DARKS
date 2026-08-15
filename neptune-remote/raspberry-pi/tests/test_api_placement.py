@@ -518,3 +518,165 @@ def test_a_backup_filename_cannot_escape_the_backup_directory(client: TestClient
     # path outside the folder it is supposed to address.
     response = client.get("/api/library/backups/..%2F..%2Fetc%2Fpasswd/download")
     assert response.status_code in (404, 422)
+
+
+# --------------------------------------------------------------------------- #
+# Plate arrangement
+# --------------------------------------------------------------------------- #
+
+
+def test_the_arrange_route_is_not_swallowed_by_the_item_route(client: TestClient):
+    # FastAPI matches in declaration order. /library/arrange has the same shape
+    # as /library/{item_id}, and the backup routes were already caught by
+    # exactly this - so it is checked rather than assumed.
+    item = upload(client, slab_stl(40, 30, 10))
+
+    response = client.post("/api/library/arrange", json={"model_ids": [item]})
+
+    assert response.status_code == 200
+    assert "placements" in response.json()
+
+
+def test_one_part_is_arranged_in_the_middle(client: TestClient):
+    item = upload(client, slab_stl(40, 30, 10))
+
+    body = client.post("/api/library/arrange", json={"model_ids": [item]}).json()
+
+    assert body["ok"] is True
+    placement = body["placements"][0]
+    assert placement["x"] == pytest.approx(0.0)
+    assert placement["y"] == pytest.approx(0.0)
+    assert placement["width"] == pytest.approx(40.0, abs=1e-2)
+    assert placement["depth"] == pytest.approx(30.0, abs=1e-2)
+
+
+def test_the_bed_comes_from_the_printers_own_config(client: TestClient):
+    item = upload(client, slab_stl(40, 30, 10))
+
+    body = client.post("/api/library/arrange", json={"model_ids": [item]}).json()
+
+    # The fixture's printer.cfg says X is 250, not the 320 a fallback would use.
+    assert body["bed_width"] == pytest.approx(250.0)
+    assert body["bed_depth"] == pytest.approx(320.0)
+
+
+def test_footprints_are_measured_after_rotation(client: TestClient):
+    # A rotated part casts a different shadow on the plate than the file did,
+    # and arranging on the file's own size would pack them wrong.
+    item = upload(client, slab_stl(40, 30, 10))
+
+    body = client.post(
+        "/api/library/arrange",
+        json={
+            "model_ids": [item],
+            "transforms": {item: {"rotation_deg": [90, 0, 0]}},
+        },
+    ).json()
+
+    placement = body["placements"][0]
+    # Rotating about X swaps depth and height: 40 x 10 on the bed now.
+    assert placement["depth"] == pytest.approx(10.0, abs=1e-2)
+
+
+def test_several_parts_are_placed_without_touching(client: TestClient):
+    ids = [upload(client, slab_stl(40, 30, 10), name=f"p{i}.stl") for i in range(4)]
+
+    body = client.post("/api/library/arrange", json={"model_ids": ids}).json()
+
+    assert body["ok"] is True
+    assert len(body["placements"]) == 4
+    assert body["problems_ar"] == []
+
+
+def test_a_part_too_big_for_the_bed_is_named(client: TestClient):
+    big = upload(client, slab_stl(300, 300, 10), name="big.stl")
+
+    body = client.post("/api/library/arrange", json={"model_ids": [big]}).json()
+
+    # 250 mm wide bed minus margins cannot take a 300 mm part.
+    assert body["ok"] is False
+    assert big in body["unplaced"]
+    assert body["problems_ar"]
+
+
+def test_arranging_a_model_that_does_not_exist_is_a_404(client: TestClient):
+    response = client.post("/api/library/arrange", json={"model_ids": ["nope"]})
+    assert response.status_code == 404
+
+
+def test_an_empty_plate_is_a_valid_arrangement(client: TestClient):
+    body = client.post("/api/library/arrange", json={"model_ids": []}).json()
+
+    assert body["ok"] is True
+    assert body["placements"] == []
+
+
+def test_a_placed_transform_round_trips_through_the_slice_request(client: TestClient):
+    # The offset is what makes the engine skip --arrange, so it has to survive
+    # being sent as part of a slice request.
+    item = upload(client, slab_stl(40, 30, 10))
+
+    body = client.post(
+        f"/api/library/{item}/transform",
+        json={"offset_xy": [50.0, -25.0]},
+    )
+
+    assert body.status_code == 200
+
+
+def test_check_only_judges_the_plate_as_it_stands(client: TestClient):
+    # After a drag the app asks about the plate the user just built.
+    # Rearranging there would undo the move and answer a different question.
+    a = upload(client, slab_stl(40, 30, 10), name="a.stl")
+    b = upload(client, slab_stl(40, 30, 10), name="b.stl")
+
+    body = client.post(
+        "/api/library/arrange",
+        json={
+            "model_ids": [a, b],
+            "check_only": True,
+            "transforms": {
+                a: {"offset_xy": [-40, 0]},
+                b: {"offset_xy": [40, 0]},
+            },
+        },
+    ).json()
+
+    assert body["ok"] is True
+    # The positions come back exactly as sent, not rearranged.
+    positions = {p["model_id"]: (p["x"], p["y"]) for p in body["placements"]}
+    assert positions[a] == (-40.0, 0.0)
+    assert positions[b] == (40.0, 0.0)
+
+
+def test_check_only_reports_parts_the_user_dragged_together(client: TestClient):
+    a = upload(client, slab_stl(40, 30, 10), name="a.stl")
+    b = upload(client, slab_stl(40, 30, 10), name="b.stl")
+
+    body = client.post(
+        "/api/library/arrange",
+        json={
+            "model_ids": [a, b],
+            "check_only": True,
+            "transforms": {a: {"offset_xy": [-15, 0]}, b: {"offset_xy": [15, 0]}},
+        },
+    ).json()
+
+    assert body["ok"] is False
+    assert any("متلاصقين" in problem for problem in body["problems_ar"])
+
+
+def test_check_only_reports_a_part_dragged_off_the_bed(client: TestClient):
+    item = upload(client, slab_stl(40, 30, 10))
+
+    body = client.post(
+        "/api/library/arrange",
+        json={
+            "model_ids": [item],
+            "check_only": True,
+            "transforms": {item: {"offset_xy": [200, 0]}},
+        },
+    ).json()
+
+    assert body["ok"] is False
+    assert any("حدود السرير" in problem for problem in body["problems_ar"])

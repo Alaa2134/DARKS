@@ -86,6 +86,31 @@ final class PlacementStore: ObservableObject {
 
     // MARK: - Changing
 
+    /// Where a model sits on the bed, in mm from the bed centre.
+    ///
+    /// Not measured afterwards: moving a part across the plate changes nothing
+    /// about its height, its footprint or whether it needs support, and a
+    /// request to the Pi per frame of a drag is not a drag.
+    func setPosition(_ point: CGPoint, for modelID: String) {
+        var placement = transform(for: modelID)
+        placement.position = point
+        transforms[modelID] = placement
+    }
+
+    /// Every transform for a plate, position included, whether or not it is
+    /// otherwise identity.
+    ///
+    /// `payload(for:)` drops identity transforms because the slicer does not
+    /// need them. The arrangement does: a part sitting at the origin unturned
+    /// still has to be in the list, or the plate loses a model.
+    func platePayload(for modelIDs: [String]) -> [String: ModelTransform] {
+        var result: [String: ModelTransform] = [:]
+        for identifier in modelIDs {
+            result[identifier] = transform(for: identifier)
+        }
+        return result
+    }
+
     /// Set the transform and measure what it did.
     ///
     /// Measuring is debounced and single-flighted: a rotation dial produces a

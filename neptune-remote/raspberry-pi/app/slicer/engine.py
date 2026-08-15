@@ -515,16 +515,25 @@ class PrusaSlicerEngine(BaseEngine):
         ]
 
         copies = max(1, int(request.copies or 1))
-        # Arrange whenever there is more than one thing on the plate.
-        #
-        # Without it every object lands on the same centre point and the
-        # slicer either refuses or produces a single overlapping mess.
-        # `--center` is what places a lone object, and the two fight, so only
-        # one of them is ever passed.
-        needs_arrange = len(model_paths) > 1 or copies > 1
+
+        # A transform carrying a position means the user placed these parts
+        # themselves, and the meshes have already been moved to where they said
+        # before they got here. Letting the slicer arrange would throw that
+        # away, so it is asked not to.
+        user_placed = any(
+            tuple(spec.offset_xy) != (0.0, 0.0)
+            for spec in request.transforms.values()
+        )
+
+        # Otherwise arrange whenever there is more than one thing on the plate.
+        # Without it every object lands on the same centre point and the slicer
+        # either refuses or produces a single overlapping mess. `--center` is
+        # what places a lone object, and the two fight, so only one of them is
+        # ever passed.
+        needs_arrange = (len(model_paths) > 1 or copies > 1) and not user_placed
         if needs_arrange:
             command.insert(1, "--arrange")
-        else:
+        elif not user_placed:
             center = bed_center(printer)
             if center:
                 command += ["--center", center]

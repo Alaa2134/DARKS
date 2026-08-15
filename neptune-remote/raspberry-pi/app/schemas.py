@@ -413,6 +413,54 @@ class MeshRepairResult(BaseModel):
 # --------------------------------------------------------------------------- #
 
 
+class PlatePlacement(BaseModel):
+    """One model's footprint on the bed, and where it sits.
+
+    Positions are millimetres from the bed *centre* - the bed origin is a
+    corner on some machines and the middle on others, and the centre is the one
+    point both agree on.
+    """
+
+    model_id: str
+    #: Footprint after rotation and scale, so this is what will actually print.
+    width: float = 0.0
+    depth: float = 0.0
+    x: float = 0.0
+    y: float = 0.0
+
+
+class ArrangeRequest(BaseModel):
+    """Work out where a set of models should go, or check where they are."""
+
+    model_ids: List[str] = Field(default_factory=list)
+    #: How each is turned and sized. The footprint is measured after applying
+    #: these, because a rotated part has a different shadow on the bed.
+    transforms: Dict[str, "ModelTransform"] = Field(default_factory=dict)
+    #: Millimetres between parts.
+    spacing: float = Field(default=6.0, ge=0, le=50)
+    #: Millimetres kept clear of the bed edge.
+    margin: float = Field(default=8.0, ge=0, le=50)
+    #: Judge the plate as it stands instead of rearranging it.
+    #:
+    #: With this on, positions are taken from each transform's `offset_xy` and
+    #: only the checks run. It is what the app asks after a drag: rearranging
+    #: there would undo the move the user just made and answer a question
+    #: nobody asked.
+    check_only: bool = False
+
+
+class ArrangeResponse(BaseModel):
+    placements: List[PlatePlacement] = Field(default_factory=list)
+    #: Empty when the arrangement will print. Non-empty means it will not.
+    problems_ar: List[str] = Field(default_factory=list)
+    #: Models that could not be fitted at all.
+    unplaced: List[str] = Field(default_factory=list)
+    ok: bool = True
+    #: The bed this was worked out against, read from the printer's own config.
+    bed_width: float = 0.0
+    bed_depth: float = 0.0
+
+
 class ModelTransform(BaseModel):
     """Rotation, scale and mirror, relative to the file on disk.
 
@@ -431,6 +479,20 @@ class ModelTransform(BaseModel):
     #: a model left hovering above the plate has its first layer printed in air.
     drop_to_bed: bool = True
     center_on_bed: bool = True
+    #: Where on the bed this model goes, in mm from the bed centre.
+    #:
+    #: PrusaSlicer's command line has no per-object placement flag, so the only
+    #: way to say "this one goes there" is to move the mesh before handing it
+    #: over. A non-zero value here also tells the engine the user placed these
+    #: themselves, so it does not arrange over the top of them.
+    offset_xy: List[float] = Field(default_factory=lambda: [0.0, 0.0])
+
+    @field_validator("offset_xy")
+    @classmethod
+    def _two_numbers(cls, value: List[float]) -> List[float]:
+        if len(value) != 2:
+            raise ValueError("لازم تكون قيمتين: X و Y.")
+        return [float(item) for item in value]
 
     @field_validator("rotation_deg", "scale")
     @classmethod

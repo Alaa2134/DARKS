@@ -474,3 +474,107 @@ final class MeshHealthTests: XCTestCase {
         XCTAssertTrue(MeshRepairResult(ok: true, reoriented: true).changed)
     }
 }
+
+/// The plate: what gets sent, and how a position round-trips.
+final class PlateArrangementTests: XCTestCase {
+
+    func testAPositionRoundTripsThroughTheTransform() {
+        var placement = ModelTransform()
+        placement.position = CGPoint(x: 40, y: -25)
+
+        XCTAssertEqual(placement.offsetXY, [40, -25])
+        XCTAssertEqual(placement.position, CGPoint(x: 40, y: -25))
+    }
+
+    func testAPlacedModelIsNotIdentity() {
+        // The offset is what tells the Pi the user placed these themselves, so
+        // it must survive the identity check that decides what gets sent.
+        var placement = ModelTransform()
+        placement.position = CGPoint(x: 10, y: 0)
+
+        XCTAssertFalse(placement.isIdentity)
+    }
+
+    func testAModelAtTheOriginIsStillIdentity() {
+        XCTAssertTrue(ModelTransform().isIdentity)
+        XCTAssertEqual(ModelTransform().position, .zero)
+    }
+
+    func testTheTransformEncodesTheOffsetWithTheBackendsKey() throws {
+        var placement = ModelTransform()
+        placement.position = CGPoint(x: 12.5, y: -3)
+
+        let data = try JSONEncoder().encode(placement)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        XCTAssertEqual(json["offset_xy"] as? [Double], [12.5, -3])
+    }
+
+    func testTheArrangeRequestEncodesWithTheBackendsKeys() throws {
+        let payload = ArrangeRequestPayload(
+            modelIDs: ["a", "b"], spacing: 8, margin: 10, checkOnly: true
+        )
+
+        let data = try JSONEncoder().encode(payload)
+        let json = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+
+        XCTAssertEqual(json["model_ids"] as? [String], ["a", "b"])
+        XCTAssertEqual(json["check_only"] as? Bool, true)
+        XCTAssertEqual(json["spacing"] as? Double, 8)
+    }
+
+    func testAnArrangeResponseDecodesFromTheBackendsShape() throws {
+        let json = """
+        {
+          "placements": [
+            {"model_id": "a", "width": 40.0, "depth": 30.0, "x": -25.0, "y": 0.0}
+          ],
+          "problems_ar": [],
+          "unplaced": [],
+          "ok": true,
+          "bed_width": 250.0,
+          "bed_depth": 320.0
+        }
+        """.data(using: .utf8)!
+
+        let result = try JSONDecoder().decode(ArrangeResponse.self, from: json)
+
+        XCTAssertTrue(result.ok)
+        XCTAssertEqual(result.bedWidth, 250)
+        XCTAssertEqual(result.placements.first?.center, CGPoint(x: -25, y: 0))
+        XCTAssertEqual(result.placements.first?.size, CGSize(width: 40, height: 30))
+    }
+
+    @MainActor
+    func testThePlatePayloadKeepsEveryModelEvenTheUntouchedOnes() {
+        // payload(for:) drops identity transforms because the slicer does not
+        // need them. The arrangement does: a part sitting unturned at the
+        // origin still has to be in the list, or the plate loses a model.
+        let store = PlacementStore(
+            settings: AppSettings(),
+            printer: PrinterStore(settings: AppSettings(), notifications: NotificationManager())
+        )
+        store.setPosition(CGPoint(x: 30, y: 0), for: "moved")
+
+        let slicePayload = store.payload(for: ["moved", "untouched"])
+        let platePayload = store.platePayload(for: ["moved", "untouched"])
+
+        XCTAssertEqual(Set(slicePayload.keys), ["moved"])
+        XCTAssertEqual(Set(platePayload.keys), ["moved", "untouched"])
+    }
+
+    @MainActor
+    func testSettingAPositionLeavesTheRotationAlone() {
+        let store = PlacementStore(
+            settings: AppSettings(),
+            printer: PrinterStore(settings: AppSettings(), notifications: NotificationManager())
+        )
+        store.set(ModelTransform(rotationDeg: [90, 0, 0]), for: "m", measure: false)
+
+        store.setPosition(CGPoint(x: 20, y: 20), for: "m")
+
+        let result = store.transform(for: "m")
+        XCTAssertEqual(result.rotationDeg, [90, 0, 0])
+        XCTAssertEqual(result.position, CGPoint(x: 20, y: 20))
+    }
+}

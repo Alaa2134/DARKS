@@ -490,11 +490,26 @@ struct ModelTransform: Codable, Equatable {
     /// left hovering has its first layer printed in mid-air.
     var dropToBed: Bool = true
     var centerOnBed: Bool = true
+    /// Where on the bed this model goes, in mm from the bed centre.
+    ///
+    /// PrusaSlicer has no per-object placement flag, so the Pi moves the mesh
+    /// before handing it over. A non-zero value here also tells it the user
+    /// placed these themselves, so it does not arrange over the top of them.
+    var offsetXY: [Double] = [0, 0]
 
     static let identity = ModelTransform()
 
     var isIdentity: Bool {
-        rotationDeg == [0, 0, 0] && scale == [1, 1, 1] && mirror == [false, false, false]
+        rotationDeg == [0, 0, 0]
+            && scale == [1, 1, 1]
+            && mirror == [false, false, false]
+            && offsetXY == [0, 0]
+    }
+
+    /// Where this model sits on the bed, as a point.
+    var position: CGPoint {
+        get { CGPoint(x: offsetXY.first ?? 0, y: offsetXY.count > 1 ? offsetXY[1] : 0) }
+        set { offsetXY = [newValue.x, newValue.y] }
     }
 
     /// Uniform scale, when all three axes agree. Nil for a stretched model,
@@ -513,6 +528,64 @@ struct ModelTransform: Codable, Equatable {
         case rotationDeg = "rotation_deg"
         case dropToBed = "drop_to_bed"
         case centerOnBed = "center_on_bed"
+        case offsetXY = "offset_xy"
+    }
+}
+
+/// One model's footprint on the bed, and where it sits.
+///
+/// Positions are millimetres from the bed *centre*: the bed origin is a corner
+/// on some machines and the middle on others, and the centre is the one point
+/// both agree on.
+struct PlatePlacement: Codable, Equatable, Identifiable {
+    var modelID: String = ""
+    /// Footprint after rotation and scale, so this is what will actually print.
+    var width: Double = 0
+    var depth: Double = 0
+    var x: Double = 0
+    var y: Double = 0
+
+    var id: String { modelID }
+    var center: CGPoint { CGPoint(x: x, y: y) }
+    var size: CGSize { CGSize(width: width, height: depth) }
+
+    enum CodingKeys: String, CodingKey {
+        case width, depth, x, y
+        case modelID = "model_id"
+    }
+}
+
+struct ArrangeRequestPayload: Encodable, Equatable {
+    var modelIDs: [String]
+    var transforms: [String: ModelTransform] = [:]
+    var spacing: Double = 6
+    var margin: Double = 8
+    /// Judge the plate as it stands instead of rearranging it. What the app
+    /// asks after a drag - rearranging there would undo the move.
+    var checkOnly: Bool = false
+
+    enum CodingKeys: String, CodingKey {
+        case transforms, spacing, margin
+        case modelIDs = "model_ids"
+        case checkOnly = "check_only"
+    }
+}
+
+struct ArrangeResponse: Codable, Equatable {
+    var placements: [PlatePlacement] = []
+    /// Empty when the arrangement will print. Non-empty means it will not.
+    var problemsAr: [String] = []
+    var unplaced: [String] = []
+    var ok: Bool = true
+    /// The bed this was worked out against, from the printer's own config.
+    var bedWidth: Double = 0
+    var bedDepth: Double = 0
+
+    enum CodingKeys: String, CodingKey {
+        case placements, unplaced, ok
+        case problemsAr = "problems_ar"
+        case bedWidth = "bed_width"
+        case bedDepth = "bed_depth"
     }
 }
 
