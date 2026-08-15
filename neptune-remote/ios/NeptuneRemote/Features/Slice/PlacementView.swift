@@ -50,6 +50,7 @@ struct PlacementView: View {
                 }
 
                 preview
+                healthCard
                 measurements
                 autoOrientCard
                 rotationCard
@@ -86,6 +87,86 @@ struct PlacementView: View {
         .task {
             scalePercent = (current.uniformScale ?? 1) * 100
             await placement.measure(modelID)
+            // Last moment a warning is still cheap: after this comes the wait
+            // for a slice that would fail with a message nobody can read.
+            await placement.checkHealth(modelID)
+        }
+    }
+
+    // MARK: - Is the model sound
+
+    /// What is wrong with the mesh, before the slice rather than during it.
+    ///
+    /// Only shown when there is something to say. A model with no problems does
+    /// not need a card telling it so on the way past - the absence of a warning
+    /// is the message.
+    @ViewBuilder
+    private var healthCard: some View {
+        if let health = placement.health[modelID], !health.clean {
+            VStack(alignment: .leading, spacing: 10) {
+                Label(
+                    L.t(health.isSerious ? "mesh.serious" : "mesh.minor"),
+                    systemImage: health.isSerious
+                        ? "exclamationmark.triangle.fill"
+                        : "info.circle.fill"
+                )
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(health.isSerious ? Theme.danger : Theme.paused)
+
+                ForEach(health.summaryAr, id: \.self) { line in
+                    HStack(alignment: .top, spacing: 8) {
+                        Circle()
+                            .fill(health.isSerious ? Theme.danger : Theme.paused)
+                            .frame(width: 5, height: 5)
+                            .padding(.top, 6)
+                        Text(line)
+                            .font(.caption)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+
+                if health.repairable {
+                    Text(localized: "mesh.repair.explain")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+
+                    Button {
+                        Task { await placement.repair(modelID) }
+                    } label: {
+                        if placement.isRepairing {
+                            HStack(spacing: 8) {
+                                ProgressView().controlSize(.small)
+                                Text(localized: "mesh.repairing")
+                            }
+                            .frame(maxWidth: .infinity)
+                        } else {
+                            Label(L.t("mesh.repair"), systemImage: "bandage")
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .disabled(placement.isRepairing)
+                }
+
+                if let result = placement.repairResult, result.changed {
+                    Divider()
+                    ForEach(result.notesAr, id: \.self) { note in
+                        Text(note)
+                            .font(.caption)
+                            .foregroundStyle(Theme.printing)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    Text(localized: "mesh.repaired.copy")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .card()
+            .transition(.neptuneContent)
+            .animation(.neptuneContent, value: placement.repairResult)
         }
     }
 

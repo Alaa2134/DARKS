@@ -308,6 +308,51 @@ class ResumeRequest(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# Mesh health
+# --------------------------------------------------------------------------- #
+
+
+class MeshHealth(BaseModel):
+    """What is wrong with a model, checked before a slice rather than during.
+
+    A broken mesh used to fail at slice time with a message from the slicer
+    that assumes you know what a manifold is - after the upload, the profile
+    and the wait.
+    """
+
+    triangle_count: int = 0
+    degenerate: int = 0
+    open_edges: int = 0
+    overlapping_edges: int = 0
+    total_edges: int = 0
+    shells: int = 1
+    flipped: int = 0
+    inside_out: bool = False
+    watertight: bool = True
+    clean: bool = True
+    #: Too many open edges to be a solid with holes - a scan or a sheet.
+    probably_not_a_solid: bool = False
+    #: Plain Arabic, worst first.
+    summary_ar: List[str] = Field(default_factory=list)
+    #: True when the safe repairs would change something.
+    repairable: bool = False
+
+
+class MeshRepairResult(BaseModel):
+    """What the repair actually changed."""
+
+    ok: bool = True
+    before: MeshHealth = Field(default_factory=MeshHealth)
+    after: MeshHealth = Field(default_factory=MeshHealth)
+    removed_triangles: int = 0
+    reoriented: bool = False
+    notes_ar: List[str] = Field(default_factory=list)
+    #: The new model's id in the library. The original is kept untouched, so a
+    #: repair is always something the user can walk back from.
+    repaired_model_id: str = ""
+
+
+# --------------------------------------------------------------------------- #
 # Model placement
 #
 # How a model is turned, sized and stood up before it reaches the slicer.

@@ -411,3 +411,66 @@ final class ToolpathPreviewTests: XCTestCase {
         }
     }
 }
+
+/// Mesh health: what counts as serious, and what the app promises to fix.
+final class MeshHealthTests: XCTestCase {
+
+    func testHealthDecodesFromTheBackendsShape() throws {
+        let json = """
+        {
+          "triangle_count": 12, "degenerate": 0, "open_edges": 3,
+          "overlapping_edges": 0, "total_edges": 18, "shells": 1,
+          "flipped": 2, "inside_out": false, "watertight": false,
+          "clean": false, "probably_not_a_solid": false,
+          "summary_ar": ["فيه 3 ضلع مفتوح"], "repairable": true
+        }
+        """.data(using: .utf8)!
+
+        let health = try JSONDecoder().decode(MeshHealth.self, from: json)
+
+        XCTAssertEqual(health.openEdges, 3)
+        XCTAssertEqual(health.flipped, 2)
+        XCTAssertFalse(health.clean)
+        XCTAssertTrue(health.repairable)
+    }
+
+    func testAFewHolesIsNotSerious() {
+        // A model with small holes slices fine - slicers close them per layer.
+        // Raising an alarm for it would train the user to ignore alarms.
+        let health = MeshHealth(openEdges: 3, totalEdges: 18, watertight: false, clean: false)
+
+        XCTAssertFalse(health.isSerious)
+    }
+
+    func testNotBeingASolidIsSerious() {
+        let health = MeshHealth(
+            openEdges: 3, totalEdges: 3, watertight: false, clean: false,
+            probablyNotASolid: true
+        )
+
+        XCTAssertTrue(health.isSerious)
+    }
+
+    func testAnInsideOutModelIsSerious() {
+        // A slicer given this prints the negative of the part.
+        XCTAssertTrue(MeshHealth(insideOut: true, clean: false).isSerious)
+    }
+
+    func testFusedShellsAreSerious() {
+        // An edge shared by three faces means the slicer cannot tell inside
+        // from outside.
+        XCTAssertTrue(MeshHealth(overlappingEdges: 4, watertight: false, clean: false).isSerious)
+    }
+
+    func testARepairThatChangedNothingIsNotReportedAsAChange() {
+        let result = MeshRepairResult(ok: true)
+
+        XCTAssertFalse(result.changed)
+        XCTAssertTrue(result.repairedModelID.isEmpty)
+    }
+
+    func testARepairThatRemovedOrTurnedSomethingCounts() {
+        XCTAssertTrue(MeshRepairResult(ok: true, removedTriangles: 3).changed)
+        XCTAssertTrue(MeshRepairResult(ok: true, reoriented: true).changed)
+    }
+}

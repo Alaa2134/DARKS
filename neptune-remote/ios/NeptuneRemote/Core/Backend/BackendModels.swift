@@ -125,6 +125,73 @@ struct BackendModelFile: Decodable, Identifiable, Equatable, Hashable {
     }
 }
 
+// MARK: - Mesh health
+
+/// What is wrong with a model, checked before a slice rather than during one.
+///
+/// A broken mesh used to fail at slice time with a message from the slicer that
+/// assumes you know what a manifold is - after the upload, the profile and the
+/// wait.
+struct MeshHealth: Codable, Equatable {
+    var triangleCount: Int = 0
+    var degenerate: Int = 0
+    var openEdges: Int = 0
+    var overlappingEdges: Int = 0
+    var totalEdges: Int = 0
+    var shells: Int = 1
+    var flipped: Int = 0
+    var insideOut: Bool = false
+    var watertight: Bool = true
+    var clean: Bool = true
+    /// Too many open edges to be a solid with holes in it - a scan, or a sheet
+    /// exported by mistake.
+    var probablyNotASolid: Bool = false
+    /// Plain Arabic, worst first.
+    var summaryAr: [String] = []
+    /// True when the safe repairs would change something. Holes are never
+    /// filled, so a model whose only problem is a hole is not repairable - and
+    /// saying it was would promise something that does not happen.
+    var repairable: Bool = false
+
+    /// Worth interrupting the user for. A model with a couple of small holes
+    /// slices fine; one that is not a solid at all does not.
+    var isSerious: Bool { probablyNotASolid || insideOut || overlappingEdges > 0 }
+
+    enum CodingKeys: String, CodingKey {
+        case degenerate, shells, flipped, watertight, clean, repairable
+        case triangleCount = "triangle_count"
+        case openEdges = "open_edges"
+        case overlappingEdges = "overlapping_edges"
+        case totalEdges = "total_edges"
+        case insideOut = "inside_out"
+        case probablyNotASolid = "probably_not_a_solid"
+        case summaryAr = "summary_ar"
+    }
+}
+
+/// What a repair actually changed.
+struct MeshRepairResult: Codable, Equatable {
+    var ok: Bool = false
+    var before: MeshHealth = MeshHealth()
+    var after: MeshHealth = MeshHealth()
+    var removedTriangles: Int = 0
+    var reoriented: Bool = false
+    var notesAr: [String] = []
+    /// The repaired copy in the library. Empty when nothing needed doing. The
+    /// original is always kept: a repair changes geometry, and only the person
+    /// who uploaded it can say whether the result is still the part they wanted.
+    var repairedModelID: String = ""
+
+    var changed: Bool { removedTriangles > 0 || reoriented }
+
+    enum CodingKeys: String, CodingKey {
+        case ok, before, after, reoriented
+        case removedTriangles = "removed_triangles"
+        case notesAr = "notes_ar"
+        case repairedModelID = "repaired_model_id"
+    }
+}
+
 // MARK: - Resuming a print
 
 /// What resuming a file at a layer would involve.

@@ -28,6 +28,8 @@ from ..library.models import (
     SearchResult,
 )
 from ..schemas import (
+    MeshHealth,
+    MeshRepairResult,
     ModelTransform,
     OKResponse,
     OrientationReport,
@@ -182,6 +184,107 @@ async def regenerate_thumbnail(item_id: str, state: AppState = Depends(get_state
             status_code=404, detail="Model not found, or it has no model file to render"
         )
     return item
+
+
+# --------------------------------------------------------------------------- #
+# Mesh health
+#
+# A broken model used to fail at slice time, with a slicer message that assumes
+# you know what a manifold is - after the upload, the profile and the wait.
+# --------------------------------------------------------------------------- #
+
+
+def _health(report: Any) -> MeshHealth:
+    return MeshHealth(
+        triangle_count=report.triangle_count,
+        degenerate=report.degenerate,
+        open_edges=report.open_edges,
+        overlapping_edges=report.overlapping_edges,
+        total_edges=report.total_edges,
+        shells=report.shells,
+        flipped=report.flipped,
+        inside_out=report.inside_out,
+        watertight=report.is_watertight,
+        clean=report.is_clean,
+        probably_not_a_solid=report.is_probably_not_a_solid,
+        summary_ar=report.summary_ar(),
+        # Only the safe repairs count: holes are never filled, so a model whose
+        # only problem is a hole is not "repairable" and saying it was would be
+        # promising something that does not happen.
+        repairable=report.degenerate > 0 or report.flipped > 0 or report.inside_out,
+    )
+
+
+@router.get("/library/{item_id}/health", response_model=MeshHealth)
+async def mesh_health(item_id: str, state: AppState = Depends(get_state)) -> MeshHealth:
+    """Check a model before slicing it."""
+    from ..library.repair import RepairError, inspect_file
+
+    path = state.models.path_for(item_id)
+    if path is None or not path.is_file():
+        raise HTTPException(status_code=404, detail="Model file not found")
+
+    try:
+        return _health(inspect_file(path))
+    except RepairError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+
+@router.post("/library/{item_id}/repair", response_model=MeshRepairResult)
+async def repair_mesh(item_id: str, state: AppState = Depends(get_state)) -> MeshRepairResult:
+    """Fix what has one right answer, and leave the original alone.
+
+    The repaired mesh becomes a *new* library item rather than replacing the
+    old one. A repair changes geometry, and the person who uploaded the file is
+    the only one who can say whether the result is still the part they wanted.
+    """
+    import tempfile
+
+    from ..library.models import LibraryItemCreate
+    from ..library.repair import RepairError, repair_file
+
+    item = state.library.get_item(item_id)
+    path = state.models.path_for(item_id)
+    if item is None or path is None or not path.is_file():
+        raise HTTPException(status_code=404, detail="Model file not found")
+
+    workdir = Path(tempfile.mkdtemp(prefix="neptune-repair-"))
+    target = workdir / f"{Path(path.name).stem}_repaired.stl"
+    try:
+        result = repair_file(path, target)
+    except RepairError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    if not result.changed:
+        return MeshRepairResult(
+            ok=True,
+            before=_health(result.before),
+            after=_health(result.after),
+            notes_ar=result.notes_ar,
+        )
+
+    repaired = state.library.create_item(
+        payload=LibraryItemCreate(
+            name_ar=f"{item.display_name} (مُصلَّح)",
+            name_en=f"{item.name_en} (repaired)" if item.name_en else "",
+            category=item.category,
+            tags=list(item.tags),
+            notes="اتعمل تلقائيًا من إصلاح الميش. الأصل موجود زي ما هو.",
+            recommended_material=item.recommended_material,
+        ),
+        model_file=target,
+        original_filename=target.name,
+    )
+
+    return MeshRepairResult(
+        ok=True,
+        before=_health(result.before),
+        after=_health(result.after),
+        removed_triangles=result.removed_triangles,
+        reoriented=result.reoriented,
+        notes_ar=result.notes_ar,
+        repaired_model_id=repaired.id,
+    )
 
 
 # --------------------------------------------------------------------------- #

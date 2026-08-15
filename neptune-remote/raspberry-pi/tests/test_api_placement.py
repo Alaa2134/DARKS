@@ -372,3 +372,71 @@ def test_the_second_open_is_served_from_the_cache(client: TestClient):
     assert any(cache_dir.glob("*.preview.json"))
     # And it still answers correctly from the cached index.
     assert client.get(f"/api/gcodes/local/{name}/preview").json()["layer_count"] == 2
+
+
+# --------------------------------------------------------------------------- #
+# Mesh health and repair
+# --------------------------------------------------------------------------- #
+
+
+def flipped_slab_stl(width: float, depth: float, height: float) -> bytes:
+    """A closed box with one face turned inside out."""
+    data = bytearray(slab_stl(width, depth, height))
+    # Records are 50 bytes after the 84-byte header; swap two vertices of the
+    # fourth triangle to reverse its winding.
+    base = 84 + 3 * 50 + 12
+    first = bytes(data[base:base + 12])
+    second = bytes(data[base + 12:base + 24])
+    data[base:base + 12] = second
+    data[base + 12:base + 24] = first
+    return bytes(data)
+
+
+def test_a_sound_model_reports_clean(client: TestClient):
+    item = upload(client, slab_stl(10, 20, 40))
+
+    body = client.get(f"/api/library/{item}/health").json()
+
+    assert body["clean"] is True
+    assert body["watertight"] is True
+    assert body["open_edges"] == 0
+    assert body["repairable"] is False
+    assert any("سليم" in line for line in body["summary_ar"])
+
+
+def test_a_flipped_face_is_reported_and_marked_repairable(client: TestClient):
+    item = upload(client, flipped_slab_stl(10, 20, 40))
+
+    body = client.get(f"/api/library/{item}/health").json()
+
+    assert body["clean"] is False
+    assert body["flipped"] > 0
+    assert body["repairable"] is True
+
+
+def test_repairing_makes_a_new_model_and_keeps_the_original(client: TestClient):
+    item = upload(client, flipped_slab_stl(10, 20, 40))
+
+    body = client.post(f"/api/library/{item}/repair").json()
+
+    assert body["reoriented"] is True
+    assert body["after"]["flipped"] == 0
+    assert body["repaired_model_id"]
+    # A repair changes geometry, so the original has to survive it.
+    assert client.get(f"/api/library/{item}").status_code == 200
+    assert client.get(f"/api/library/{body['repaired_model_id']}").status_code == 200
+
+
+def test_repairing_a_sound_model_changes_nothing_and_makes_no_copy(client: TestClient):
+    item = upload(client, slab_stl(10, 20, 40))
+
+    body = client.post(f"/api/library/{item}/repair").json()
+
+    assert body["repaired_model_id"] == ""
+    assert body["removed_triangles"] == 0
+    assert body["reoriented"] is False
+
+
+def test_health_for_a_model_that_does_not_exist_is_a_404(client: TestClient):
+    assert client.get("/api/library/nope/health").status_code == 404
+    assert client.post("/api/library/nope/repair").status_code == 404

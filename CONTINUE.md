@@ -68,6 +68,17 @@ lands and CI must be checked after.
   `FlowRow` legend, colour-change ticks on the scrubber, `Theme.color(for:)`
   using the slicer legend vocabulary.
 
+### Mesh repair (S2)
+- `raspberry-pi/app/library/repair.py` — welds loose STL corners into shared
+  vertices first (without it every edge looks open), then counts degenerate
+  triangles, open edges, edges shared by 3+ faces, shells, and faces whose
+  winding disagrees. Signed volume catches a mesh that is *consistently*
+  inside-out, which a neighbour-agreement check cannot see. Repairs only what
+  has one right answer; holes are reported, never filled.
+- `GET /api/library/{id}/health`, `POST /api/library/{id}/repair` (writes a new
+  library item, never replaces the original).
+- iOS: `MeshHealth`, `MeshRepairResult`, health card on `PlacementView`.
+
 ### Resume / print a piece
 - `raspberry-pi/app/gcode/resume.py` — `state_at_layer` replays temps, fan,
   M82/M83, G90/G91, feedrate, position; `assess` decides whether Z can be homed
@@ -84,7 +95,7 @@ lands and CI must be checked after.
 
 ## Current state
 
-- Backend: **1093 tests passing**.
+- Backend: **1119 tests passing**.
 - iOS: **~300 tests**. Last full CI run (`f931fd3`) compiled the whole app and
   ran 295 tests with **one failure — a wrong assertion in my own test**
   (`[0,0,1,1]` is two points, not one). Fixed, not yet re-run.
@@ -94,16 +105,17 @@ lands and CI must be checked after.
 
 ## Next step
 
-1. Push the current batch (resume + preview test fix) and confirm CI green.
-2. **S2 — mesh repair.** `raspberry-pi/app/library/` has no repair. A broken
-   model currently fails at slice time with a slicer message nobody can read.
-   Plan: detect non-manifold edges, flipped normals, zero-area triangles,
-   disconnected shells; auto-fix only the safe ones; report in Arabic; keep the
-   original.
-3. **S3 — visual plate arrangement.** `extra_model_ids`/`copies` exist but the
-   user cannot see or position anything.
-4. **L1 — import from a URL** (Printables first — open API; Thingiverse needs a
-   key in `config.yaml` on the Pi only).
+1. Confirm CI green for the resume + mesh-repair batch.
+2. **S3 — visual plate arrangement.** `extra_model_ids`/`copies` exist in
+   `SliceRequest` but the user cannot see the bed or position anything. Needs:
+   bed drawn from `printer.cfg` limits, drag to place, overlap and out-of-bounds
+   warnings, simple bin-packing as a starting arrangement, offsets passed to the
+   engine with `--dont-arrange`.
+3. **L1 — import from a URL** (Printables first — open API; Thingiverse needs a
+   key in `config.yaml` on the Pi only). A ZIP of several STLs should become one
+   project, not several entries.
+4. **L4 — library backup/restore.** Highest real-world value of the remaining
+   library work: the SD card is the single point of failure for years of work.
 
 ---
 

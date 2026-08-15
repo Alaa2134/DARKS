@@ -25,8 +25,18 @@ final class PlacementStore: ObservableObject {
     /// hand, because advice about a different orientation is not advice.
     @Published private(set) var suggestions: [String: OrientationSuggestion] = [:]
 
+    /// What is wrong with each model, per id. Checked once when the placement
+    /// screen opens, because that is the moment before the slice - and the
+    /// last moment a warning is still cheap.
+    @Published private(set) var health: [String: MeshHealth] = [:]
+
     @Published private(set) var isMeasuring = false
     @Published private(set) var isSuggesting = false
+    @Published private(set) var isChecking = false
+    @Published private(set) var isRepairing = false
+    /// Set when a repair produced a new model, so the screen can offer to use
+    /// it. The original is never replaced.
+    @Published var repairResult: MeshRepairResult?
     @Published var lastError: APIError?
 
     private let settings: AppSettings
@@ -135,6 +145,40 @@ final class PlacementStore: ObservableObject {
             try? await Task.sleep(nanoseconds: 350_000_000)
             guard !Task.isCancelled else { return }
             await self?.measure(modelID)
+        }
+    }
+
+    // MARK: - Mesh health
+
+    /// Check a model, quietly. Failures are swallowed: this is advice offered
+    /// alongside the real task, and an error banner for a check the user did
+    /// not ask for would be noise in front of the thing they did.
+    func checkHealth(_ modelID: String) async {
+        guard health[modelID] == nil else { return }
+        isChecking = true
+        defer { isChecking = false }
+        if let result = try? await printer.backend.meshHealth(id: modelID) {
+            health[modelID] = result
+        }
+    }
+
+    /// Repair a model into a new library item. The original is kept.
+    @discardableResult
+    func repair(_ modelID: String) async -> String? {
+        isRepairing = true
+        defer { isRepairing = false }
+        do {
+            let result = try await printer.backend.repairMesh(id: modelID)
+            repairResult = result
+            // The repaired copy is a different model, so the old verdict no
+            // longer describes anything on screen.
+            health[modelID] = result.after
+            Haptics.success()
+            return result.repairedModelID.isEmpty ? nil : result.repairedModelID
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            Haptics.error()
+            return nil
         }
     }
 

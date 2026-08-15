@@ -68,6 +68,23 @@ extension BackendClient {
         _ = try await raw(path: "library/\(id)", method: "DELETE", timeout: 30)
     }
 
+    // MARK: - Mesh health
+
+    /// Check a model before slicing it.
+    func meshHealth(id: String) async throws -> MeshHealth {
+        try await decode(MeshHealth.self, path: "library/\(id)/health", timeout: 120)
+    }
+
+    /// Fix what has one right answer, into a new library item.
+    func repairMesh(id: String) async throws -> MeshRepairResult {
+        try await decode(
+            MeshRepairResult.self,
+            path: "library/\(id)/repair",
+            method: "POST",
+            timeout: 180
+        )
+    }
+
     // MARK: - Resuming
 
     /// What resuming at this layer would involve. Nothing is written.

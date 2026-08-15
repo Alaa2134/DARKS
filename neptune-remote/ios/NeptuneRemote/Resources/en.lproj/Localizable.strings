@@ -1651,3 +1651,12 @@
 "resume.not_uploaded" = "The file was written on the Pi but Moonraker would not take it. You can upload it from the files screen.";
 "resume.next_step" = "Open Files, pick this file, and start the print once you are sure the bed and the part are where they should be.";
 "resume.open" = "Resume from this layer";
+
+
+/* Mesh health: catching a broken model before the slice */
+"mesh.serious" = "This model has a serious problem";
+"mesh.minor" = "This model has some minor issues";
+"mesh.repair" = "Repair the model";
+"mesh.repairing" = "Repairing…";
+"mesh.repair.explain" = "Zero-area triangles are removed and flipped faces are turned back round. Holes are not filled - filling one means inventing surface the designer did not draw, and that invention comes out as plastic.";
+"mesh.repaired.copy" = "The repair was written to a new library item. The original is untouched.";
