@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import posixpath
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -267,7 +268,12 @@ async def gcode_preview_summary(
     """
     path = _local_gcode(state, name)
     try:
-        index = load_or_build_index(path, _preview_cache_dir(state))
+        # Building the index scans a file that can be 200 MB. The first open of
+        # a big print would otherwise stop the Pi answering anything at all -
+        # including the printer status the app polls while it waits.
+        index = await asyncio.to_thread(
+            load_or_build_index, path, _preview_cache_dir(state)
+        )
     except PreviewError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -296,9 +302,13 @@ async def gcode_preview_layer(
     phone wants them all; this costs the size of a single layer.
     """
     path = _local_gcode(state, name)
-    try:
+
+    def work():
         index = load_or_build_index(path, _preview_cache_dir(state))
-        result = read_layer(path, index, layer, include_travel=travel)
+        return read_layer(path, index, layer, include_travel=travel)
+
+    try:
+        result = await asyncio.to_thread(work)
     except PreviewError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -374,9 +384,13 @@ async def resume_plan(
     the form with.
     """
     path = _local_gcode(state, name)
-    try:
+
+    def work():
         index = load_or_build_index(path, _preview_cache_dir(state))
-        machine = state_at_layer(path, index, layer)
+        return index, state_at_layer(path, index, layer)
+
+    try:
+        index, machine = await asyncio.to_thread(work)
     except (PreviewError, ResumeError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -411,9 +425,13 @@ async def build_resume(
     something to press Print on deliberately, after looking at the machine.
     """
     path = _local_gcode(state, name)
-    try:
+
+    def read_plan():
         index = load_or_build_index(path, _preview_cache_dir(state))
-        machine = state_at_layer(path, index, request.start_layer)
+        return index, state_at_layer(path, index, request.start_layer)
+
+    try:
+        index, machine = await asyncio.to_thread(read_plan)
         safety = assess_resume(
             index,
             z_home_point=await _z_home_point(state),
@@ -430,15 +448,19 @@ async def build_resume(
             request.output_name or f"{Path(path.name).stem}_{suffix}.gcode"
         )
 
-        build_resumed_file(
-            path, output, index,
-            start_layer=request.start_layer,
-            end_layer=request.end_layer,
-            safety=safety,
-            state=machine,
-            nozzle_temp=request.nozzle_temp,
-            bed_temp=request.bed_temp,
-            prime_mm=request.prime_mm,
+        # Writing the resumed file copies most of the original through, which
+        # for a nine-hour print is hundreds of megabytes.
+        await asyncio.to_thread(
+            lambda: build_resumed_file(
+                path, output, index,
+                start_layer=request.start_layer,
+                end_layer=request.end_layer,
+                safety=safety,
+                state=machine,
+                nozzle_temp=request.nozzle_temp,
+                bed_temp=request.bed_temp,
+                prime_mm=request.prime_mm,
+            )
         )
     except (PreviewError, ResumeError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error

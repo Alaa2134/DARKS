@@ -116,10 +116,14 @@ async def upload_model(
         notes=notes,
         recommended_material=recommended_material,
     )
-    item = state.library.create_item(
-        payload=payload, model_file=temporary, original_filename=filename
+    # Measuring the mesh and rendering its thumbnail is the slow part, and it
+    # is CPU rather than IO - so off the event loop, or every other request
+    # waits behind somebody's 200 MB STL.
+    return await asyncio.to_thread(
+        lambda: state.library.create_item(
+            payload=payload, model_file=temporary, original_filename=filename
+        )
     )
-    return item
 
 
 @router.get("/library/categories", response_model=List[CategoryInfo])
@@ -322,18 +326,23 @@ async def create_backup(
         counter += 1
 
     try:
-        manifest = create_archive(
-            target,
-            database=Path(state.layout.database) / "neptune.db",
-            models=Path(state.layout.models),
-            thumbnails=Path(state.layout.thumbnails),
-            app_version=VERSION,
+        # Copying a whole library into a tarball is minutes of disk and CPU on
+        # a Pi. On the event loop it is minutes of an API that answers nothing,
+        # from a button whose whole promise is that it is safe to press.
+        manifest = await asyncio.to_thread(
+            lambda: create_archive(
+                target,
+                database=Path(state.layout.database) / "neptune.db",
+                models=Path(state.layout.models),
+                thumbnails=Path(state.layout.thumbnails),
+                app_version=VERSION,
+            )
         )
     except (BackupError, OSError) as error:
         raise HTTPException(status_code=500, detail=f"مش قادر أعمل النسخة: {error}") from error
 
     # A backup nobody prunes fills the card it exists to protect.
-    pruned = prune(state.layout.backups, keep=keep)
+    pruned = await asyncio.to_thread(prune, state.layout.backups, keep=keep)
 
     return BackupResult(
         ok=True,
@@ -369,12 +378,14 @@ async def restore_backup(
         raise HTTPException(status_code=404, detail="النسخة دي مش موجودة.")
 
     try:
-        report = restore_archive(
-            path,
-            database=Path(state.layout.database) / "neptune.db",
-            models=Path(state.layout.models),
-            thumbnails=Path(state.layout.thumbnails),
-            keep_existing=request.keep_existing,
+        report = await asyncio.to_thread(
+            lambda: restore_archive(
+                path,
+                database=Path(state.layout.database) / "neptune.db",
+                models=Path(state.layout.models),
+                thumbnails=Path(state.layout.thumbnails),
+                keep_existing=request.keep_existing,
+            )
         )
     except BackupError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
@@ -455,7 +466,7 @@ async def replace_thumbnail(
 
 @router.post("/library/{item_id}/regenerate-thumbnail", response_model=LibraryItem)
 async def regenerate_thumbnail(item_id: str, state: AppState = Depends(get_state)) -> LibraryItem:
-    item = state.library.regenerate_thumbnail(item_id)
+    item = await asyncio.to_thread(state.library.regenerate_thumbnail, item_id)
     if item is None:
         raise HTTPException(
             status_code=404, detail="Model not found, or it has no model file to render"
@@ -502,7 +513,10 @@ async def mesh_health(item_id: str, state: AppState = Depends(get_state)) -> Mes
         raise HTTPException(status_code=404, detail="Model file not found")
 
     try:
-        return _health(inspect_file(path))
+        # Reading every edge of a mesh is seconds of pure CPU on a Pi. On the
+        # event loop those are seconds where /printer/status does not answer,
+        # and the app draws that as the printer having gone away.
+        return _health(await asyncio.to_thread(inspect_file, path))
     except RepairError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -528,7 +542,7 @@ async def repair_mesh(item_id: str, state: AppState = Depends(get_state)) -> Mes
     workdir = Path(tempfile.mkdtemp(prefix="neptune-repair-"))
     target = workdir / f"{Path(path.name).stem}_repaired.stl"
     try:
-        result = repair_file(path, target)
+        result = await asyncio.to_thread(repair_file, path, target)
     except RepairError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -540,17 +554,21 @@ async def repair_mesh(item_id: str, state: AppState = Depends(get_state)) -> Mes
             notes_ar=result.notes_ar,
         )
 
-    repaired = state.library.create_item(
-        payload=LibraryItemCreate(
-            name_ar=f"{item.display_name} (مُصلَّح)",
-            name_en=f"{item.name_en} (repaired)" if item.name_en else "",
-            category=item.category,
-            tags=list(item.tags),
-            notes="اتعمل تلقائيًا من إصلاح الميش. الأصل موجود زي ما هو.",
-            recommended_material=item.recommended_material,
-        ),
-        model_file=target,
-        original_filename=target.name,
+    payload = LibraryItemCreate(
+        name_ar=f"{item.display_name} (مُصلَّح)",
+        name_en=f"{item.name_en} (repaired)" if item.name_en else "",
+        category=item.category,
+        tags=list(item.tags),
+        notes="اتعمل تلقائيًا من إصلاح الميش. الأصل موجود زي ما هو.",
+        recommended_material=item.recommended_material,
+        source_url=item.source_url,
+        author=item.author,
+        licence=item.licence,
+    )
+    repaired = await asyncio.to_thread(
+        lambda: state.library.create_item(
+            payload=payload, model_file=target, original_filename=target.name
+        )
     )
 
     return MeshRepairResult(
@@ -651,7 +669,7 @@ async def arrange_plate(
     # what will be printed.
     instances = expand(request.model_ids, request.quantities)
 
-    footprints: List[tuple] = []
+    paths: Dict[str, Path] = {}
     for instance in instances:
         model_id = base_id(instance)
         path = state.models.path_for(model_id)
@@ -659,27 +677,43 @@ async def arrange_plate(
             raise HTTPException(
                 status_code=404, detail=f"الموديل «{model_id}» مش موجود."
             )
-        spec = request.transforms.get(model_id)
-        placement = transform_tools.Transform.from_dict(
-            spec.model_dump() if spec else None
-        )
-        try:
+        paths[model_id] = path
+
+    def measure() -> List[tuple]:
+        """Every footprint, after rotation and scale.
+
+        One thread hop for the whole plate rather than one per model: loading
+        a mesh is CPU, and eight of those on the event loop is eight seconds
+        in which the Pi answers nothing - including the printer status the app
+        polls, which it would draw as the printer going away.
+        """
+        measured: List[tuple] = []
+        for instance in instances:
+            model_id = base_id(instance)
+            spec = request.transforms.get(model_id)
+            placement = transform_tools.Transform.from_dict(
+                spec.model_dump() if spec else None
+            )
             # Measured without the offset: the arrangement is about to decide
             # where it goes, so where it currently sits is not an input.
             sized = transform_tools.apply(
-                load(path),
+                load(paths[model_id]),
                 transform_tools.Transform(
                     rotation_deg=placement.rotation_deg,
                     scale=placement.scale,
                     mirror=placement.mirror,
                 ),
             )
-        except Exception as error:                          # noqa: BLE001
-            raise HTTPException(
-                status_code=422, detail=f"مش قادر أقرا «{model_id}»: {error}"
-            ) from error
-        size = sized.size
-        footprints.append((instance, float(size[0]), float(size[1])))
+            size = sized.size
+            measured.append((instance, float(size[0]), float(size[1])))
+        return measured
+
+    try:
+        footprints = await asyncio.to_thread(measure)
+    except Exception as error:                              # noqa: BLE001
+        raise HTTPException(
+            status_code=422, detail=f"مش قادر أقرا الموديل: {error}"
+        ) from error
 
 
     if request.check_only:
@@ -769,19 +803,26 @@ async def suggest_orientation(
 
     volume = await _build_volume(state)
 
-    try:
-        mesh = load(path)
-        # Measure where it stands now - including any transform already saved
-        # against it, so "current" means what the user is actually looking at.
-        starting = transform_tools.Transform.from_dict(
-            transform.model_dump() if transform else None
-        )
-        current_mesh = transform_tools.apply(mesh, starting)
-        current = transform_tools.score_orientation(current_mesh)
+    # Measure where it stands now - including any transform already saved
+    # against it, so "current" means what the user is actually looking at.
+    starting = transform_tools.Transform.from_dict(
+        transform.model_dump() if transform else None
+    )
 
-        placement, score = transform_tools.auto_orient(
-            current_mesh, max_height=volume[2]
+    def work():
+        """Turn and score every candidate orientation.
+
+        The most expensive thing in the library: a mesh load plus one full
+        transform and scoring pass per candidate. It belongs in a thread.
+        """
+        current_mesh = transform_tools.apply(load(path), starting)
+        return (
+            transform_tools.score_orientation(current_mesh),
+            transform_tools.auto_orient(current_mesh, max_height=volume[2]),
         )
+
+    try:
+        current, (placement, score) = await asyncio.to_thread(work)
     except transform_tools.TransformError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except Exception as error:                              # noqa: BLE001
@@ -822,11 +863,17 @@ async def measure_transform(
         raise HTTPException(status_code=404, detail="Model file not found")
 
     volume = await _build_volume(state)
-    try:
+
+    def work():
         placed = transform_tools.apply(
             load(path), transform_tools.Transform.from_dict(transform.model_dump())
         )
-        score = transform_tools.score_orientation(placed)
+        return transform_tools.score_orientation(placed)
+
+    try:
+        # Called on every frame of a rotation dial, on a mesh that can be
+        # millions of triangles.
+        score = await asyncio.to_thread(work)
     except transform_tools.TransformError as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
     except Exception as error:                              # noqa: BLE001
