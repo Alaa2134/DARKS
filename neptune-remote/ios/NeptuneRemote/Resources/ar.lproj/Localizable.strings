@@ -1693,3 +1693,20 @@
 "plate.auto" = "رتّب تلقائي";
 "plate.reset" = "رجّع للنص";
 "plate.part.accessibility" = "قطعة %@ عند %d، %d مليمتر من نص السرير";
+
+/* الاستيراد من رابط */
+"import.title" = "استيراد من رابط";
+"import.link" = "الرابط";
+"import.link.placeholder" = "الصق رابط ملف STL أو 3MF أو ZIP";
+"import.name" = "اسم الموديل (اختياري)";
+"import.start" = "نزّل على الراسبيري";
+"import.working" = "الراسبيري بينزّل الملف…";
+"import.done" = "تمام — دخل %d موديل المكتبة";
+"import.collection" = "اتحطوا مع بعض في مجموعة «%@»";
+"import.back_to_library" = "روح للمكتبة";
+"import.needs_key" = "الموقع ده محتاج مفتاح API متسجل على الراسبيري";
+"import.failed" = "الاستيراد ما تمّش";
+"import.what_works" = "الروابط اللي بتشتغل";
+"import.works.direct" = "أي رابط مباشر لملف STL أو 3MF أو OBJ.";
+"import.works.zip" = "رابط ملف ZIP فيه كذا قطعة — بيدخلوا المكتبة كمشروع واحد مش قطع متفرقة.";
+"import.works.pages" = "صفحات Printables وMakerWorld محتاجة تسجيل دخول، فنزّل الملف منها والصق رابطه المباشر. Thingiverse بيشتغل لو حطيت المفتاح في config.yaml على الراسبيري.";

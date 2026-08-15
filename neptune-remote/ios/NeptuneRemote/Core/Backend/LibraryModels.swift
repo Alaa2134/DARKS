@@ -78,6 +78,12 @@ struct LibraryItem: Decodable, Identifiable, Equatable, Hashable {
     let estimatedSeconds: Double?
     let estimatedFilamentGrams: Double?
 
+    /// Where this came from, when it was imported from a link. Empty for
+    /// anything uploaded from the phone.
+    let sourceURL: String
+    let author: String
+    let licence: String
+
     let favourite: Bool
     let printCount: Int
     let lastPrinted: Double?
@@ -106,6 +112,8 @@ struct LibraryItem: Decodable, Identifiable, Equatable, Hashable {
         case recommendedMaterial = "recommended_material"
         case estimatedSeconds = "estimated_seconds"
         case estimatedFilamentGrams = "estimated_filament_g"
+        case sourceURL = "source_url"
+        case author, licence
         case printCount = "print_count"
         case lastPrinted = "last_printed"
         case isProduct = "is_product"
@@ -134,6 +142,9 @@ struct LibraryItem: Decodable, Identifiable, Equatable, Hashable {
         recommendedMaterial = try container.decodeIfPresent(String.self, forKey: .recommendedMaterial) ?? ""
         estimatedSeconds = try container.decodeIfPresent(Double.self, forKey: .estimatedSeconds)
         estimatedFilamentGrams = try container.decodeIfPresent(Double.self, forKey: .estimatedFilamentGrams)
+        sourceURL = try container.decodeIfPresent(String.self, forKey: .sourceURL) ?? ""
+        author = try container.decodeIfPresent(String.self, forKey: .author) ?? ""
+        licence = try container.decodeIfPresent(String.self, forKey: .licence) ?? ""
         favourite = try container.decodeIfPresent(Bool.self, forKey: .favourite) ?? false
         printCount = try container.decodeIfPresent(Int.self, forKey: .printCount) ?? 0
         lastPrinted = try container.decodeIfPresent(Double.self, forKey: .lastPrinted)
@@ -165,6 +176,9 @@ struct LibraryItem: Decodable, Identifiable, Equatable, Hashable {
         recommendedMaterial: String = "",
         estimatedSeconds: Double? = nil,
         estimatedFilamentGrams: Double? = nil,
+        sourceURL: String = "",
+        author: String = "",
+        licence: String = "",
         favourite: Bool = false,
         printCount: Int = 0,
         lastPrinted: Double? = nil,
@@ -194,6 +208,9 @@ struct LibraryItem: Decodable, Identifiable, Equatable, Hashable {
         self.recommendedMaterial = recommendedMaterial
         self.estimatedSeconds = estimatedSeconds
         self.estimatedFilamentGrams = estimatedFilamentGrams
+        self.sourceURL = sourceURL
+        self.author = author
+        self.licence = licence
         self.favourite = favourite
         self.printCount = printCount
         self.lastPrinted = lastPrinted

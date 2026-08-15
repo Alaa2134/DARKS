@@ -589,6 +589,43 @@ struct ArrangeResponse: Codable, Equatable {
     }
 }
 
+// MARK: - Importing from a link
+
+struct ImportRequestPayload: Encodable, Equatable {
+    var url: String
+    var category: String = "other"
+    var nameAR: String = ""
+    var tags: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case url, category, tags
+        case nameAR = "name_ar"
+    }
+}
+
+/// What arrived from a link, or why nothing did.
+struct ImportResult: Decodable, Equatable {
+    var ok: Bool = true
+    var items: [LibraryItem] = []
+    /// Set when an archive brought several parts, so they stay together.
+    var collectionID: String = ""
+    var collectionName: String = ""
+    var sourceURL: String = ""
+    /// A site that needs a key this Pi does not have. Reported rather than
+    /// failed, because it is something the user can actually fix.
+    var needsKey: String = ""
+    var notesAr: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case ok, items
+        case collectionID = "collection_id"
+        case collectionName = "collection_name"
+        case sourceURL = "source_url"
+        case needsKey = "needs_key"
+        case notesAr = "notes_ar"
+    }
+}
+
 /// What an orientation costs, measured against the real mesh.
 struct OrientationReport: Codable, Equatable {
     /// Area that would sit flat on the bed, mm². Bigger sticks better.

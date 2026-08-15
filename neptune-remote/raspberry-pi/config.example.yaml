@@ -107,6 +107,19 @@ storage:
   max_backups: 10
 
 # ---------------------------------------------------------------------------
+# Library
+#
+# Importing from a link works without any key for a direct file URL. Only
+# Thingiverse needs one: get a personal app token from
+# https://www.thingiverse.com/apps/create and put it here.
+#
+# Like every other credential, it stays on the Pi - the app never receives it,
+# and the API reports only whether it is set.
+# ---------------------------------------------------------------------------
+library:
+  thingiverse_key: ""
+
+# ---------------------------------------------------------------------------
 # Camera (USB UVC webcam on the Raspberry Pi 5)
 #
 # Preferred: point at the stream crowsnest already serves, so Mainsail, this

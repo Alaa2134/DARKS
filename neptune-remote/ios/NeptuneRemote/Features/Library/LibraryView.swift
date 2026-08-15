@@ -8,6 +8,7 @@ struct LibraryView: View {
 
     @State private var showingImporter = false
     @State private var showingIdeas = false
+    @State private var showingLinkImport = false
     @State private var isImporting = false
     @FocusState private var searchFocused: Bool
 
@@ -95,6 +96,11 @@ struct LibraryView: View {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button {
+                        showingLinkImport = true
+                    } label: {
+                        Label(L.t("import.title"), systemImage: "link")
+                    }
+                    Button {
                         showingIdeas = true
                     } label: {
                         Label(L.t("ideas.title"), systemImage: "lightbulb")
@@ -107,6 +113,9 @@ struct LibraryView: View {
         }
         .sheet(isPresented: $showingIdeas) {
             NavigationStack { IdeaFinderView().withLibraryDestinations() }
+        }
+        .sheet(isPresented: $showingLinkImport) {
+            NavigationStack { ImportLinkView() }
         }
         // A UIKit picker in a sheet, not .fileImporter. The importer's
         // completion is bound to this view, and this view is rebuilt every few

@@ -101,6 +101,9 @@ class LibraryStore:
             category=payload.category or "other",
             notes=payload.notes,
             recommended_material=payload.recommended_material,
+            source_url=payload.source_url,
+            author=payload.author,
+            licence=payload.licence,
             favourite=payload.favourite,
             model_path=self.layout.relative(stored_path) if stored_path else None,
             model_filename=stored_path.name.split("__", 1)[-1] if stored_path else "",
@@ -174,16 +177,18 @@ class LibraryStore:
                 thumbnail, hero_image, model_path, model_filename, model_size,
                 dimensions_x, dimensions_y, dimensions_z, triangle_count,
                 recommended_material, estimated_seconds, estimated_filament_g,
+                source_url, author, licence,
                 favourite, print_count, last_printed, successful_profile,
                 is_product, created_at, updated_at, search_blob
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
             """,
             (
                 item.id, item.name_ar, item.name_en, dump_json(item.aliases), dump_json(item.tags),
                 item.category, item.notes, item.thumbnail, item.hero_image, item.model_path,
                 item.model_filename, item.model_size, item.dimensions_x, item.dimensions_y,
                 item.dimensions_z, item.triangle_count, item.recommended_material,
-                item.estimated_seconds, item.estimated_filament_g, int(item.favourite),
+                item.estimated_seconds, item.estimated_filament_g,
+                item.source_url, item.author, item.licence, int(item.favourite),
                 item.print_count, item.last_printed,
                 dump_json(item.successful_profile) if item.successful_profile else None,
                 int(item.is_product), item.created_at, item.updated_at, document.blob(),
@@ -309,6 +314,12 @@ class LibraryStore:
             recommended_material=data["recommended_material"] or "",
             estimated_seconds=data["estimated_seconds"],
             estimated_filament_g=data["estimated_filament_g"],
+            # `.get`, not `[...]`: a database restored from an archive made
+            # before these columns existed is opened without another migration
+            # pass, and a missing source is not worth a crash.
+            source_url=data.get("source_url") or "",
+            author=data.get("author") or "",
+            licence=data.get("licence") or "",
             favourite=bool(data["favourite"]),
             print_count=int(data["print_count"] or 0),
             last_printed=data["last_printed"],

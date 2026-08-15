@@ -6,6 +6,8 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from .library.models import LibraryItem
+
 
 # --------------------------------------------------------------------------- #
 # Generic
@@ -356,6 +358,37 @@ class RestoreResult(BaseModel):
     models_restored: int = 0
     thumbnails_restored: int = 0
     database_restored: bool = False
+    notes_ar: List[str] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------- #
+# Importing from a link
+# --------------------------------------------------------------------------- #
+
+
+class ImportRequest(BaseModel):
+    url: str = ""
+    category: str = "other"
+    #: Empty means the name comes from the file or the archive.
+    name_ar: str = ""
+    tags: List[str] = Field(default_factory=list)
+
+
+class ImportResult(BaseModel):
+    """What arrived, or why nothing did.
+
+    `needs_key` is reported rather than raised: Thingiverse is a site the user
+    can actually use once a key is set on the Pi, so the app offers that
+    instead of showing a failure.
+    """
+
+    ok: bool = True
+    items: List["LibraryItem"] = Field(default_factory=list)
+    #: Set when an archive brought more than one part, so they stay together.
+    collection_id: str = ""
+    collection_name: str = ""
+    source_url: str = ""
+    needs_key: str = ""
     notes_ar: List[str] = Field(default_factory=list)
 
 

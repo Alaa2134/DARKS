@@ -112,6 +112,7 @@
 		34FC5C820AA6184FCEBA1EC1 /* MaintenanceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MaintenanceView.swift"; sourceTree = "<group>"; };
 		F5D80D04AA29CACF165D17F7 /* QueueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "QueueView.swift"; sourceTree = "<group>"; };
 		DC5F4D88F672359A8DECEB6B /* IdeaFinderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "IdeaFinderView.swift"; sourceTree = "<group>"; };
+		DD600B383936D4FC9A12FFE2 /* ImportLinkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ImportLinkView.swift"; sourceTree = "<group>"; };
 		B7D6B45620931165111C6C2D /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryView.swift"; sourceTree = "<group>"; };
 		86A69E178A464C0AFAD0ED9D /* ModelDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelDetailView.swift"; sourceTree = "<group>"; };
 		AF1D6F7C3779F09036137EB3 /* ModelImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ModelImage.swift"; sourceTree = "<group>"; };
@@ -153,6 +154,7 @@
 		6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorTests.swift"; sourceTree = "<group>"; };
 		A464B815DD4754605B807349 /* EcosystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EcosystemTests.swift"; sourceTree = "<group>"; };
 		CE2FA3344C4CBCB563B766BA /* EstimateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EstimateTests.swift"; sourceTree = "<group>"; };
+		B0D19C88425B70FBB6117DED /* ImportLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ImportLinkTests.swift"; sourceTree = "<group>"; };
 		1384AE822FE8A9A1E18F4655 /* MJPEGStreamTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MJPEGStreamTests.swift"; sourceTree = "<group>"; };
 		D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MeshLoaderTests.swift"; sourceTree = "<group>"; };
 		B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MoonrakerParsingTests.swift"; sourceTree = "<group>"; };
@@ -432,6 +434,7 @@
 			isa = PBXGroup;
 			children = (
 				DC5F4D88F672359A8DECEB6B /* IdeaFinderView.swift */,
+				DD600B383936D4FC9A12FFE2 /* ImportLinkView.swift */,
 				B7D6B45620931165111C6C2D /* LibraryView.swift */,
 				86A69E178A464C0AFAD0ED9D /* ModelDetailView.swift */,
 				AF1D6F7C3779F09036137EB3 /* ModelImage.swift */,
@@ -589,6 +592,7 @@
 				6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */,
 				A464B815DD4754605B807349 /* EcosystemTests.swift */,
 				CE2FA3344C4CBCB563B766BA /* EstimateTests.swift */,
+				B0D19C88425B70FBB6117DED /* ImportLinkTests.swift */,
 				1384AE822FE8A9A1E18F4655 /* MJPEGStreamTests.swift */,
 				D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */,
 				B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */,
@@ -729,6 +733,7 @@
 		35A2C0452544C1C05F6BB018 /* MaintenanceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34FC5C820AA6184FCEBA1EC1 /* MaintenanceView.swift */; };
 		033019E583E9F8F6E1C817FA /* QueueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5D80D04AA29CACF165D17F7 /* QueueView.swift */; };
 		22791B99562E65F0A0DC9234 /* IdeaFinderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC5F4D88F672359A8DECEB6B /* IdeaFinderView.swift */; };
+		F0B1A83E9C16A406FBF1BC92 /* ImportLinkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD600B383936D4FC9A12FFE2 /* ImportLinkView.swift */; };
 		D56FDFCCE43404FA4B310C62 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7D6B45620931165111C6C2D /* LibraryView.swift */; };
 		0E4DBB3AE2C8D6C377591683 /* ModelDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86A69E178A464C0AFAD0ED9D /* ModelDetailView.swift */; };
 		B0DFDBE4DCCAE1F264E5A82A /* ModelImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF1D6F7C3779F09036137EB3 /* ModelImage.swift */; };
@@ -775,6 +780,7 @@
 		7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */; };
 		E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A464B815DD4754605B807349 /* EcosystemTests.swift */; };
 		2CD1A241228D625941542824 /* EstimateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE2FA3344C4CBCB563B766BA /* EstimateTests.swift */; };
+		641A752D960E753F055BE12A /* ImportLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0D19C88425B70FBB6117DED /* ImportLinkTests.swift */; };
 		02F1749E080EEB478B57F687 /* MJPEGStreamTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1384AE822FE8A9A1E18F4655 /* MJPEGStreamTests.swift */; };
 		9EA6CE005C650DFE211FF700 /* MeshLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7CB5B06C21E0506E493FD48 /* MeshLoaderTests.swift */; };
 		C4B8BB0FF0543E42EBE4B4A9 /* MoonrakerParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B79963A3B105B918F39A87AA /* MoonrakerParsingTests.swift */; };
@@ -898,6 +904,7 @@
 				35A2C0452544C1C05F6BB018 /* MaintenanceView.swift in Sources */,
 				033019E583E9F8F6E1C817FA /* QueueView.swift in Sources */,
 				22791B99562E65F0A0DC9234 /* IdeaFinderView.swift in Sources */,
+				F0B1A83E9C16A406FBF1BC92 /* ImportLinkView.swift in Sources */,
 				D56FDFCCE43404FA4B310C62 /* LibraryView.swift in Sources */,
 				0E4DBB3AE2C8D6C377591683 /* ModelDetailView.swift in Sources */,
 				B0DFDBE4DCCAE1F264E5A82A /* ModelImage.swift in Sources */,
@@ -1015,6 +1022,7 @@
 				7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */,
 				E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */,
 				2CD1A241228D625941542824 /* EstimateTests.swift in Sources */,
+				641A752D960E753F055BE12A /* ImportLinkTests.swift in Sources */,
 				02F1749E080EEB478B57F687 /* MJPEGStreamTests.swift in Sources */,
 				9EA6CE005C650DFE211FF700 /* MeshLoaderTests.swift in Sources */,
 				C4B8BB0FF0543E42EBE4B4A9 /* MoonrakerParsingTests.swift in Sources */,

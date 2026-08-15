@@ -57,6 +57,21 @@ extension BackendClient {
         }
     }
 
+    /// Fetch a model from a link straight onto the Pi.
+    ///
+    /// The download happens there, not here: the phone is rarely where the
+    /// file is, and the model is going to the Pi in the end anyway.
+    func importFromURL(_ payload: ImportRequestPayload) async throws -> ImportResult {
+        try await decode(
+            ImportResult.self,
+            path: "library/import",
+            method: "POST",
+            body: try await http.encodeBody(payload),
+            // A large archive over a home connection.
+            timeout: 600
+        )
+    }
+
     func updateLibraryItem(id: String, payload: LibraryItemUpdatePayload) async throws -> LibraryItem {
         try await decode(
             LibraryItem.self, path: "library/\(id)", method: "PATCH",

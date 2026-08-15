@@ -309,6 +309,45 @@ final class LibraryStore: ObservableObject {
         }
     }
 
+    /// Import from a link. The Pi does the downloading.
+    ///
+    /// Nothing passes through the phone: the file is going to the Pi in the
+    /// end, and a 200 MB archive over a phone connection - down and then back
+    /// up again - is the slowest possible way to get it there.
+    ///
+    /// Returns the result even when `ok` is false, because "this site needs a
+    /// key" is an answer the screen can act on, not a failure.
+    func importFromURL(
+        _ url: String, nameAR: String = "", category: String = "other"
+    ) async -> ImportResult? {
+        trace("import: \(url)")
+        do {
+            let result = try await printer.backend.importFromURL(
+                ImportRequestPayload(url: url, category: category, nameAR: nameAR)
+            )
+            if result.ok {
+                // Inserted rather than reloaded: the list is already on screen
+                // and the new parts should appear where the eye is.
+                items.insert(contentsOf: result.items, at: 0)
+                trace("import ok: \(result.items.count) موديل")
+                Haptics.success()
+                if !result.collectionID.isEmpty {
+                    await load(force: true)
+                }
+            } else {
+                trace("import needs key: \(result.needsKey)")
+            }
+            lastError = nil
+            return result
+        } catch {
+            let apiError = APIError.from(error, host: settings.host)
+            trace("import FAILED: \(apiError.localizedDescription)")
+            lastError = apiError
+            Haptics.error()
+            return nil
+        }
+    }
+
     /// Files handed over by the Share Extension. The extension only stages
     /// them in the App Group - the upload happens here, with the app's own
     /// Keychain-held token, so no credential ever leaves the app.

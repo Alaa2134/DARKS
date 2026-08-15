@@ -1694,3 +1694,20 @@
 "plate.auto" = "Arrange automatically";
 "plate.reset" = "Back to the centre";
 "plate.part.accessibility" = "Part %@ at %d, %d millimetres from the bed centre";
+
+/* Importing from a link */
+"import.title" = "Import from a link";
+"import.link" = "The link";
+"import.link.placeholder" = "Paste a link to an STL, 3MF or ZIP";
+"import.name" = "Model name (optional)";
+"import.start" = "Download to the Pi";
+"import.working" = "The Pi is downloading the file…";
+"import.done" = "Done - %d model(s) added to the library";
+"import.collection" = "Kept together in the “%@” collection";
+"import.back_to_library" = "Back to the library";
+"import.needs_key" = "That site needs an API key set on the Pi";
+"import.failed" = "The import did not go through";
+"import.what_works" = "Links that work";
+"import.works.direct" = "Any direct link to an STL, 3MF or OBJ file.";
+"import.works.zip" = "A link to a ZIP holding several parts - they arrive as one project, not as separate models.";
+"import.works.pages" = "Printables and MakerWorld pages need a login, so download the file there and paste its direct link. Thingiverse works once its key is set in config.yaml on the Pi.";

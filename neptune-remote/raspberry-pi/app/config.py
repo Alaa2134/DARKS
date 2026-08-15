@@ -382,6 +382,20 @@ class StorageConfig(BaseModel):
     max_backups: int = 10
 
 
+class LibraryConfig(BaseModel):
+    """Keys the library needs to fetch from sites that ask for one.
+
+    Kept here, on the Pi, for the same reason every other credential is: the
+    app never sees it, and the API reports only whether it is set.
+    """
+
+    thingiverse_key: str = ""
+
+    @property
+    def thingiverse_configured(self) -> bool:
+        return bool(self.thingiverse_key.strip())
+
+
 class AppConfig(BaseModel):
     server: ServerConfig = Field(default_factory=ServerConfig)
     moonraker: MoonrakerConfig = Field(default_factory=MoonrakerConfig)
@@ -398,6 +412,7 @@ class AppConfig(BaseModel):
     vision: VisionConfig = Field(default_factory=VisionConfig)
     notifications: NotificationsConfig = Field(default_factory=NotificationsConfig)
     outage: OutageConfig = Field(default_factory=OutageConfig)
+    library: LibraryConfig = Field(default_factory=LibraryConfig)
 
     source_path: Optional[str] = None
 
@@ -462,6 +477,7 @@ ENV_OVERRIDES: Dict[str, str] = {
     "NEPTUNE_HEARTBEAT_URL": "notifications.heartbeat.url",
     "NEPTUNE_HEARTBEAT_ENABLED": "notifications.heartbeat.enabled",
     "NEPTUNE_OUTAGE_SERIAL": "outage.serial_path",
+    "NEPTUNE_THINGIVERSE_KEY": "library.thingiverse_key",
 }
 
 _BOOL_TRUE = {"1", "true", "yes", "on", "y"}

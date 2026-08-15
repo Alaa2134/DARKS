@@ -242,6 +242,21 @@ CREATE TABLE IF NOT EXISTS app_state (
 """
 
 
+# Columns added to an existing table after its first release.
+#
+# ``CREATE TABLE IF NOT EXISTS`` above is skipped entirely on a database that
+# already exists - which is every install worth caring about - so a column added
+# to SCHEMA would appear only on a fresh one. These run as ALTER TABLE instead,
+# guarded by what the table already has.
+COLUMN_MIGRATIONS = (
+    # Where an imported model came from. Respecting somebody's licence starts
+    # with still knowing whose work it is a month later.
+    ("library_items", "source_url", "ALTER TABLE library_items ADD COLUMN source_url TEXT NOT NULL DEFAULT ''"),
+    ("library_items", "author", "ALTER TABLE library_items ADD COLUMN author TEXT NOT NULL DEFAULT ''"),
+    ("library_items", "licence", "ALTER TABLE library_items ADD COLUMN licence TEXT NOT NULL DEFAULT ''"),
+)
+
+
 class Database:
     """Thin synchronous SQLite wrapper. All access is serialised by a lock."""
 
@@ -253,7 +268,18 @@ class Database:
         self._conn.row_factory = sqlite3.Row
         with self._lock:
             self._conn.executescript(SCHEMA)
+            self._migrate()
             self._conn.commit()
+
+    def _migrate(self) -> None:
+        """Add columns an earlier version did not have. Caller holds the lock."""
+        for table, column, statement in COLUMN_MIGRATIONS:
+            rows = self._conn.execute(f"PRAGMA table_info({table})").fetchall()
+            if not rows:
+                continue
+            if column in {row["name"] for row in rows}:
+                continue
+            self._conn.execute(statement)
 
     # ------------------------------------------------------------- plumbing
     def close(self) -> None:

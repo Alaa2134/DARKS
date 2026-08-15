@@ -83,6 +83,12 @@ class LibraryItem(BaseModel):
     estimated_seconds: Optional[float] = None
     estimated_filament_g: Optional[float] = None
 
+    #: Where this model came from, when it was imported from a link rather than
+    #: uploaded. Kept so the source can be reopened and the licence honoured.
+    source_url: str = ""
+    author: str = ""
+    licence: str = ""
+
     favourite: bool = False
     print_count: int = 0
     last_printed: Optional[float] = None
@@ -110,6 +116,9 @@ class LibraryItemCreate(BaseModel):
     notes: str = ""
     recommended_material: str = ""
     favourite: bool = False
+    source_url: str = ""
+    author: str = ""
+    licence: str = ""
 
 
 class LibraryItemUpdate(BaseModel):

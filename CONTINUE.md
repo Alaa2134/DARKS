@@ -119,11 +119,32 @@ lands and CI must be checked after.
 - iOS: `ResumePlan`, `ResumeRequestPayload`, `ResumeResult`, `ResumePrintView`,
   reachable from the preview carrying the on-screen layer through.
 
+### Import from a link (L1)
+- `raspberry-pi/app/library/importer.py` — every host is resolved and checked
+  against the private ranges **before each request and after every redirect**
+  (redirects are followed by hand for exactly that reason: a public URL that
+  302s to `127.0.0.1` is the whole attack). Download and unpacked-archive size
+  caps; a zip's declared sizes are summed before anything is written. A ZIP of
+  eight STLs becomes **one project**, not eight entries.
+- Reality check on the plan: **Printables page downloads need a login**, so
+  `resolve()` says so and asks for a direct file link instead. MakerWorld has no
+  public download API. Thingiverse works, with a key. Direct file links always
+  work — that is the path the screen leads with.
+- `POST /api/library/import` — one library item per model, plus a collection
+  when there is more than one. `library_items` gained `source_url`/`author`/
+  `licence` through a new `COLUMN_MIGRATIONS` pass in `app/db.py` (the schema
+  is `CREATE TABLE IF NOT EXISTS`, so a new column in it would appear only on a
+  fresh database).
+- `config.yaml` → `library.thingiverse_key`, Pi-only like every other secret.
+- iOS: `ImportRequestPayload`, `ImportResult`, `LibraryItem.sourceURL/author/
+  licence`, `LibraryStore.importFromURL`, `ImportLinkView` (link field forced
+  LTR so a pasted URL is not reordered), reachable from the library's menu.
+
 ---
 
 ## Current state
 
-- Backend: **1178 tests passing**.
+- Backend: **1233 tests passing**.
 - iOS: **~300 tests**. Last full CI run (`f931fd3`) compiled the whole app and
   ran 295 tests with **one failure — a wrong assertion in my own test**
   (`[0,0,1,1]` is two points, not one). Fixed, not yet re-run.
@@ -133,12 +154,13 @@ lands and CI must be checked after.
 
 ## Next step
 
-1. Confirm CI green for the resume + mesh-repair batch.
-2. **L1 — import from a URL** (Printables first — open API; Thingiverse needs a
-   key in `config.yaml` on the Pi only). A ZIP of several STLs should become one
-   project, not several entries.
-3. **S5 — per-object settings**, or **L2 — a model as a project rather than a
-   single file**. Both are open; L2 is the more useful of the two day to day.
+1. Confirm CI green for the plate-arrangement and import batches.
+2. **L2 — a model as a project rather than a single file.** The import already
+   produces one, but only as a collection: the parts are separate items that
+   happen to share a folder. A project wants its own screen — all parts, one
+   plate, one slice, one print.
+3. **S5 — per-object settings** (different infill or supports per part on the
+   same plate).
 
 ## Two mistakes worth not repeating
 

@@ -33,6 +33,8 @@ from ..schemas import (
     BackupInfo,
     BackupManifestInfo,
     BackupResult,
+    ImportRequest,
+    ImportResult,
     MeshHealth,
     MeshRepairResult,
     ModelTransform,
@@ -127,6 +129,118 @@ async def categories(state: AppState = Depends(get_state)) -> List[CategoryInfo]
 @router.get("/library/stats")
 async def library_stats(state: AppState = Depends(get_state)) -> Dict[str, Any]:
     return state.library.stats()
+
+
+# --------------------------------------------------------------------------- #
+# Importing from a link
+#
+# Until now everything in the library had to be uploaded from the phone, which
+# means finding the model on a desktop, downloading it, moving it across, and
+# uploading it again. Most of that is the phone not being where the file is.
+# --------------------------------------------------------------------------- #
+
+
+@router.post("/library/import", response_model=ImportResult)
+async def import_from_url(
+    request: ImportRequest, state: AppState = Depends(get_state)
+) -> ImportResult:
+    """Fetch a model from a link and put it in the library.
+
+    An archive of several STLs becomes **one collection of parts**, not several
+    unrelated entries: the fact that they belong together is the only thing the
+    archive was carrying, and splitting it throws that away.
+    """
+    from ..library.importer import ImportError_, fetch, resolve, unpack
+
+    try:
+        source = resolve(
+            request.url, thingiverse_key=state.config.library.thingiverse_key
+        )
+    except ImportError_ as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    # Reported, not raised: the user can set the key and try again, and an
+    # error screen does not tell them that.
+    if source.needs_key:
+        return ImportResult(
+            ok=False,
+            needs_key=source.needs_key,
+            source_url=source.page_url or request.url,
+            notes_ar=[
+                "الموقع ده محتاج مفتاح API. حطه في config.yaml على الراسبيري "
+                "تحت library.thingiverse_key وجرّب تاني."
+            ],
+        )
+
+    try:
+        download = await fetch(source.download_url)
+        project = unpack(download)
+    except ImportError_ as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    project.source_url = source.page_url or request.url
+    project.author = source.author
+    project.licence = source.licence
+
+    notes = list(project.notes_ar)
+    usable = [
+        model for model in project.models
+        if Path(model.filename).suffix.lower() in SUPPORTED_EXTENSIONS
+    ]
+    skipped = len(project.models) - len(usable)
+    if skipped:
+        notes.append(
+            f"{skipped} ملف اتساب — نوعه مش مدعوم للتقطيع "
+            f"({', '.join(sorted(SUPPORTED_EXTENSIONS))})."
+        )
+    if not usable:
+        raise HTTPException(
+            status_code=422,
+            detail="مفيش ملف نقدر نقطّعه في اللي اتنزّل "
+                   f"({', '.join(sorted(SUPPORTED_EXTENSIONS))}).",
+        )
+
+    folder = Path(tempfile.mkdtemp(prefix="neptune-import-"))
+    created: List[LibraryItem] = []
+    for model in usable:
+        temporary = folder / Path(model.filename).name
+        temporary.write_bytes(model.data)
+        payload = LibraryItemCreate(
+            name_ar=request.name_ar if len(usable) == 1 else "",
+            name_en=Path(model.filename).stem.replace("_", " ").replace("-", " "),
+            category=request.category or "other",
+            tags=[tag.strip() for tag in request.tags if tag.strip()],
+            source_url=project.source_url,
+            author=project.author,
+            licence=project.licence,
+        )
+        created.append(
+            state.library.create_item(
+                payload=payload,
+                model_file=temporary,
+                original_filename=Path(model.filename).name,
+            )
+        )
+
+    collection_id = ""
+    collection_name = ""
+    if len(created) > 1:
+        collection_name = request.name_ar.strip() or project.name
+        collection = state.library.create_collection(
+            name_ar=collection_name, icon="shippingbox"
+        )
+        collection_id = collection.id
+        for item in created:
+            state.library.add_to_collection(collection_id, item.id)
+
+    return ImportResult(
+        ok=True,
+        items=created,
+        collection_id=collection_id,
+        collection_name=collection_name,
+        source_url=project.source_url,
+        notes_ar=notes,
+    )
 
 
 # --------------------------------------------------------------------------- #
