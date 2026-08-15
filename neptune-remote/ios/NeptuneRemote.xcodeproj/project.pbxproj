@@ -120,6 +120,7 @@
 		A818C1710FC12F603AB8340A /* VisionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "VisionView.swift"; sourceTree = "<group>"; };
 		B8C2286CD0F9D2254315E814 /* AlertSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlertSettingsView.swift"; sourceTree = "<group>"; };
 		4FE5711C54BB7196916672EB /* AlertSetupGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlertSetupGuideView.swift"; sourceTree = "<group>"; };
+		9B3FCB45188F340CB690DB52 /* LibraryBackupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LibraryBackupView.swift"; sourceTree = "<group>"; };
 		08647BC4645383B362BBB2B3 /* NetworkDiagnosticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NetworkDiagnosticsView.swift"; sourceTree = "<group>"; };
 		21A13A6383385B3ABAC37431 /* PrinterCapabilitiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterCapabilitiesView.swift"; sourceTree = "<group>"; };
 		B46BA26DA4AEBAB629D4CF8C /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SettingsView.swift"; sourceTree = "<group>"; };
@@ -452,6 +453,7 @@
 			children = (
 				B8C2286CD0F9D2254315E814 /* AlertSettingsView.swift */,
 				4FE5711C54BB7196916672EB /* AlertSetupGuideView.swift */,
+				9B3FCB45188F340CB690DB52 /* LibraryBackupView.swift */,
 				08647BC4645383B362BBB2B3 /* NetworkDiagnosticsView.swift */,
 				21A13A6383385B3ABAC37431 /* PrinterCapabilitiesView.swift */,
 				B46BA26DA4AEBAB629D4CF8C /* SettingsView.swift */,
@@ -733,6 +735,7 @@
 		DFB0D7B56B08B00E8AEEC8F2 /* VisionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A818C1710FC12F603AB8340A /* VisionView.swift */; };
 		1BF5D626FDC4C70F0B439CC3 /* AlertSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8C2286CD0F9D2254315E814 /* AlertSettingsView.swift */; };
 		56A36F3EF064F4F95FA0870B /* AlertSetupGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FE5711C54BB7196916672EB /* AlertSetupGuideView.swift */; };
+		6EFF3EF6FDA82A7EB2C0B407 /* LibraryBackupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B3FCB45188F340CB690DB52 /* LibraryBackupView.swift */; };
 		004A00A81D6D859A15FF7EC8 /* NetworkDiagnosticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08647BC4645383B362BBB2B3 /* NetworkDiagnosticsView.swift */; };
 		45C9E15F6842848097BB5D5B /* PrinterCapabilitiesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21A13A6383385B3ABAC37431 /* PrinterCapabilitiesView.swift */; };
 		9C3A199BBE38759E9005E6B9 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B46BA26DA4AEBAB629D4CF8C /* SettingsView.swift */; };
@@ -900,6 +903,7 @@
 				DFB0D7B56B08B00E8AEEC8F2 /* VisionView.swift in Sources */,
 				1BF5D626FDC4C70F0B439CC3 /* AlertSettingsView.swift in Sources */,
 				56A36F3EF064F4F95FA0870B /* AlertSetupGuideView.swift in Sources */,
+				6EFF3EF6FDA82A7EB2C0B407 /* LibraryBackupView.swift in Sources */,
 				004A00A81D6D859A15FF7EC8 /* NetworkDiagnosticsView.swift in Sources */,
 				45C9E15F6842848097BB5D5B /* PrinterCapabilitiesView.swift in Sources */,
 				9C3A199BBE38759E9005E6B9 /* SettingsView.swift in Sources */,

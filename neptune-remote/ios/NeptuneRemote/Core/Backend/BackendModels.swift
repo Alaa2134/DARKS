@@ -125,6 +125,83 @@ struct BackendModelFile: Decodable, Identifiable, Equatable, Hashable {
     }
 }
 
+// MARK: - Library backup
+
+/// One archive sitting on the Pi.
+struct BackupInfo: Codable, Equatable, Identifiable {
+    var filename: String = ""
+    var size: Int = 0
+    var createdAt: Double = 0
+
+    var id: String { filename }
+
+    enum CodingKeys: String, CodingKey {
+        case filename, size
+        case createdAt = "created_at"
+    }
+}
+
+/// What is inside an archive, without unpacking it.
+struct BackupManifestInfo: Codable, Equatable {
+    var version: Int = 0
+    var createdAt: Double = 0
+    var appVersion: String = ""
+    var modelCount: Int = 0
+    var modelBytes: Int = 0
+    var thumbnailCount: Int = 0
+    var databaseBytes: Int = 0
+
+    enum CodingKeys: String, CodingKey {
+        case version
+        case createdAt = "created_at"
+        case appVersion = "app_version"
+        case modelCount = "model_count"
+        case modelBytes = "model_bytes"
+        case thumbnailCount = "thumbnail_count"
+        case databaseBytes = "database_bytes"
+    }
+}
+
+struct BackupResult: Codable, Equatable {
+    var ok: Bool = false
+    var filename: String = ""
+    var size: Int = 0
+    var manifest: BackupManifestInfo = BackupManifestInfo()
+    /// Older archives deleted to keep the card from filling up.
+    var pruned: Int = 0
+}
+
+struct RestoreRequestPayload: Encodable, Equatable {
+    var filename: String
+    /// True merges: files already there are left alone and the database is
+    /// only restored when there is not one already. The safe default, because
+    /// a restore onto a working Pi is usually somebody recovering one thing
+    /// rather than rolling the whole library back.
+    var keepExisting: Bool = true
+
+    enum CodingKeys: String, CodingKey {
+        case filename
+        case keepExisting = "keep_existing"
+    }
+}
+
+struct RestoreResult: Codable, Equatable {
+    var ok: Bool = false
+    var manifest: BackupManifestInfo = BackupManifestInfo()
+    var modelsRestored: Int = 0
+    var thumbnailsRestored: Int = 0
+    var databaseRestored: Bool = false
+    var notesAr: [String] = []
+
+    enum CodingKeys: String, CodingKey {
+        case ok, manifest
+        case modelsRestored = "models_restored"
+        case thumbnailsRestored = "thumbnails_restored"
+        case databaseRestored = "database_restored"
+        case notesAr = "notes_ar"
+    }
+}
+
 // MARK: - Mesh health
 
 /// What is wrong with a model, checked before a slice rather than during one.

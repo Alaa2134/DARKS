@@ -68,6 +68,46 @@ extension BackendClient {
         _ = try await raw(path: "library/\(id)", method: "DELETE", timeout: 30)
     }
 
+    // MARK: - Backup
+
+    func backups() async throws -> [BackupInfo] {
+        try await decode([BackupInfo].self, path: "library/backups", timeout: 30)
+    }
+
+    /// Write an archive and prune the old ones.
+    func createBackup(keep: Int = 5) async throws -> BackupResult {
+        try await decode(
+            BackupResult.self,
+            path: "library/backups",
+            method: "POST",
+            query: [URLQueryItem(name: "keep", value: "\(keep)")],
+            // A library of a few hundred models is a real amount of copying.
+            timeout: 900
+        )
+    }
+
+    func restoreBackup(_ payload: RestoreRequestPayload) async throws -> RestoreResult {
+        try await decode(
+            RestoreResult.self,
+            path: "library/backups/restore",
+            method: "POST",
+            body: try await http.encodeBody(payload),
+            timeout: 900
+        )
+    }
+
+    func deleteBackup(filename: String) async throws {
+        _ = try await raw(
+            path: "library/backups/\(filename)", method: "DELETE", timeout: 30
+        )
+    }
+
+    /// The archive itself, for saving off the Pi - which is the entire point:
+    /// a backup that only exists on the card it protects is not a backup.
+    func downloadBackup(filename: String) async throws -> Data {
+        try await raw(path: "library/backups/\(filename)/download", timeout: 900)
+    }
+
     // MARK: - Mesh health
 
     /// Check a model before slicing it.

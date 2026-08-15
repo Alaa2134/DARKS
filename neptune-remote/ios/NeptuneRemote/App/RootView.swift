@@ -209,6 +209,9 @@ struct MoreView: View {
                 NavigationLink { ConfigVersionsView() } label: {
                     Label(L.t("config.versions.title"), systemImage: "doc.on.doc")
                 }
+                NavigationLink { LibraryBackupView() } label: {
+                    Label(L.t("backup.title"), systemImage: "externaldrive.badge.timemachine")
+                }
                 NavigationLink { SystemInfoView() } label: {
                     Label(L.t("system.title"), systemImage: "cpu")
                 }
