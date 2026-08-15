@@ -440,3 +440,81 @@ def test_repairing_a_sound_model_changes_nothing_and_makes_no_copy(client: TestC
 def test_health_for_a_model_that_does_not_exist_is_a_404(client: TestClient):
     assert client.get("/api/library/nope/health").status_code == 404
     assert client.post("/api/library/nope/repair").status_code == 404
+
+
+# --------------------------------------------------------------------------- #
+# Library backup
+# --------------------------------------------------------------------------- #
+
+
+def test_a_backup_can_be_made_and_lists_afterwards(client: TestClient):
+    upload(client, slab_stl(10, 20, 40))
+
+    made = client.post("/api/library/backups").json()
+
+    assert made["ok"] is True
+    assert made["filename"].endswith(".tar.gz")
+    assert made["size"] > 0
+    assert made["manifest"]["model_count"] >= 1
+
+    listed = client.get("/api/library/backups").json()
+    assert any(entry["filename"] == made["filename"] for entry in listed)
+
+
+def test_a_backup_can_be_downloaded(client: TestClient):
+    upload(client, slab_stl(10, 20, 40))
+    made = client.post("/api/library/backups").json()
+
+    response = client.get(f"/api/library/backups/{made['filename']}/download")
+
+    assert response.status_code == 200
+    assert len(response.content) == made["size"]
+
+
+def test_restoring_over_a_working_library_reports_what_it_did(client: TestClient):
+    upload(client, slab_stl(10, 20, 40))
+    made = client.post("/api/library/backups").json()
+
+    body = client.post(
+        "/api/library/backups/restore",
+        json={"filename": made["filename"], "keep_existing": True},
+    ).json()
+
+    assert body["ok"] is True
+    # Everything in the archive is already on disk, so nothing was restored -
+    # and the report has to say that rather than going quiet.
+    assert body["models_restored"] == 0
+    assert body["notes_ar"]
+
+
+def test_old_backups_are_pruned(client: TestClient):
+    upload(client, slab_stl(10, 20, 40))
+    for _ in range(3):
+        client.post("/api/library/backups", params={"keep": 50})
+
+    result = client.post("/api/library/backups", params={"keep": 2}).json()
+
+    assert result["pruned"] >= 1
+    assert len(client.get("/api/library/backups").json()) == 2
+
+
+def test_a_backup_can_be_deleted(client: TestClient):
+    upload(client, slab_stl(10, 20, 40))
+    made = client.post("/api/library/backups").json()
+
+    assert client.delete(f"/api/library/backups/{made['filename']}").status_code == 200
+    assert client.get("/api/library/backups").json() == []
+
+
+def test_restoring_something_that_is_not_there_is_a_404(client: TestClient):
+    response = client.post(
+        "/api/library/backups/restore", json={"filename": "nope.tar.gz"}
+    )
+    assert response.status_code == 404
+
+
+def test_a_backup_filename_cannot_escape_the_backup_directory(client: TestClient):
+    # The filename comes from the client, so it must never be able to name a
+    # path outside the folder it is supposed to address.
+    response = client.get("/api/library/backups/..%2F..%2Fetc%2Fpasswd/download")
+    assert response.status_code in (404, 422)

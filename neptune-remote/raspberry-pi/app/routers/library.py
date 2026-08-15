@@ -28,12 +28,17 @@ from ..library.models import (
     SearchResult,
 )
 from ..schemas import (
+    BackupInfo,
+    BackupManifestInfo,
+    BackupResult,
     MeshHealth,
     MeshRepairResult,
     ModelTransform,
     OKResponse,
     OrientationReport,
     OrientationSuggestion,
+    RestoreRequest,
+    RestoreResult,
 )
 from ..search.arabic import normalize
 from ..security import require_token
@@ -119,6 +124,146 @@ async def categories(state: AppState = Depends(get_state)) -> List[CategoryInfo]
 @router.get("/library/stats")
 async def library_stats(state: AppState = Depends(get_state)) -> Dict[str, Any]:
     return state.library.stats()
+
+
+# --------------------------------------------------------------------------- #
+# Backup
+#
+# The library is the only thing on this Pi that cannot be recreated. Klipper's
+# config lives in a repository, the G-code can be re-sliced, the videos are
+# disposable - the models and everything known about them are years of
+# accumulation on a consumer SD card, and those fail.
+# --------------------------------------------------------------------------- #
+
+
+def _manifest_info(manifest: Any) -> BackupManifestInfo:
+    return BackupManifestInfo(
+        version=manifest.version,
+        created_at=manifest.created_at,
+        app_version=manifest.app_version,
+        model_count=manifest.model_count,
+        model_bytes=manifest.model_bytes,
+        thumbnail_count=manifest.thumbnail_count,
+        database_bytes=manifest.database_bytes,
+    )
+
+
+@router.get("/library/backups", response_model=List[BackupInfo])
+async def list_backups(state: AppState = Depends(get_state)) -> List[BackupInfo]:
+    from ..library.backup import list_archives
+
+    return [
+        BackupInfo(
+            filename=str(entry["filename"]),
+            size=int(entry["size"]),
+            created_at=float(entry["created_at"]),
+        )
+        for entry in list_archives(state.layout.backups)
+    ]
+
+
+@router.post("/library/backups", response_model=BackupResult)
+async def create_backup(
+    keep: int = Query(5, ge=1, le=50, description="How many archives to keep"),
+    state: AppState = Depends(get_state),
+) -> BackupResult:
+    """Write an archive of the database, the models and the thumbnails.
+
+    G-code and videos are left out on purpose: they are large and regenerable,
+    and including them turns a 40 MB archive into a 4 GB one that nobody
+    actually takes a copy of.
+    """
+    import time as _time
+
+    from ..library.backup import BackupError, create_archive, prune
+    from ..version import VERSION
+
+    stamp = _time.strftime("%Y%m%d-%H%M%S")
+    folder = Path(state.layout.backups)
+    target = folder / f"neptune-library-{stamp}.tar.gz"
+    # Two backups inside the same second would otherwise land on the same name
+    # and the first would be silently destroyed by the second - which is a
+    # backup feature deleting a backup.
+    counter = 2
+    while target.exists():
+        target = folder / f"neptune-library-{stamp}-{counter}.tar.gz"
+        counter += 1
+
+    try:
+        manifest = create_archive(
+            target,
+            database=Path(state.layout.database) / "neptune.db",
+            models=Path(state.layout.models),
+            thumbnails=Path(state.layout.thumbnails),
+            app_version=VERSION,
+        )
+    except (BackupError, OSError) as error:
+        raise HTTPException(status_code=500, detail=f"مش قادر أعمل النسخة: {error}") from error
+
+    # A backup nobody prunes fills the card it exists to protect.
+    pruned = prune(state.layout.backups, keep=keep)
+
+    return BackupResult(
+        ok=True,
+        filename=target.name,
+        size=target.stat().st_size,
+        manifest=_manifest_info(manifest),
+        pruned=pruned,
+    )
+
+
+@router.get("/library/backups/{filename}/download")
+async def download_backup(filename: str, state: AppState = Depends(get_state)) -> FileResponse:
+    path = Path(state.layout.backups) / Path(filename).name
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="النسخة دي مش موجودة.")
+    return FileResponse(path, filename=path.name, media_type="application/gzip")
+
+
+@router.post("/library/backups/restore", response_model=RestoreResult)
+async def restore_backup(
+    request: RestoreRequest, state: AppState = Depends(get_state)
+) -> RestoreResult:
+    """Unpack an archive over the current library.
+
+    Merges by default. Replacing the database moves the old one aside rather
+    than deleting it - the difference between a restore you can walk back from
+    and one you cannot.
+    """
+    from ..library.backup import BackupError, restore_archive
+
+    path = Path(state.layout.backups) / Path(request.filename).name
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="النسخة دي مش موجودة.")
+
+    try:
+        report = restore_archive(
+            path,
+            database=Path(state.layout.database) / "neptune.db",
+            models=Path(state.layout.models),
+            thumbnails=Path(state.layout.thumbnails),
+            keep_existing=request.keep_existing,
+        )
+    except BackupError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    return RestoreResult(
+        ok=True,
+        manifest=_manifest_info(report.manifest),
+        models_restored=report.models_restored,
+        thumbnails_restored=report.thumbnails_restored,
+        database_restored=report.database_restored,
+        notes_ar=report.notes_ar,
+    )
+
+
+@router.delete("/library/backups/{filename}", response_model=OKResponse)
+async def delete_backup(filename: str, state: AppState = Depends(get_state)) -> OKResponse:
+    path = Path(state.layout.backups) / Path(filename).name
+    if not path.is_file():
+        raise HTTPException(status_code=404, detail="النسخة دي مش موجودة.")
+    path.unlink()
+    return OKResponse(ok=True, message="النسخة اتمسحت.")
 
 
 @router.get("/library/{item_id}", response_model=LibraryItem)

@@ -79,6 +79,19 @@ lands and CI must be checked after.
   library item, never replaces the original).
 - iOS: `MeshHealth`, `MeshRepairResult`, health card on `PlacementView`.
 
+### Library backup (L4)
+- `raspberry-pi/app/library/backup.py` — `.tar.gz` of the database (through
+  SQLite's own backup API, because a WAL database's newest commits are not in
+  the `.db` file), the models and the thumbnails, plus a manifest so a restore
+  can refuse a newer format. G-code and videos excluded on purpose. Tar members
+  are filtered against path escape and links before extraction. Restore merges
+  by default; replacing the database moves the old one aside.
+- `GET/POST /api/library/backups`, `/backups/{name}/download`,
+  `POST /backups/restore`, `DELETE /backups/{name}`.
+- Two bugs the API tests caught: the routes were declared after
+  `/library/{item_id}` and were being swallowed by it, and two backups in the
+  same second landed on the same filename — a backup feature deleting a backup.
+
 ### Resume / print a piece
 - `raspberry-pi/app/gcode/resume.py` — `state_at_layer` replays temps, fan,
   M82/M83, G90/G91, feedrate, position; `assess` decides whether Z can be homed
@@ -95,7 +108,7 @@ lands and CI must be checked after.
 
 ## Current state
 
-- Backend: **1119 tests passing**.
+- Backend: **1144 tests passing**.
 - iOS: **~300 tests**. Last full CI run (`f931fd3`) compiled the whole app and
   ran 295 tests with **one failure — a wrong assertion in my own test**
   (`[0,0,1,1]` is two points, not one). Fixed, not yet re-run.
@@ -114,8 +127,8 @@ lands and CI must be checked after.
 3. **L1 — import from a URL** (Printables first — open API; Thingiverse needs a
    key in `config.yaml` on the Pi only). A ZIP of several STLs should become one
    project, not several entries.
-4. **L4 — library backup/restore.** Highest real-world value of the remaining
-   library work: the SD card is the single point of failure for years of work.
+4. **iOS screen for backup/restore.** The backend and API are done; there is no
+   UI for it yet. Belongs in Settings or More → System.
 
 ---
 

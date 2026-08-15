@@ -308,6 +308,58 @@ class ResumeRequest(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# Library backup
+# --------------------------------------------------------------------------- #
+
+
+class BackupInfo(BaseModel):
+    """One archive on disk."""
+
+    filename: str
+    size: int = 0
+    created_at: float = 0.0
+
+
+class BackupManifestInfo(BaseModel):
+    """What is inside an archive, without unpacking it."""
+
+    version: int = 0
+    created_at: float = 0.0
+    app_version: str = ""
+    model_count: int = 0
+    model_bytes: int = 0
+    thumbnail_count: int = 0
+    database_bytes: int = 0
+
+
+class BackupResult(BaseModel):
+    ok: bool = True
+    filename: str = ""
+    size: int = 0
+    manifest: BackupManifestInfo = Field(default_factory=BackupManifestInfo)
+    #: Older archives deleted to keep the card from filling up.
+    pruned: int = 0
+
+
+class RestoreRequest(BaseModel):
+    filename: str
+    #: True merges: existing files are left alone and the database is only
+    #: restored when there is not one already. The safe default, because a
+    #: restore onto a working Pi is usually somebody recovering one thing
+    #: rather than rolling the whole library back.
+    keep_existing: bool = True
+
+
+class RestoreResult(BaseModel):
+    ok: bool = True
+    manifest: BackupManifestInfo = Field(default_factory=BackupManifestInfo)
+    models_restored: int = 0
+    thumbnails_restored: int = 0
+    database_restored: bool = False
+    notes_ar: List[str] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------- #
 # Mesh health
 # --------------------------------------------------------------------------- #
 
