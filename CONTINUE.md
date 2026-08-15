@@ -185,11 +185,25 @@ lands and CI must be checked after.
   push server and a paid developer account. The Pi's own ntfy/Telegram channels
   remain the way to get that today.
 
+### The Pi answers while it works
+- Every heavy library operation ran on the event loop: mesh reads, thumbnail
+  renders, G-code scans, backups. CPU there means an API that answers nothing —
+  and the app polls `/printer/status`, so its own tap made the printer look
+  disconnected.
+- Now `asyncio.to_thread`: mesh health, repair, upload, thumbnail regeneration,
+  arrange (one hop for the whole plate), orient, transform, backup, restore,
+  preview index, preview layer, resume plan, resumed-file writing.
+- `tests/test_api_responsive.py` measures the stall with a **ticker**, not with
+  a second request — the first version used a request as the probe and passed
+  on the blocking code, because a request can be served in the gap before the
+  slow handler reaches its blocking call. Verified by reverting one endpoint
+  and watching the test fail.
+
 ---
 
 ## Current state
 
-- Backend: **1257 tests passing**.
+- Backend: **1261 tests passing**.
 - iOS: **~300 tests**. Last full CI run (`f931fd3`) compiled the whole app and
   ran 295 tests with **one failure — a wrong assertion in my own test**
   (`[0,0,1,1]` is two points, not one). Fixed, not yet re-run.
