@@ -54,10 +54,10 @@ enum Theme {
 
     /// The plate the toolpath is drawn on. Dark enough that the warm wall
     /// colours read against it in both themes.
-    static let previewBed = Color(uiColor: .init { traits in
+    static let previewBed = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
-            ? .init(white: 0.10, alpha: 1)
-            : .init(white: 0.16, alpha: 1)
+            ? UIColor(white: 0.10, alpha: 1)
+            : UIColor(white: 0.16, alpha: 1)
     })
 
     static func color(for power: PowerState) -> Color {

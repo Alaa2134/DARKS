@@ -15,8 +15,9 @@ import SwiftUI
 struct ToolpathPreviewView: View {
     let filename: String
 
-    @EnvironmentObject private var printer: PrinterStore
-    @EnvironmentObject private var settings: AppSettings
+    // Taken through init rather than the environment: the store has to be
+    // built with them, and @StateObject is created before the environment is
+    // available.
     @StateObject private var store: PreviewStore
 
     init(filename: String, settings: AppSettings, printer: PrinterStore) {
@@ -307,7 +308,6 @@ struct ToolpathCanvas: View {
                 )
             }
         }
-        .drawingGroup()
         .accessibilityLabel(L.t("preview.canvas.accessibility"))
     }
 }
