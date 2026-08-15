@@ -128,7 +128,7 @@ struct BackendModelFile: Decodable, Identifiable, Equatable, Hashable {
 // MARK: - Library backup
 
 /// One archive sitting on the Pi.
-struct BackupInfo: Codable, Equatable, Identifiable {
+struct LibraryBackupInfo: Codable, Equatable, Identifiable {
     var filename: String = ""
     var size: Int = 0
     var createdAt: Double = 0
@@ -142,7 +142,7 @@ struct BackupInfo: Codable, Equatable, Identifiable {
 }
 
 /// What is inside an archive, without unpacking it.
-struct BackupManifestInfo: Codable, Equatable {
+struct LibraryBackupManifest: Codable, Equatable {
     var version: Int = 0
     var createdAt: Double = 0
     var appVersion: String = ""
@@ -162,16 +162,16 @@ struct BackupManifestInfo: Codable, Equatable {
     }
 }
 
-struct BackupResult: Codable, Equatable {
+struct LibraryBackupResult: Codable, Equatable {
     var ok: Bool = false
     var filename: String = ""
     var size: Int = 0
-    var manifest: BackupManifestInfo = BackupManifestInfo()
+    var manifest: LibraryBackupManifest = LibraryBackupManifest()
     /// Older archives deleted to keep the card from filling up.
     var pruned: Int = 0
 }
 
-struct RestoreRequestPayload: Encodable, Equatable {
+struct LibraryRestorePayload: Encodable, Equatable {
     var filename: String
     /// True merges: files already there are left alone and the database is
     /// only restored when there is not one already. The safe default, because
@@ -185,9 +185,9 @@ struct RestoreRequestPayload: Encodable, Equatable {
     }
 }
 
-struct RestoreResult: Codable, Equatable {
+struct LibraryRestoreResult: Codable, Equatable {
     var ok: Bool = false
-    var manifest: BackupManifestInfo = BackupManifestInfo()
+    var manifest: LibraryBackupManifest = LibraryBackupManifest()
     var modelsRestored: Int = 0
     var thumbnailsRestored: Int = 0
     var databaseRestored: Bool = false

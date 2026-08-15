@@ -70,14 +70,14 @@ extension BackendClient {
 
     // MARK: - Backup
 
-    func backups() async throws -> [BackupInfo] {
-        try await decode([BackupInfo].self, path: "library/backups", timeout: 30)
+    func libraryBackups() async throws -> [LibraryBackupInfo] {
+        try await decode([LibraryBackupInfo].self, path: "library/backups", timeout: 30)
     }
 
     /// Write an archive and prune the old ones.
-    func createBackup(keep: Int = 5) async throws -> BackupResult {
+    func createLibraryBackup(keep: Int = 5) async throws -> LibraryBackupResult {
         try await decode(
-            BackupResult.self,
+            LibraryBackupResult.self,
             path: "library/backups",
             method: "POST",
             query: [URLQueryItem(name: "keep", value: "\(keep)")],
@@ -86,9 +86,9 @@ extension BackendClient {
         )
     }
 
-    func restoreBackup(_ payload: RestoreRequestPayload) async throws -> RestoreResult {
+    func restoreLibraryBackup(_ payload: LibraryRestorePayload) async throws -> LibraryRestoreResult {
         try await decode(
-            RestoreResult.self,
+            LibraryRestoreResult.self,
             path: "library/backups/restore",
             method: "POST",
             body: try await http.encodeBody(payload),
@@ -96,7 +96,7 @@ extension BackendClient {
         )
     }
 
-    func deleteBackup(filename: String) async throws {
+    func deleteLibraryBackup(filename: String) async throws {
         _ = try await raw(
             path: "library/backups/\(filename)", method: "DELETE", timeout: 30
         )
@@ -104,7 +104,7 @@ extension BackendClient {
 
     /// The archive itself, for saving off the Pi - which is the entire point:
     /// a backup that only exists on the card it protects is not a backup.
-    func downloadBackup(filename: String) async throws -> Data {
+    func downloadLibraryBackup(filename: String) async throws -> Data {
         try await raw(path: "library/backups/\(filename)/download", timeout: 900)
     }
 
@@ -589,7 +589,7 @@ extension BackendClient {
         try await decode(BedMeshReport.self, path: "printer/bed-mesh", timeout: 25)
     }
 
-    func backups() async throws -> [BackupInfo] {
+    func libraryBackups() async throws -> [LibraryBackupInfo] {
         try await decode([BackupInfo].self, path: "backups", timeout: 25)
     }
 

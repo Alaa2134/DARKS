@@ -1663,12 +1663,12 @@
 
 
 /* Library backup: getting years of work off the SD card */
-"backup.title" = "Library backup";
+"library.backup.title" = "Library backup";
 "backup.explain" = "The library is the only thing on the Pi that cannot be recreated. Klipper's config lives in a repository, the G-code can be re-sliced, the videos are disposable - but the models, their names, which ones worked and which profile printed them are years of accumulation on an SD card, and those fail.";
 "backup.excludes" = "The archive holds the database, the models and the thumbnails. G-code and videos are left out on purpose - they are large and regenerable, and including them would make an archive nobody actually takes a copy of.";
-"backup.create" = "Back up now";
+"library.backup.create" = "Back up now";
 "backup.creating" = "Writing the archive…";
-"backup.created" = "Backed up - %d models, %@.";
+"library.backup.created" = "Backed up - %d models, %@.";
 "backup.pruned" = "%d older backups removed.";
 "backup.existing" = "Existing backups";
 "backup.empty.title" = "No backups yet";

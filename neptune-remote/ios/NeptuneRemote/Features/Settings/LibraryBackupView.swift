@@ -15,16 +15,16 @@ struct LibraryBackupView: View {
     @EnvironmentObject private var printer: PrinterStore
     @EnvironmentObject private var settings: AppSettings
 
-    @State private var backups: [BackupInfo] = []
+    @State private var backups: [LibraryBackupInfo] = []
     @State private var isLoading = false
     @State private var isCreating = false
     @State private var isRestoring = false
-    @State private var lastResult: BackupResult?
-    @State private var restoreResult: RestoreResult?
+    @State private var lastResult: LibraryBackupResult?
+    @State private var restoreResult: LibraryRestoreResult?
     @State private var error: APIError?
 
-    @State private var restoring: BackupInfo?
-    @State private var deleting: BackupInfo?
+    @State private var restoring: LibraryBackupInfo?
+    @State private var deleting: LibraryBackupInfo?
     @State private var exportURL: URL?
     @State private var isExporting = false
 
@@ -61,7 +61,7 @@ struct LibraryBackupView: View {
             .animation(.neptuneContent, value: restoreResult)
         }
         .background(Theme.pageFill)
-        .navigationTitle(L.t("backup.title"))
+        .navigationTitle(L.t("library.backup.title"))
         .navigationBarTitleDisplayMode(.inline)
         .task { await load() }
         .refreshable { await load() }
@@ -103,7 +103,7 @@ struct LibraryBackupView: View {
 
     private var explainer: some View {
         VStack(alignment: .leading, spacing: 8) {
-            SectionHeader("backup.title", systemImage: "externaldrive.badge.timemachine")
+            SectionHeader("library.backup.title", systemImage: "externaldrive.badge.timemachine")
             Text(localized: "backup.explain")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
@@ -128,7 +128,7 @@ struct LibraryBackupView: View {
                     }
                     .frame(maxWidth: .infinity)
                 } else {
-                    Label(L.t("backup.create"), systemImage: "plus.circle")
+                    Label(L.t("library.backup.create"), systemImage: "plus.circle")
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -138,7 +138,7 @@ struct LibraryBackupView: View {
 
             if let result = lastResult {
                 Text(L.t(
-                    "backup.created",
+                    "library.backup.created",
                     result.manifest.modelCount,
                     Format.fileSize(result.size)
                 ))
@@ -221,7 +221,7 @@ struct LibraryBackupView: View {
         .card()
     }
 
-    private func restoreResultCard(_ result: RestoreResult) -> some View {
+    private func restoreResultCard(_ result: LibraryRestoreResult) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Label(L.t("backup.restored"), systemImage: "checkmark.circle.fill")
                 .font(.subheadline.weight(.semibold))
@@ -251,7 +251,7 @@ struct LibraryBackupView: View {
         isLoading = true
         defer { isLoading = false }
         do {
-            backups = try await printer.backend.backups()
+            backups = try await printer.backend.libraryBackups()
             error = nil
         } catch {
             self.error = APIError.from(error, host: settings.host)
@@ -262,7 +262,7 @@ struct LibraryBackupView: View {
         isCreating = true
         defer { isCreating = false }
         do {
-            lastResult = try await printer.backend.createBackup()
+            lastResult = try await printer.backend.createLibraryBackup()
             error = nil
             Haptics.success()
             await load()
@@ -272,13 +272,13 @@ struct LibraryBackupView: View {
         }
     }
 
-    private func restore(_ backup: BackupInfo, keepExisting: Bool) async {
+    private func restore(_ backup: LibraryBackupInfo, keepExisting: Bool) async {
         restoring = nil
         isRestoring = true
         defer { isRestoring = false }
         do {
-            restoreResult = try await printer.backend.restoreBackup(
-                RestoreRequestPayload(filename: backup.filename, keepExisting: keepExisting)
+            restoreResult = try await printer.backend.restoreLibraryBackup(
+                LibraryRestorePayload(filename: backup.filename, keepExisting: keepExisting)
             )
             error = nil
             Haptics.success()
@@ -288,10 +288,10 @@ struct LibraryBackupView: View {
         }
     }
 
-    private func delete(_ backup: BackupInfo) async {
+    private func delete(_ backup: LibraryBackupInfo) async {
         deleting = nil
         do {
-            try await printer.backend.deleteBackup(filename: backup.filename)
+            try await printer.backend.deleteLibraryBackup(filename: backup.filename)
             await load()
         } catch {
             self.error = APIError.from(error, host: settings.host)
@@ -302,9 +302,9 @@ struct LibraryBackupView: View {
     ///
     /// This is the step that makes it a backup. Everything before it produces a
     /// second copy on the same card as the first.
-    private func export(_ backup: BackupInfo) async {
+    private func export(_ backup: LibraryBackupInfo) async {
         do {
-            let data = try await printer.backend.downloadBackup(filename: backup.filename)
+            let data = try await printer.backend.downloadLibraryBackup(filename: backup.filename)
             let url = FileManager.default.temporaryDirectory
                 .appendingPathComponent(backup.filename)
             try data.write(to: url, options: .atomic)
