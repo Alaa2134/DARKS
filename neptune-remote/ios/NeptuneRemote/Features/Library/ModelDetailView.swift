@@ -14,6 +14,8 @@ struct ModelDetailView: View {
     @State private var showing3D = false
     @State private var nameAR = ""
     @State private var nameEN = ""
+    @State private var creatingProject = false
+    @State private var newProjectName = ""
     @State private var cost: CostBreakdown?
 
     private var item: LibraryItem? { library.item(id: itemID) }
@@ -68,6 +70,19 @@ struct ModelDetailView: View {
             Button(L.t("common.save")) {
                 guard let item else { return }
                 Task { await library.rename(item, nameAR: nameAR, nameEN: nameEN) }
+            }
+            Button(L.t("common.cancel"), role: .cancel) {}
+        }
+        .alert(L.t("project.new"), isPresented: $creatingProject) {
+            TextField(L.t("project.name"), text: $newProjectName)
+            Button(L.t("common.save")) {
+                let name = newProjectName.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !name.isEmpty, let item else { return }
+                Task {
+                    if let project = await library.createProject(named: name) {
+                        await library.addToCollection(item, collection: project.id)
+                    }
+                }
             }
             Button(L.t("common.cancel"), role: .cancel) {}
         }
@@ -274,6 +289,27 @@ struct ModelDetailView: View {
                 showingRename = true
             } label: {
                 Label(L.t("library.detail.rename"), systemImage: "pencil")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Divider()
+            // Adding to a project is here rather than only on the project
+            // screen: a part is usually found first and only then recognised
+            // as belonging with something else.
+            Menu {
+                ForEach(library.projects) { project in
+                    Button(project.displayName) {
+                        Task { await library.addToCollection(item, collection: project.id) }
+                    }
+                }
+                Divider()
+                Button {
+                    newProjectName = ""
+                    creatingProject = true
+                } label: {
+                    Label(L.t("project.new"), systemImage: "plus")
+                }
+            } label: {
+                Label(L.t("project.add_to"), systemImage: "shippingbox")
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             Divider()

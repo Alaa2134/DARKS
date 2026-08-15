@@ -1727,3 +1727,5 @@
 "project.delete.confirm" = "Only the grouping is deleted - the parts stay in the library.";
 "project.remove_part" = "Remove this part from the project";
 "project.empty" = "This project has no parts.";
+"project.add_to" = "Add to a project";
+"project.new" = "New project";

@@ -1726,3 +1726,5 @@
 "project.delete.confirm" = "هيتمسح التجميع بس — القطع نفسها هتفضل في المكتبة.";
 "project.remove_part" = "شيل القطعة من المشروع";
 "project.empty" = "المشروع ده مفيهوش قطع.";
+"project.add_to" = "ضيفها لمشروع";
+"project.new" = "مشروع جديد";
