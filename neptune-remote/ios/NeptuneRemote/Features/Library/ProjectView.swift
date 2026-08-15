@@ -23,15 +23,27 @@ struct ProjectView: View {
     @State private var confirmingDelete = false
     @State private var goToSlice = false
 
+    /// Fetched for this project rather than filtered out of the library list,
+    /// which is capped: a project whose parts sit past the cap would draw as an
+    /// empty project, and an empty project reads as "my models are gone".
+    @State private var fetched: [LibraryItem] = []
+    @State private var isLoading = false
+
     private var project: LibraryCollection? { library.collection(id: projectID) }
-    private var parts: [LibraryItem] { library.parts(of: projectID) }
+
+    /// What is already known, until the fetch lands. Drawing nothing while a
+    /// request is in flight would flash an empty screen over models the app can
+    /// already see.
+    private var parts: [LibraryItem] {
+        fetched.isEmpty ? library.parts(of: projectID) : fetched
+    }
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: Theme.spacing)]
 
     var body: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: Theme.spacing) {
-                if library.isLoading && parts.isEmpty {
+                if isLoading && parts.isEmpty {
                     SkeletonGrid(tiles: 4)
                 } else if parts.isEmpty {
                     emptyCard
@@ -88,7 +100,8 @@ struct ProjectView: View {
             Button(L.t("common.cancel"), role: .cancel) {}
         }
         .navigationDestination(isPresented: $goToSlice) { SliceView() }
-        .task { await library.load() }
+        .task { await reload() }
+        .refreshable { await reload() }
     }
 
     // MARK: - Cards
@@ -160,7 +173,10 @@ struct ProjectView: View {
                 .buttonStyle(.plain)
                 .contextMenu {
                     Button(role: .destructive) {
-                        Task { await library.removeFromProject(item, project: projectID) }
+                        Task {
+                            await library.removeFromProject(item, project: projectID)
+                            await reload()
+                        }
                     } label: {
                         Label(L.t("project.remove_part"), systemImage: "minus.circle")
                     }
@@ -183,6 +199,12 @@ struct ProjectView: View {
     }
 
     // MARK: - Work
+
+    private func reload() async {
+        isLoading = true
+        defer { isLoading = false }
+        fetched = await library.loadParts(of: projectID)
+    }
 
     /// Put every part on one plate, ready to slice as a single job.
     ///

@@ -308,9 +308,24 @@ struct LibraryView: View {
                     ForEach(library.projects) { project in
                         NavigationLink(value: ProjectRoute(id: project.id)) {
                             VStack(alignment: .leading, spacing: 6) {
-                                Image(systemName: project.icon)
-                                    .font(.title3)
-                                    .foregroundStyle(Theme.accent)
+                                // The first part's picture, when the app has it
+                                // - a shelf of identical grey boxes tells you
+                                // nothing about which project is which.
+                                if let cover = library.parts(of: project.id).first {
+                                    ModelImage(
+                                        url: library.mediaURL(cover.thumbnail),
+                                        name: cover.displayName,
+                                        category: cover.category,
+                                        cornerRadius: 8,
+                                        showsPlaceholderLabel: false
+                                    )
+                                    .frame(height: 70)
+                                    .frame(maxWidth: .infinity)
+                                } else {
+                                    Image(systemName: project.icon)
+                                        .font(.title3)
+                                        .foregroundStyle(Theme.accent)
+                                }
                                 Text(project.displayName)
                                     .font(.subheadline.weight(.medium))
                                     .lineLimit(1)

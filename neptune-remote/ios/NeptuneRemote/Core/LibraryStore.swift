@@ -438,13 +438,37 @@ final class LibraryStore: ObservableObject {
         collections.first { $0.id == id }
     }
 
-    /// The parts of a project, in the order they were added to the library.
+    /// The parts of a project, from whatever is already loaded.
     ///
-    /// Read from what is already loaded rather than asked for: the list is on
-    /// screen anyway, and a second round trip to learn what the app has in hand
-    /// is a spinner for nothing.
+    /// Only what the library list happens to hold, which is the first few
+    /// hundred models. `loadParts` is what a project screen should use - this
+    /// is the instant answer to draw with while that arrives.
     func parts(of collectionID: String) -> [LibraryItem] {
         items.filter { $0.collections.contains(collectionID) }
+    }
+
+    /// Ask the Pi for a project's parts.
+    ///
+    /// Filtering the loaded list is not enough on its own: that list is capped,
+    /// so a project whose parts sit past the cap would draw as an empty
+    /// project - which reads as "your models are gone".
+    func loadParts(of collectionID: String) async -> [LibraryItem] {
+        guard !settings.demoMode else { return parts(of: collectionID) }
+        do {
+            let fetched = try await printer.backend.libraryItems(
+                collection: collectionID, limit: 500
+            )
+            // Folded into the shared list so thumbnails, favourites and
+            // anything else already on screen keep showing one truth.
+            for item in fetched where !items.contains(where: { $0.id == item.id }) {
+                items.append(item)
+            }
+            lastError = nil
+            return fetched
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+            return parts(of: collectionID)
+        }
     }
 
     @discardableResult

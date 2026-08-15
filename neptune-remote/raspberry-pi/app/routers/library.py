@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import mimetypes
 import tempfile
 import time
@@ -174,7 +175,10 @@ async def import_from_url(
 
     try:
         download = await fetch(source.download_url)
-        project = unpack(download)
+        # Unpacking a 200 MB archive is a second or two of pure CPU. On the
+        # event loop that is a second or two where the printer's own status
+        # endpoint does not answer, which the app reads as the Pi going away.
+        project = await asyncio.to_thread(unpack, download)
     except ImportError_ as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -201,26 +205,37 @@ async def import_from_url(
         )
 
     folder = Path(tempfile.mkdtemp(prefix="neptune-import-"))
-    created: List[LibraryItem] = []
-    for model in usable:
-        temporary = folder / Path(model.filename).name
-        temporary.write_bytes(model.data)
-        payload = LibraryItemCreate(
-            name_ar=request.name_ar if len(usable) == 1 else "",
-            name_en=Path(model.filename).stem.replace("_", " ").replace("-", " "),
-            category=request.category or "other",
-            tags=[tag.strip() for tag in request.tags if tag.strip()],
-            source_url=project.source_url,
-            author=project.author,
-            licence=project.licence,
-        )
-        created.append(
-            state.library.create_item(
-                payload=payload,
-                model_file=temporary,
-                original_filename=Path(model.filename).name,
+
+    def store_all() -> List[LibraryItem]:
+        """Write every part and let the library measure and render it.
+
+        In a thread: each part is a mesh read, a size measurement and a
+        thumbnail render, and a project can hold sixty of them. Sixty of those
+        on the event loop is a minute of a Pi that answers nothing.
+        """
+        items: List[LibraryItem] = []
+        for model in usable:
+            temporary = folder / Path(model.filename).name
+            temporary.write_bytes(model.data)
+            payload = LibraryItemCreate(
+                name_ar=request.name_ar if len(usable) == 1 else "",
+                name_en=Path(model.filename).stem.replace("_", " ").replace("-", " "),
+                category=request.category or "other",
+                tags=[tag.strip() for tag in request.tags if tag.strip()],
+                source_url=project.source_url,
+                author=project.author,
+                licence=project.licence,
             )
-        )
+            items.append(
+                state.library.create_item(
+                    payload=payload,
+                    model_file=temporary,
+                    original_filename=Path(model.filename).name,
+                )
+            )
+        return items
+
+    created = await asyncio.to_thread(store_all)
 
     collection_id = ""
     collection_name = ""
