@@ -164,6 +164,27 @@ lands and CI must be checked after.
   the expansion sits between the request and the command line and nothing else
   looks at it.
 
+### Notifications that actually arrive
+- Two faults, together explaining "الإشعارات مش بتيجي":
+  1. **No `UNUserNotificationCenterDelegate`** — iOS shows nothing in the
+     foreground unless the app says to, so every alert raised while the user was
+     looking at the app was swallowed.
+  2. **Nothing awake to raise them.** Events came over a WebSocket that closes
+     with the app. `UIBackgroundModes: fetch` was declared and **no task was
+     ever registered** — the NotificationManager doc comment described a
+     background poller that did not exist.
+- `Core/Notifications/BackgroundWatch.swift` — a `BGAppRefreshTask` registered
+  through SwiftUI's `.backgroundTask`, depending on no store (iOS may relaunch
+  the process for this alone): address from the App Group, token from the
+  Keychain, last reading from disk. The app records what it saw on the way to
+  the background so a later wake-up does not re-announce it.
+- `decide(previous:current:allow:)` is pure and has 16 tests. `postTest()` and
+  an honest "iOS decides when" section on the alerts screen, plus a warning when
+  Background App Refresh is off.
+- Still **not** push: instant delivery with the app terminated needs APNs, a
+  push server and a paid developer account. The Pi's own ntfy/Telegram channels
+  remain the way to get that today.
+
 ---
 
 ## Current state
