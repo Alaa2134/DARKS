@@ -238,10 +238,12 @@ struct SliceView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
 
-            // Only once there is more than one thing to place. A single part is
-            // arranged by putting it in the middle, and a screen for that is a
-            // screen with nothing to decide on it.
-            if !slicing.plateModels.isEmpty {
+            // Shown for a single part too, now that the plate screen is where
+            // quantity lives. It used to be hidden below two parts - "a screen
+            // with nothing to decide on it" - which was true until asking for
+            // four of one thing became a decision, and then the only way to
+            // reach it was to put a second model on the plate first.
+            if slicing.selectedModel != nil {
                 NavigationLink {
                     PlateView(modelIDs: plateModelIDs)
                 } label: {
