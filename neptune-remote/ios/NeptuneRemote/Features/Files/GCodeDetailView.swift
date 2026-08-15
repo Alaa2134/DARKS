@@ -25,6 +25,36 @@ struct GCodeDetailView: View {
             && (printer.snapshot.filename as NSString).lastPathComponent == file.filename
     }
 
+    /// The way into the toolpath preview.
+    ///
+    /// Right under the thumbnail, because a render of the model and a drawing
+    /// of what the slicer produced answer different questions, and the second
+    /// one is the question you have just before pressing Print.
+    private var previewLink: some View {
+        NavigationLink {
+            ToolpathPreviewView(filename: file.filename, settings: settings, printer: printer)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "square.3.layers.3d")
+                    .font(.title3)
+                    .foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localized: "preview.open")
+                        .font(.subheadline.weight(.medium))
+                    Text(localized: "preview.title")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.forward")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .card()
+        }
+        .buttonStyle(.plain)
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: Theme.spacing) {
@@ -37,6 +67,7 @@ struct GCodeDetailView: View {
                     )
                 }
                 thumbnailCard
+                previewLink
                 // Before the details and the print button, because it changes
                 // what this print asks of you: you have to be in the room.
                 if !colorChanges.isEmpty {

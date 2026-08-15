@@ -11,7 +11,18 @@ from fastapi.responses import FileResponse, Response
 
 from ..deps import get_state
 from ..moonraker import MoonrakerError
-from ..schemas import AppliedColorChange, GCodeFile, ModelFile, OKResponse, UploadResponse
+from ..gcode.preview import PreviewError, load_or_build_index, read_layer
+from ..schemas import (
+    AppliedColorChange,
+    GCodeFile,
+    ModelFile,
+    OKResponse,
+    PreviewBounds,
+    PreviewLayer,
+    PreviewSegment,
+    PreviewSummary,
+    UploadResponse,
+)
 from ..security import require_token
 from ..slicer.engine import SUPPORTED_MODEL_EXTENSIONS
 from ..slicer.gcode_meta import color_changes, parse_gcode
@@ -208,6 +219,88 @@ async def gcode_metadata(
             for item in color_changes(local)
         ]
     return entry
+
+
+# --------------------------------------------------------------------------- #
+# Toolpath preview
+#
+# Reads the file the slicer already wrote. Slicing used to produce a number and
+# nothing to look at, which is the difference between this app and a slicer: you
+# could not tell whether the first layer covered the bed, where the supports
+# landed, or whether the part you thought you were printing was the one that got
+# sliced.
+# --------------------------------------------------------------------------- #
+
+
+def _preview_cache_dir(state: AppState) -> Path:
+    return Path(state.gcodes.directory) / ".preview-cache"
+
+
+def _local_gcode(state: AppState, name: str) -> Path:
+    path = state.gcodes.path_for(name)
+    if not path.is_file():
+        raise HTTPException(
+            status_code=404,
+            detail="الملف ده مش موجود على الباي. المعاينة بتشتغل على الملفات "
+                   "اللي اتقطعت هنا.",
+        )
+    return path
+
+
+@router.get("/gcodes/local/{name}/preview", response_model=PreviewSummary)
+async def gcode_preview_summary(
+    name: str, state: AppState = Depends(get_state)
+) -> PreviewSummary:
+    """How many layers, how high, and how wide - before any of them is drawn.
+
+    The index behind this is built once and cached, so the first open pays for
+    a scan of the file and every layer after that is a seek.
+    """
+    path = _local_gcode(state, name)
+    try:
+        index = load_or_build_index(path, _preview_cache_dir(state))
+    except PreviewError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    return PreviewSummary(
+        filename=path.name,
+        layer_count=index.layer_count,
+        layer_heights=[entry.z for entry in index.layers],
+        bounds=PreviewBounds(
+            min_x=index.min_x, min_y=index.min_y,
+            max_x=index.max_x, max_y=index.max_y,
+        ),
+        color_change_layers=index.color_change_layers,
+    )
+
+
+@router.get("/gcodes/local/{name}/preview/{layer}", response_model=PreviewLayer)
+async def gcode_preview_layer(
+    name: str,
+    layer: int,
+    travel: bool = Query(False, description="Include travel moves"),
+    state: AppState = Depends(get_state),
+) -> PreviewLayer:
+    """One layer's toolpath.
+
+    One at a time on purpose. A 50 MB file holds millions of coordinates and no
+    phone wants them all; this costs the size of a single layer.
+    """
+    path = _local_gcode(state, name)
+    try:
+        index = load_or_build_index(path, _preview_cache_dir(state))
+        result = read_layer(path, index, layer, include_travel=travel)
+    except PreviewError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    return PreviewLayer(
+        index=result.index,
+        z=result.z,
+        segments=[
+            PreviewSegment(feature=segment.feature, points=segment.points)
+            for segment in result.segments
+        ],
+    )
 
 
 @router.get("/gcodes/thumbnail")

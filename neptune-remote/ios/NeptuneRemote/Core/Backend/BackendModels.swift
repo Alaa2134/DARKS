@@ -1,3 +1,4 @@
+import CoreGraphics
 import Foundation
 
 // Mirrors raspberry-pi/app/schemas.py
@@ -121,6 +122,130 @@ struct BackendModelFile: Decodable, Identifiable, Equatable, Hashable {
     enum CodingKeys: String, CodingKey {
         case id, filename, size, modified
         case fileExtension = "extension"
+    }
+}
+
+// MARK: - Toolpath preview
+
+/// What the nozzle was doing, in the five kinds a phone screen can tell apart.
+///
+/// Slicers distinguish a dozen sorts of perimeter and the difference matters to
+/// a slicer. On a 6-inch screen it is five colours or it is a mess.
+enum ToolpathFeature: String, Codable, CaseIterable, Hashable {
+    case outerWall = "outer_wall"
+    case innerWall = "inner_wall"
+    case infill
+    case solid
+    case support
+    case skirt
+    case bridge
+    case travel
+    case unknown
+
+    /// Everything that puts plastic down. Travel is the odd one out and is
+    /// hidden by default - a layer with its travels drawn is a scribble.
+    var isExtruding: Bool { self != .travel }
+
+    var localizationKey: String { "preview.feature.\(rawValue)" }
+
+    /// Drawn in the order a slicer's own legend uses, so anyone who has seen
+    /// one recognises this one.
+    static let drawingOrder: [ToolpathFeature] = [
+        .travel, .skirt, .support, .infill, .solid, .bridge, .innerWall, .outerWall, .unknown
+    ]
+}
+
+/// The extent of the print itself, not of the bed.
+struct PreviewBounds: Codable, Equatable {
+    var minX: Double = 0
+    var minY: Double = 0
+    var maxX: Double = 0
+    var maxY: Double = 0
+
+    var width: Double { max(0, maxX - minX) }
+    var height: Double { max(0, maxY - minY) }
+    var isEmpty: Bool { width <= 0 || height <= 0 }
+
+    enum CodingKeys: String, CodingKey {
+        case minX = "min_x"
+        case minY = "min_y"
+        case maxX = "max_x"
+        case maxY = "max_y"
+    }
+}
+
+/// Everything the app needs before it asks for a single layer.
+struct PreviewSummary: Codable, Equatable {
+    var filename: String = ""
+    var layerCount: Int = 0
+    /// Height of each layer. Nil where the slicer wrote none - Cura does not,
+    /// and inventing a number would be worse than admitting it is unknown.
+    var layerHeights: [Double?] = []
+    var bounds: PreviewBounds = PreviewBounds()
+    /// Layers where the print stops for a filament swap, marked on the
+    /// scrubber. This is what ties the preview to the colour feature.
+    var colorChangeLayers: [Int] = []
+
+    func height(at index: Int) -> Double? {
+        guard layerHeights.indices.contains(index) else { return nil }
+        return layerHeights[index]
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case filename, bounds
+        case layerCount = "layer_count"
+        case layerHeights = "layer_heights"
+        case colorChangeLayers = "color_change_layers"
+    }
+}
+
+/// A run of moves of one kind, as a flat [x, y, x, y, ...] list.
+struct PreviewSegment: Codable, Equatable {
+    var feature: ToolpathFeature = .unknown
+    var points: [Double] = []
+
+    /// The points as coordinate pairs. A malformed trailing value is dropped
+    /// rather than crashing the view that draws it.
+    var coordinates: [CGPoint] {
+        stride(from: 0, to: points.count - 1, by: 2).map {
+            CGPoint(x: points[$0], y: points[$0 + 1])
+        }
+    }
+
+    init(feature: ToolpathFeature = .unknown, points: [Double] = []) {
+        self.feature = feature
+        self.points = points
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // An unrecognised feature name is a newer backend talking to an older
+        // app. Drawing it as unknown is better than dropping the geometry.
+        let raw = try container.decodeIfPresent(String.self, forKey: .feature) ?? ""
+        feature = ToolpathFeature(rawValue: raw) ?? .unknown
+        points = try container.decodeIfPresent([Double].self, forKey: .points) ?? []
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case feature, points
+    }
+}
+
+struct PreviewLayer: Codable, Equatable {
+    var index: Int = 0
+    var z: Double?
+    var segments: [PreviewSegment] = []
+
+    /// Segments grouped by kind, so the view draws one path per colour instead
+    /// of switching stroke colour thousands of times.
+    func segments(for feature: ToolpathFeature) -> [PreviewSegment] {
+        segments.filter { $0.feature == feature }
+    }
+
+    var featuresPresent: [ToolpathFeature] {
+        ToolpathFeature.drawingOrder.filter { feature in
+            segments.contains { $0.feature == feature }
+        }
     }
 }
 

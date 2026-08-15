@@ -68,6 +68,37 @@ extension BackendClient {
         _ = try await raw(path: "library/\(id)", method: "DELETE", timeout: 30)
     }
 
+    // MARK: - Toolpath preview
+
+    /// How many layers a sliced file has, how high each one is, and how wide
+    /// the print is. Asked for once, before any layer is drawn.
+    func previewSummary(name: String) async throws -> PreviewSummary {
+        try await decode(
+            PreviewSummary.self,
+            // The first call scans the whole file to build its layer index.
+            path: "gcodes/local/\(name)/preview",
+            timeout: 120
+        )
+    }
+
+    /// One layer's toolpath.
+    ///
+    /// One at a time on purpose: a 50 MB file holds millions of coordinates and
+    /// no phone wants them all. The Pi seeks straight to the layer, so this
+    /// costs the size of a single layer rather than of the file.
+    func previewLayer(
+        name: String,
+        layer: Int,
+        includeTravel: Bool = false
+    ) async throws -> PreviewLayer {
+        try await decode(
+            PreviewLayer.self,
+            path: "gcodes/local/\(name)/preview/\(layer)",
+            query: includeTravel ? [URLQueryItem(name: "travel", value: "true")] : [],
+            timeout: 60
+        )
+    }
+
     // MARK: - Placement
 
     /// Ask the Pi which way up this model should go.

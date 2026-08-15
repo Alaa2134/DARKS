@@ -32,6 +32,34 @@ enum Theme {
         }
     }
 
+    /// Toolpath colours, borrowed from the vocabulary every slicer already
+    /// uses: warm for the walls that show, cool for the infill nobody sees,
+    /// green for support that gets thrown away, and a faint dash for travel.
+    ///
+    /// Anyone who has opened a slicer recognises this legend without reading
+    /// it, which is the whole reason not to invent a new one.
+    static func color(for feature: ToolpathFeature) -> Color {
+        switch feature {
+        case .outerWall: return Color(red: 0.98, green: 0.45, blue: 0.16)
+        case .innerWall: return Color(red: 0.95, green: 0.72, blue: 0.22)
+        case .infill:    return Color(red: 0.78, green: 0.32, blue: 0.28)
+        case .solid:     return Color(red: 0.90, green: 0.55, blue: 0.35)
+        case .support:   return Color(red: 0.31, green: 0.70, blue: 0.48)
+        case .skirt:     return Color(red: 0.45, green: 0.62, blue: 0.85)
+        case .bridge:    return Color(red: 0.38, green: 0.78, blue: 0.85)
+        case .travel:    return Color.secondary.opacity(0.45)
+        case .unknown:   return Color.secondary
+        }
+    }
+
+    /// The plate the toolpath is drawn on. Dark enough that the warm wall
+    /// colours read against it in both themes.
+    static let previewBed = Color(uiColor: .init { traits in
+        traits.userInterfaceStyle == .dark
+            ? .init(white: 0.10, alpha: 1)
+            : .init(white: 0.16, alpha: 1)
+    })
+
     static func color(for power: PowerState) -> Color {
         switch power {
         case .on: return printing

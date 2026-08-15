@@ -1594,3 +1594,30 @@
 "startup.step" = "خطوة %d من %d";
 "startup.offline.hint" = "الطابعة مش رادّة على العنوان ده. اتأكد إن كهرباء الباي شغالة، وإن Tailscale متصل على الموبايل.";
 "startup.auth.hint" = "العنوان وصل بس المفتاح مرفوض. راجع مفتاح الـAPI في الإعدادات.";
+
+
+/* Toolpath preview: seeing what the slicer actually produced */
+"preview.title" = "معاينة المسار";
+"preview.layer" = "الطبقة";
+"preview.layer_of" = "طبقة %d من %d";
+"preview.indexing" = "بقرا الملف وبفهرس الطبقات…";
+"preview.legend" = "دليل الألوان";
+"preview.legend.empty" = "الطبقة دي فاضية.";
+"preview.show_travel" = "الحركات الفاضية";
+"preview.first_layer" = "أول طبقة";
+"preview.next_color_change" = "تغيير اللون الجاي";
+"preview.color_change_here" = "الطبعة بتقف هنا عشان تغيّر اللون";
+"preview.color_change_count" = "%d وقفة لتغيير اللون";
+"preview.canvas.accessibility" = "رسم مسار النوزل للطبقة المعروضة";
+"preview.unavailable.title" = "مفيش معاينة للملف ده";
+"preview.unavailable.message" = "المعاينة بتشتغل على الملفات اللي اتقطعت على الباي. الملف ده مرفوع من بره أو مفيهوش علامات طبقات.";
+"preview.open" = "شوف المسار";
+"preview.feature.outer_wall" = "الجدار الخارجي";
+"preview.feature.inner_wall" = "الجدار الداخلي";
+"preview.feature.infill" = "الحشو";
+"preview.feature.solid" = "السطح المصمت";
+"preview.feature.support" = "الدعامات";
+"preview.feature.skirt" = "السكيرت والبريم";
+"preview.feature.bridge" = "الجسور والنتوءات";
+"preview.feature.travel" = "حركة بدون خامة";
+"preview.feature.unknown" = "غير محدد";

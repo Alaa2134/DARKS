@@ -306,3 +306,107 @@ final class StartupStageTests: XCTestCase {
         XCTAssertEqual(store.startupStage, .ready)
     }
 }
+
+/// Decoding a layer, and the geometry the canvas draws from it.
+final class ToolpathPreviewTests: XCTestCase {
+
+    func testASegmentDecodesWithTheBackendsKeys() throws {
+        let json = """
+        {"feature": "outer_wall", "points": [10.0, 10.0, 40.0, 10.0, 40.0, 30.0]}
+        """.data(using: .utf8)!
+
+        let segment = try JSONDecoder().decode(PreviewSegment.self, from: json)
+
+        XCTAssertEqual(segment.feature, .outerWall)
+        XCTAssertEqual(segment.coordinates.count, 3)
+        XCTAssertEqual(segment.coordinates.last, CGPoint(x: 40, y: 30))
+    }
+
+    func testAnUnknownFeatureNameDecodesRatherThanFailing() throws {
+        // A newer backend talking to an older app. Drawing the geometry as
+        // unclassified beats dropping the whole layer.
+        let json = """
+        {"feature": "quantum_wall", "points": [0, 0, 1, 1]}
+        """.data(using: .utf8)!
+
+        let segment = try JSONDecoder().decode(PreviewSegment.self, from: json)
+
+        XCTAssertEqual(segment.feature, .unknown)
+        XCTAssertEqual(segment.coordinates.count, 1)
+    }
+
+    func testAnOddPointCountDropsTheStrayValueInsteadOfCrashing() {
+        // Five numbers is two points and a leftover. Reading past the end of
+        // the array to pair it would be a crash in a view.
+        let segment = PreviewSegment(feature: .infill, points: [0, 0, 1, 1, 2])
+
+        XCTAssertEqual(segment.coordinates, [CGPoint(x: 0, y: 0), CGPoint(x: 1, y: 1)])
+    }
+
+    func testAnEmptySegmentHasNoCoordinates() {
+        XCTAssertTrue(PreviewSegment(feature: .travel, points: []).coordinates.isEmpty)
+        XCTAssertTrue(PreviewSegment(feature: .travel, points: [5]).coordinates.isEmpty)
+    }
+
+    func testTheSummaryDecodesFromTheBackendsShape() throws {
+        let json = """
+        {
+          "filename": "part.gcode",
+          "layer_count": 3,
+          "layer_heights": [0.2, 0.4, null],
+          "bounds": {"min_x": 10.0, "min_y": 5.0, "max_x": 40.0, "max_y": 35.0},
+          "color_change_layers": [2]
+        }
+        """.data(using: .utf8)!
+
+        let summary = try JSONDecoder().decode(PreviewSummary.self, from: json)
+
+        XCTAssertEqual(summary.layerCount, 3)
+        XCTAssertEqual(summary.height(at: 0), 0.2)
+        // Cura writes no ;Z:, so a height can genuinely be unknown.
+        XCTAssertNil(summary.height(at: 2))
+        XCTAssertNil(summary.height(at: 99))
+        XCTAssertEqual(summary.bounds.width, 30)
+        XCTAssertEqual(summary.bounds.height, 30)
+        XCTAssertEqual(summary.colorChangeLayers, [2])
+    }
+
+    func testEmptyBoundsAreRecognisedSoTheCanvasDoesNotDivideByZero() {
+        XCTAssertTrue(PreviewBounds().isEmpty)
+        XCTAssertTrue(PreviewBounds(minX: 5, minY: 5, maxX: 5, maxY: 20).isEmpty)
+        XCTAssertFalse(PreviewBounds(minX: 0, minY: 0, maxX: 10, maxY: 10).isEmpty)
+    }
+
+    func testOnlyTheFeaturesActuallyPresentAreListedForTheLegend() {
+        let layer = PreviewLayer(
+            index: 0,
+            z: 0.2,
+            segments: [
+                PreviewSegment(feature: .infill, points: [0, 0, 1, 1]),
+                PreviewSegment(feature: .outerWall, points: [0, 0, 1, 1]),
+                PreviewSegment(feature: .outerWall, points: [2, 2, 3, 3])
+            ]
+        )
+
+        // Listed once each, and in the drawing order rather than the order they
+        // happened to arrive - a legend that reshuffles between layers is one
+        // nobody can use.
+        XCTAssertEqual(layer.featuresPresent, [.infill, .outerWall])
+        XCTAssertEqual(layer.segments(for: .outerWall).count, 2)
+        XCTAssertTrue(layer.segments(for: .support).isEmpty)
+    }
+
+    func testTravelIsTheOnlyNonExtrudingFeature() {
+        for feature in ToolpathFeature.allCases where feature != .travel {
+            XCTAssertTrue(feature.isExtruding, "\(feature.rawValue) should extrude")
+        }
+        XCTAssertFalse(ToolpathFeature.travel.isExtruding)
+    }
+
+    func testEveryFeatureHasATranslatedName() {
+        for feature in ToolpathFeature.allCases {
+            let key = feature.localizationKey
+            XCTAssertNotEqual(L.t(key), key, "missing translation for \(key)")
+        }
+    }
+}

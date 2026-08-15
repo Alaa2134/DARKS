@@ -1595,3 +1595,30 @@
 "startup.step" = "Step %d of %d";
 "startup.offline.hint" = "Nothing is answering at this address. Check the Pi has power, and that Tailscale is connected on the phone.";
 "startup.auth.hint" = "The address answered but the key was refused. Check the API key in Settings.";
+
+
+/* Toolpath preview: seeing what the slicer actually produced */
+"preview.title" = "Toolpath preview";
+"preview.layer" = "Layer";
+"preview.layer_of" = "Layer %d of %d";
+"preview.indexing" = "Reading the file and indexing its layers…";
+"preview.legend" = "Legend";
+"preview.legend.empty" = "This layer is empty.";
+"preview.show_travel" = "Travel moves";
+"preview.first_layer" = "First layer";
+"preview.next_color_change" = "Next colour change";
+"preview.color_change_here" = "The print stops here for a filament swap";
+"preview.color_change_count" = "%d colour change stops";
+"preview.canvas.accessibility" = "Drawing of the nozzle path for the shown layer";
+"preview.unavailable.title" = "No preview for this file";
+"preview.unavailable.message" = "Preview works on files sliced on the Pi. This one was uploaded from elsewhere, or has no layer markers.";
+"preview.open" = "See the toolpath";
+"preview.feature.outer_wall" = "Outer wall";
+"preview.feature.inner_wall" = "Inner wall";
+"preview.feature.infill" = "Infill";
+"preview.feature.solid" = "Solid surface";
+"preview.feature.support" = "Support";
+"preview.feature.skirt" = "Skirt and brim";
+"preview.feature.bridge" = "Bridges and overhangs";
+"preview.feature.travel" = "Travel (nothing extruded)";
+"preview.feature.unknown" = "Unclassified";

@@ -186,6 +186,57 @@ class PowerActionResponse(BaseModel):
 
 
 # --------------------------------------------------------------------------- #
+# Toolpath preview
+#
+# What the slicer actually produced, read back out of the file it wrote.
+# --------------------------------------------------------------------------- #
+
+
+class PreviewBounds(BaseModel):
+    """The extent of the print itself, not of the bed.
+
+    Measured from extruding moves only, so a 20 mm part does not get framed
+    inside a 320 mm plate as a dot in the middle.
+    """
+
+    min_x: float = 0.0
+    min_y: float = 0.0
+    max_x: float = 0.0
+    max_y: float = 0.0
+
+
+class PreviewSummary(BaseModel):
+    """Everything the app needs before it asks for a single layer."""
+
+    filename: str = ""
+    layer_count: int = 0
+    #: Height of each layer, in order. Null where the slicer wrote no `;Z:` -
+    #: Cura does not, and inventing a number would be worse than admitting it.
+    layer_heights: List[Optional[float]] = Field(default_factory=list)
+    bounds: PreviewBounds = Field(default_factory=PreviewBounds)
+    #: Layers where the print stops for a filament swap, so the scrubber can
+    #: mark them.
+    color_change_layers: List[int] = Field(default_factory=list)
+
+
+class PreviewSegment(BaseModel):
+    """A run of moves of one kind, as a flat [x, y, x, y, ...] list.
+
+    Flat rather than a list of points: a layer can hold thousands of these and
+    the pairs cost twice the JSON of the numbers alone.
+    """
+
+    feature: str
+    points: List[float] = Field(default_factory=list)
+
+
+class PreviewLayer(BaseModel):
+    index: int
+    z: Optional[float] = None
+    segments: List[PreviewSegment] = Field(default_factory=list)
+
+
+# --------------------------------------------------------------------------- #
 # Model placement
 #
 # How a model is turned, sized and stood up before it reaches the slicer.
