@@ -106,9 +106,11 @@ struct AlertSettingsView: View {
 
     private func outageSection(_ record: OutageRecord) -> some View {
         Section {
-            OutageCard(record: record) {
-                Task { await alerts.acknowledge(record) }
-            }
+            OutageCard(
+                record: record,
+                onAcknowledge: { Task { await alerts.acknowledge(record) } },
+                resume: alerts.resumePlan
+            )
             .listRowInsets(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))
             .listRowBackground(Color.clear)
         }

@@ -12,6 +12,11 @@ import SwiftUI
 struct OutageCard: View {
     let record: OutageRecord
     var onAcknowledge: (() -> Void)?
+    /// What could be carried on, when the Pi says the file is still there.
+    /// The offer belongs on this card and nowhere else: this is the moment the
+    /// user finds out, and any other screen is one they would have to go
+    /// looking for.
+    var resume: OutageResumePlan?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -70,6 +75,35 @@ struct OutageCard: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .font(.caption)
+            }
+
+            if let resume, resume.available, resume.filename == record.snapshot?.filename {
+                NavigationLink {
+                    ResumePrintView(
+                        filename: resume.filename,
+                        startingLayer: resume.layer,
+                        layerCount: resume.layerCount
+                    )
+                } label: {
+                    Label(
+                        L.t("alerts.outage.resume", resume.layer + 1),
+                        systemImage: "play.circle"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+
+                Text(localized: "alerts.outage.resume.note")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if let resume, !resume.available, !resume.reasonAr.isEmpty,
+                      record.wasPrinting {
+                Text(resume.reasonAr)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             if let onAcknowledge {

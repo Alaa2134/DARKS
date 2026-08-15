@@ -77,6 +77,18 @@ def client(tmp_path: Path):
         yield test_client
 
 
+def _gcode_with_layers(count: int) -> str:
+    """A file the preview index can actually count layers in."""
+    lines = []
+    for index in range(count):
+        lines.append(f";LAYER:{index}")
+        lines.append(f";Z:{0.2 * (index + 1):.2f}")
+        lines.append(";TYPE:External perimeter")
+        lines.append(f"G1 X10 Y10 Z{0.2 * (index + 1):.2f} E1 F1200")
+        lines.append("G1 X20 Y10 E2 F1200")
+    return "\n".join(lines) + "\n"
+
+
 def services(client: TestClient):
     return client.app.state.services
 
@@ -250,7 +262,7 @@ class TestOutageEndpoints:
         state = services(client)
         target = state.gcodes.path_for("benchy.gcode")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(";LAYER:0\nG1 X0 Y0\n", encoding="utf-8")
+        target.write_text(_gcode_with_layers(300), encoding="utf-8")
 
         self._cut_power(
             client,
@@ -271,6 +283,25 @@ class TestOutageEndpoints:
         assert body["layer"] == 213
         assert body["recorded_layer"] == 214
         assert body["nozzle_temp"] == 210
+        # The real count, read from the file: the app's resume screen bounds
+        # its slider with it, and a zero leaves that screen unable to ask for
+        # a plan at all.
+        assert body["layer_count"] == 300
+
+    def test_a_file_that_no_longer_has_that_layer_is_refused(self, client: TestClient):
+        # Re-sliced, or a different job with the same name. Resuming into a
+        # layer that does not exist would produce an empty file.
+        state = services(client)
+        target = state.gcodes.path_for("short.gcode")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(_gcode_with_layers(20), encoding="utf-8")
+
+        self._cut_power(client, filename="short.gcode", current_layer=214)
+
+        body = client.get("/api/alerts/outage/resume").json()
+
+        assert body["available"] is False
+        assert "اتغيّر" in body["reason_ar"]
 
     def test_a_print_that_died_on_the_first_layer_has_nothing_to_resume(
         self, client: TestClient
@@ -301,7 +332,7 @@ class TestOutageEndpoints:
         state = services(client)
         target = state.gcodes.path_for("kit.gcode")
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(";LAYER:0\n", encoding="utf-8")
+        target.write_text(_gcode_with_layers(80), encoding="utf-8")
 
         self._cut_power(client, filename="kit.gcode", current_layer=50)
         record_id = client.get("/api/alerts/outage").json()["records"][0]["id"]

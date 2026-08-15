@@ -33,9 +33,11 @@ struct HomeView: View {
                 // outranks a state card that will happily read "standby",
                 // because from Klipper's point of view nothing is wrong now.
                 if let outage = alerts.unacknowledgedOutage {
-                    OutageCard(record: outage) {
-                        Task { await alerts.acknowledge(outage) }
-                    }
+                    OutageCard(
+                        record: outage,
+                        onAcknowledge: { Task { await alerts.acknowledge(outage) } },
+                        resume: alerts.resumePlan
+                    )
                 }
 
                 // A colour change is a pause, and it reaches the app as one -

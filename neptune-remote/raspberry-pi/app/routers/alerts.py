@@ -13,11 +13,14 @@ them.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..deps import get_state
+from ..gcode.preview import load_or_build_index
+from .files import _preview_cache_dir
 from ..notify import all_event_kinds
 from ..schemas import NotificationPreferencesRequest
 from ..security import require_token
@@ -191,9 +194,41 @@ async def outage_resume_plan(state: AppState = Depends(get_state)) -> Dict[str, 
             "layer": layer,
         }
 
+    # The real layer count, read from the file rather than from the snapshot.
+    # The app's resume screen needs it to bound its slider, and a count of zero
+    # leaves that screen inert - it cannot even ask the Pi for a plan.
+    try:
+        index = await asyncio.to_thread(
+            load_or_build_index, path, _preview_cache_dir(state)
+        )
+        layer_count = index.layer_count
+    except Exception as error:                              # noqa: BLE001
+        return {
+            "available": False,
+            "reason_ar": f"مش قادر أقرا «{snapshot.filename}»: {error}",
+            "filename": snapshot.filename,
+            "layer": layer,
+        }
+
+    if layer >= layer_count:
+        # The file on the Pi is not the file that was printing - re-sliced,
+        # renamed onto, or a different job with the same name. Resuming into a
+        # layer that does not exist would produce an empty file.
+        return {
+            "available": False,
+            "reason_ar": (
+                f"«{snapshot.filename}» اللي على الباي فيه {layer_count} طبقة بس، "
+                f"والطباعة وقفت عند {layer}. الملف اتغيّر."
+            ),
+            "filename": snapshot.filename,
+            "layer": layer,
+            "layer_count": layer_count,
+        }
+
     return {
         "available": True,
         "outage_id": record.id,
+        "layer_count": layer_count,
         "filename": snapshot.filename,
         # One layer back: the layer the printer was *on* when the power went is
         # the layer that did not finish, and starting on top of half a layer

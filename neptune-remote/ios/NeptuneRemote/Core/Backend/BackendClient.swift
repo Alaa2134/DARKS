@@ -319,6 +319,13 @@ actor BackendClient {
         )
     }
 
+    /// Whether the print a power cut killed can be carried on, and from where.
+    func outageResumePlan() async throws -> OutageResumePlan {
+        try await http.decode(
+            OutageResumePlan.self, from: try request("alerts/outage/resume")
+        )
+    }
+
     func outageStatus() async throws -> OutageStatus {
         try await http.decode(OutageStatus.self, from: try request("alerts/outage"))
     }

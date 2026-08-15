@@ -65,9 +65,17 @@ final class AlertStore: ObservableObject {
         }
     }
 
+    /// What could be carried on, if anything. Empty when there is nothing to
+    /// resume, which is the normal state and draws nothing.
+    @Published private(set) var resumePlan: OutageResumePlan?
+
     func refreshOutage() async {
         guard !settings.demoMode else { return }
         if let fresh = try? await printer.backend.outageStatus() { outage = fresh }
+        // Asked for alongside the outage itself: the card that reports the cut
+        // is the only place the offer to continue belongs, and a second screen
+        // for it would be a screen nobody opens.
+        resumePlan = try? await printer.backend.outageResumePlan()
     }
 
     // MARK: - Preferences

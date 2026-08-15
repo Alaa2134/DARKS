@@ -207,3 +207,58 @@ struct OutageRecord: Decodable, Equatable, Identifiable {
         case restoredAt = "restored_at"
     }
 }
+
+/// What it would take to carry on with the print a power cut killed.
+///
+/// The Pi knew a print had died and at which layer, and it could already build
+/// a file that starts from a layer. This is the join: the app no longer says
+/// "the power went at layer 214" and leaves you to count.
+struct OutageResumePlan: Decodable, Equatable {
+    var available = false
+    var reasonAr = ""
+    var outageID = ""
+    var filename = ""
+    /// Where to start - one layer before the recorded one, because the layer
+    /// the printer was on is the one that did not finish.
+    var layer = 0
+    var recordedLayer = 0
+    /// The file's real layer count, read from the G-code rather than from the
+    /// snapshot. The resume screen bounds its slider with it, and a zero leaves
+    /// that screen unable to ask the Pi for a plan at all.
+    var layerCount = 0
+    var z: Double = 0
+    var nozzleTemp: Double = 0
+    var bedTemp: Double = 0
+    var detectedAt: Double = 0
+
+    enum CodingKeys: String, CodingKey {
+        case available, filename, layer, z
+        case reasonAr = "reason_ar"
+        case outageID = "outage_id"
+        case recordedLayer = "recorded_layer"
+        case layerCount = "layer_count"
+        case nozzleTemp = "nozzle_temp"
+        case bedTemp = "bed_temp"
+        case detectedAt = "detected_at"
+    }
+
+    /// Written out: a synthesised decoder ignores default values, and this
+    /// response deliberately carries only the fields that apply.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        available = try container.decodeIfPresent(Bool.self, forKey: .available) ?? false
+        reasonAr = try container.decodeIfPresent(String.self, forKey: .reasonAr) ?? ""
+        outageID = try container.decodeIfPresent(String.self, forKey: .outageID) ?? ""
+        filename = try container.decodeIfPresent(String.self, forKey: .filename) ?? ""
+        layer = try container.decodeIfPresent(Int.self, forKey: .layer) ?? 0
+        recordedLayer = try container.decodeIfPresent(Int.self, forKey: .recordedLayer) ?? 0
+        layerCount = try container.decodeIfPresent(Int.self, forKey: .layerCount) ?? 0
+        z = try container.decodeIfPresent(Double.self, forKey: .z) ?? 0
+        nozzleTemp = try container.decodeIfPresent(Double.self, forKey: .nozzleTemp) ?? 0
+        bedTemp = try container.decodeIfPresent(Double.self, forKey: .bedTemp) ?? 0
+        detectedAt = try container.decodeIfPresent(Double.self, forKey: .detectedAt) ?? 0
+    }
+
+    init() {}
+}
+

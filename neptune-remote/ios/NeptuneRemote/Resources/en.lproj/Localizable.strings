@@ -1741,3 +1741,5 @@
 "alerts.test.local.title" = "Test notification";
 "alerts.test.local.body" = "If you can see this, notifications are working.";
 "alerts.test.local.sent" = "Sent. If nothing arrives within a couple of seconds, permission is off in iOS Settings.";
+"alerts.outage.resume" = "Carry on from layer %d";
+"alerts.outage.resume.note" = "Look at the bed first: if the part moved or came off, resuming prints into the air. The app only prepares the file - pressing Print is yours.";
