@@ -38,8 +38,52 @@ DEFAULT_SPACING_MM = 6.0
 DEFAULT_MARGIN_MM = 8.0
 
 
+#: Separates a model id from the number of the copy. Model ids are hex, so this
+#: cannot appear inside one.
+INSTANCE_SEPARATOR = "#"
+
+#: More copies of one part than this is a production run, not a plate. The bed
+#: refuses long before this, but a number typed by mistake should not become
+#: hundreds of mesh files on the way to finding that out.
+MAX_QUANTITY = 25
+
+
 class ArrangeError(RuntimeError):
     pass
+
+
+def instance_id(model_id: str, index: int) -> str:
+    """The id of one copy. The first copy keeps the model's own id.
+
+    Keeping the first one unchanged means everything that only ever deals in
+    single parts - transforms, thumbnails, the slice request - carries on
+    working untouched.
+    """
+    return model_id if index <= 0 else f"{model_id}{INSTANCE_SEPARATOR}{index + 1}"
+
+
+def base_id(instance: str) -> str:
+    """The model an instance is a copy of."""
+    return instance.split(INSTANCE_SEPARATOR, 1)[0]
+
+
+def expand(
+    model_ids: Sequence[str], quantities: Optional[Dict[str, int]] = None
+) -> List[str]:
+    """One id per copy, in plate order.
+
+    Quantity belongs here rather than in the slicer's `--duplicate`, which
+    multiplies *everything* on the plate: four clips and one lid cannot be
+    asked for at all that way.
+    """
+    counts = quantities or {}
+    expanded: List[str] = []
+    for model_id in model_ids:
+        count = int(counts.get(model_id, 1) or 1)
+        count = max(1, min(MAX_QUANTITY, count))
+        for index in range(count):
+            expanded.append(instance_id(model_id, index))
+    return expanded
 
 
 @dataclass

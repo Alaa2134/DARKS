@@ -97,6 +97,65 @@ final class PlacementStore: ObservableObject {
         transforms[modelID] = placement
     }
 
+    // MARK: - Copies
+    //
+    // The slicer's own `--duplicate` multiplies the whole plate, so four clips
+    // and one lid cannot be asked for with it at all. Quantity is per model
+    // here, and each copy becomes its own object with its own place on the bed.
+
+    /// How many of each model. A model missing from here means one.
+    @Published private(set) var quantities: [String: Int] = [:]
+
+    /// More than this is a production run, not a plate - and matches the cap
+    /// the Pi applies, so the number on screen is the number that gets printed.
+    static let maxQuantity = 25
+
+    func quantity(for modelID: String) -> Int {
+        max(1, min(Self.maxQuantity, quantities[modelID] ?? 1))
+    }
+
+    func setQuantity(_ count: Int, for modelID: String) {
+        let clamped = max(1, min(Self.maxQuantity, count))
+        if clamped == 1 {
+            quantities.removeValue(forKey: modelID)
+            // The copies' own positions go with them. Leaving them behind
+            // would put a stale offset on the next copy asked for.
+            transforms = transforms.filter {
+                PlacementStore.baseID($0.key) != modelID || $0.key == modelID
+            }
+        } else {
+            quantities[modelID] = clamped
+        }
+    }
+
+    /// Quantities for a plate, ready to attach to a request. Ones are left out.
+    func quantityPayload(for modelIDs: [String]) -> [String: Int] {
+        var result: [String: Int] = [:]
+        for identifier in modelIDs where quantity(for: identifier) > 1 {
+            result[identifier] = quantity(for: identifier)
+        }
+        return result
+    }
+
+    /// The id of one copy. The first keeps the model's own id, so everything
+    /// that only ever deals in single parts carries on working untouched.
+    static func instanceID(_ modelID: String, _ index: Int) -> String {
+        index <= 0 ? modelID : "\(modelID)#\(index + 1)"
+    }
+
+    static func baseID(_ instance: String) -> String {
+        instance.split(separator: "#", maxSplits: 1).first.map(String.init) ?? instance
+    }
+
+    /// One id per copy, in plate order - what the Pi arranges and slices.
+    func instances(for modelIDs: [String]) -> [String] {
+        modelIDs.flatMap { identifier in
+            (0..<quantity(for: identifier)).map {
+                PlacementStore.instanceID(identifier, $0)
+            }
+        }
+    }
+
     /// Every transform for a plate, position included, whether or not it is
     /// otherwise identity.
     ///

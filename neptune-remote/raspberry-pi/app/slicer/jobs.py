@@ -14,6 +14,7 @@ from typing import Awaitable, Callable, Dict, List, Optional
 from ..library import transform as transform_tools
 from ..schemas import AppliedColorChange, ModelTransform, SliceJob, SliceJobSummary, SliceRequest
 from ..storage import GCodeStore, ModelStore, safe_filename
+from . import arrange as arrange_tools
 from .colors import apply_color_changes
 from .engine import BaseEngine, SlicerError, SUPPORTED_MODEL_EXTENSIONS
 
@@ -207,7 +208,12 @@ class SliceJobManager:
         can otherwise print; the original is sliced instead and the reason is
         logged.
         """
-        spec = request.transforms.get(identifier)
+        # The instance's own transform first, then the model's. Copies of one
+        # model are placed individually, and falling back to the model's
+        # transform for each of them would stack them on the same spot.
+        spec = request.transforms.get(identifier) or request.transforms.get(
+            arrange_tools.base_id(identifier)
+        )
         if spec is None:
             return path
 
@@ -242,12 +248,17 @@ class SliceJobManager:
             workdir = Path(tempfile.mkdtemp(prefix=f"neptune-slice-{job.id}-"))
             try:
                 assert job.request is not None
-                identifiers = [job.model_id] + [
+                ordered = [job.model_id] + [
                     value for value in job.request.extra_model_ids if value != job.model_id
                 ]
+                # One entry per copy. Quantity is expanded here rather than
+                # handed to the slicer's `--duplicate`, which multiplies the
+                # whole plate: four clips and one lid cannot be asked for that
+                # way at all.
+                identifiers = arrange_tools.expand(ordered, job.request.quantities)
                 model_paths = []
                 for identifier in identifiers:
-                    path = self.models.path_for(identifier)
+                    path = self.models.path_for(arrange_tools.base_id(identifier))
                     if path is None:
                         raise SlicerError(
                             f"Model file for '{identifier}' disappeared before slicing started"

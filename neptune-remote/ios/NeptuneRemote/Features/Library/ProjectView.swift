@@ -200,8 +200,11 @@ struct ProjectView: View {
         }
         slicing.selectedModel = files.first
         slicing.plateModels = Array(files.dropFirst())
-        // Positions already chosen on the plate screen travel with the slice.
-        slicing.transforms = placement.platePayload(for: parts.map(\.id))
+        // Positions already chosen on the plate screen travel with the slice,
+        // one entry per copy rather than per model.
+        let ids = parts.map(\.id)
+        slicing.transforms = placement.payload(for: placement.instances(for: ids))
+        slicing.quantities = placement.quantityPayload(for: ids)
         Haptics.selection()
     }
 }

@@ -558,6 +558,8 @@ struct PlatePlacement: Codable, Equatable, Identifiable {
 struct ArrangeRequestPayload: Encodable, Equatable {
     var modelIDs: [String]
     var transforms: [String: ModelTransform] = [:]
+    /// How many of each model. Absent means one.
+    var quantities: [String: Int] = [:]
     var spacing: Double = 6
     var margin: Double = 8
     /// Judge the plate as it stands instead of rearranging it. What the app
@@ -565,7 +567,7 @@ struct ArrangeRequestPayload: Encodable, Equatable {
     var checkOnly: Bool = false
 
     enum CodingKeys: String, CodingKey {
-        case transforms, spacing, margin
+        case transforms, spacing, margin, quantities
         case modelIDs = "model_ids"
         case checkOnly = "check_only"
     }
@@ -813,6 +815,9 @@ struct SliceRequestPayload: Encodable, Equatable {
     var extraModelIDs: [String] = []
     /// Copies of everything on the plate.
     var copies: Int = 1
+    /// Copies of *one* model, keyed by model id. `copies` multiplies the whole
+    /// plate, so "four clips and one lid" cannot be asked for with it.
+    var quantities: [String: Int] = [:]
     var printerProfile: String = "neptune3plus_0.4"
     var filamentProfile: String = "pla"
     var printProfile: String = "standard"
@@ -880,7 +885,7 @@ struct SliceRequestPayload: Encodable, Equatable {
     enum CodingKeys: String, CodingKey {
         case modelID = "model_id"
         case extraModelIDs = "extra_model_ids"
-        case copies
+        case copies, quantities
         case printerProfile = "printer_profile"
         case filamentProfile = "filament_profile"
         case printProfile = "print_profile"

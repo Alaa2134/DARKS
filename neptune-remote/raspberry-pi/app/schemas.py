@@ -473,6 +473,12 @@ class ArrangeRequest(BaseModel):
     spacing: float = Field(default=6.0, ge=0, le=50)
     #: Millimetres kept clear of the bed edge.
     margin: float = Field(default=8.0, ge=0, le=50)
+    #: How many copies of each model. Absent means one.
+    #:
+    #: Per model rather than per plate: the slicer's own `--duplicate`
+    #: multiplies everything on the bed, so "four clips and one lid" cannot be
+    #: expressed with it at all.
+    quantities: Dict[str, int] = Field(default_factory=dict)
     #: Judge the plate as it stands instead of rearranging it.
     #:
     #: With this on, positions are taken from each transform's `offset_xy` and
@@ -673,8 +679,15 @@ class SliceRequest(BaseModel):
     extra_model_ids: List[str] = Field(default_factory=list)
     #: Copies of everything on the plate. 1 leaves the arrangement alone.
     copies: int = 1
+    #: Copies of *one* model, keyed by model id.
+    #:
+    #: `copies` multiplies the whole plate, so "four clips and one lid" cannot
+    #: be asked for with it. Each extra copy becomes its own object with its own
+    #: place on the bed.
+    quantities: Dict[str, int] = Field(default_factory=dict)
 
-    #: How each model is turned and sized, keyed by model id.
+    #: How each model is turned and sized, keyed by model id - or by instance
+    #: id (`{model}#2`, `{model}#3`, ...) when copies are placed individually.
     #:
     #: A model named here is transformed into a temporary copy before slicing;
     #: one that is not falls back to whatever transform is stored against it in

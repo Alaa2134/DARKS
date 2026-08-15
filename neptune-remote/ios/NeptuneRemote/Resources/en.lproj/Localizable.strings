@@ -1729,3 +1729,4 @@
 "project.empty" = "This project has no parts.";
 "project.add_to" = "Add to a project";
 "project.new" = "New project";
+"plate.quantity" = "How many of each part";

@@ -214,10 +214,14 @@ struct SliceView: View {
                 .font(.subheadline)
             }
 
-            if !slicing.plateModels.isEmpty {
-                Text(L.t("slicer.plate.count", slicing.plateModels.count + 1))
+            // Counted in parts rather than in models: asking for four of one
+            // clip puts four things on the bed, and "1 model" would be a
+            // number that contradicts the plate the user just looked at.
+            if slicing.plateModels.count > 0 || partCount > 1 {
+                Text(L.t("slicer.plate.count", partCount))
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .contentTransition(.numericText())
             }
 
             // Said once, plainly. A full plate is one print job - which is the
@@ -642,7 +646,13 @@ struct SliceView: View {
             // Copied across at the moment of slicing rather than held as a
             // live reference: a slice request has to describe the job as it was
             // when it was sent, not track state that can change while it queues.
-            slicing.transforms = placement.payload(for: plateModelIDs)
+            // Instances, not models: a copy's own position lives under its own
+            // id, and sending only the models would stack every copy on one
+            // spot. Identity transforms are still dropped by `payload`.
+            slicing.transforms = placement.payload(
+                for: placement.instances(for: plateModelIDs)
+            )
+            slicing.quantities = placement.quantityPayload(for: plateModelIDs)
             Task { await slicing.startSlicing() }
         } label: {
             HStack {
@@ -661,6 +671,11 @@ struct SliceView: View {
         }
         .buttonStyle(.plain)
         .disabled(slicing.isSlicing || slicing.selectedModel == nil)
+    }
+
+    /// How many parts will be printed, copies included.
+    private var partCount: Int {
+        placement.instances(for: plateModelIDs).count
     }
 
     /// Every model going onto this plate, main and extras.

@@ -151,6 +151,10 @@ final class SliceStore: ObservableObject {
     /// while the job is queued.
     var transforms: [String: ModelTransform] = [:]
 
+    /// How many of each model on the plate, keyed by model id. Set by the plate
+    /// screen; empty means one of each.
+    var quantities: [String: Int] = [:]
+
     var request: SliceRequestPayload? {
         guard let model = selectedModel else { return nil }
         var payload = SliceRequestPayload(modelID: model.id)
@@ -160,6 +164,14 @@ final class SliceStore: ObservableObject {
         // would make the Pi write a pointless copy of an unturned mesh.
         payload.transforms = transforms
         payload.copies = max(1, copies)
+        // How many of each, set on the plate screen. `copies` multiplies the
+        // whole plate, so it cannot say "four of this one and one of that".
+        //
+        // Filtered to what is actually on this plate: a quantity left over from
+        // a previous selection would otherwise print four of a model the user
+        // is no longer looking at.
+        let onPlate = Set([model.id] + plateModels.map(\.id))
+        payload.quantities = quantities.filter { onPlate.contains($0.key) }
         payload.mode = mode
         payload.printerProfile = printerProfile
         payload.filamentProfile = filamentProfile

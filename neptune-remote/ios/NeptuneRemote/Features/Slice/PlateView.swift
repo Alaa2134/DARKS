@@ -17,6 +17,7 @@ struct PlateView: View {
     @EnvironmentObject private var printer: PrinterStore
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var placement: PlacementStore
+    @EnvironmentObject private var library: LibraryStore
 
     @State private var arrangement: ArrangeResponse?
     @State private var isArranging = false
@@ -40,6 +41,7 @@ struct PlateView: View {
                     BusyLine(textKey: "plate.arranging").card()
                 } else if let arrangement {
                     bedCard(arrangement)
+                    quantityCard
                     problemsCard(arrangement)
                     actionsCard
                 }
@@ -189,6 +191,50 @@ struct PlateView: View {
             }
     }
 
+    // MARK: - How many of each
+
+    /// One stepper per part.
+    ///
+    /// The slicer's own duplicate count multiplies the whole plate, so four
+    /// clips and one lid could not be asked for at all. Each copy here becomes
+    /// its own object with its own place on the bed.
+    private var quantityCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader("plate.quantity", systemImage: "square.on.square")
+            ForEach(modelIDs, id: \.self) { modelID in
+                Stepper(
+                    value: Binding(
+                        get: { placement.quantity(for: modelID) },
+                        set: { count in
+                            placement.setQuantity(count, for: modelID)
+                            Haptics.selection()
+                            Task { await arrange(force: true) }
+                        }
+                    ),
+                    in: 1...PlacementStore.maxQuantity
+                ) {
+                    HStack {
+                        Text(name(for: modelID))
+                            .font(.subheadline)
+                            .lineLimit(1)
+                        Spacer(minLength: 8)
+                        Text("×\(placement.quantity(for: modelID))")
+                            .font(.subheadline.weight(.semibold))
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                    }
+                }
+            }
+        }
+        .card()
+    }
+
+    /// The model's own name when the library has it loaded, and its id when it
+    /// does not - which is still better than an empty row.
+    private func name(for modelID: String) -> String {
+        library.item(id: modelID)?.displayName ?? modelID
+    }
+
     // MARK: - Problems
 
     @ViewBuilder
@@ -233,7 +279,9 @@ struct PlateView: View {
             .disabled(isArranging)
 
             Button {
-                for id in modelIDs { placement.setPosition(.zero, for: id) }
+                for id in placement.instances(for: modelIDs) {
+                    placement.setPosition(.zero, for: id)
+                }
                 Task { await arrange(force: true) }
             } label: {
                 Label(L.t("plate.reset"), systemImage: "arrow.uturn.backward")
@@ -271,7 +319,12 @@ struct PlateView: View {
             let result = try await printer.backend.arrangePlate(
                 ArrangeRequestPayload(
                     modelIDs: modelIDs,
-                    transforms: placement.platePayload(for: modelIDs)
+                    // Every copy, not every model: the arrangement is about
+                    // what will be printed.
+                    transforms: placement.platePayload(
+                        for: placement.instances(for: modelIDs)
+                    ),
+                    quantities: placement.quantityPayload(for: modelIDs)
                 )
             )
             arrangement = result
@@ -295,7 +348,10 @@ struct PlateView: View {
             let result = try await printer.backend.arrangePlate(
                 ArrangeRequestPayload(
                     modelIDs: modelIDs,
-                    transforms: placement.platePayload(for: modelIDs),
+                    transforms: placement.platePayload(
+                        for: placement.instances(for: modelIDs)
+                    ),
+                    quantities: placement.quantityPayload(for: modelIDs),
                     checkOnly: true
                 )
             )

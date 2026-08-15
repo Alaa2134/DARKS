@@ -680,3 +680,107 @@ def test_check_only_reports_a_part_dragged_off_the_bed(client: TestClient):
 
     assert body["ok"] is False
     assert any("حدود السرير" in problem for problem in body["problems_ar"])
+
+
+# --------------------------------------------------------------------------- #
+# Several copies of one part
+# --------------------------------------------------------------------------- #
+
+
+def test_a_quantity_puts_that_many_parts_on_the_plate(client: TestClient):
+    item = upload(client, slab_stl(40, 30, 10))
+
+    body = client.post(
+        "/api/library/arrange",
+        json={"model_ids": [item], "quantities": {item: 4}},
+    ).json()
+
+    assert body["ok"] is True
+    assert len(body["placements"]) == 4
+    # Every copy gets its own place; two parts on the same spot is one part.
+    positions = {(p["x"], p["y"]) for p in body["placements"]}
+    assert len(positions) == 4
+
+
+def test_copies_are_named_after_the_model_they_came_from(client: TestClient):
+    item = upload(client, slab_stl(40, 30, 10))
+
+    body = client.post(
+        "/api/library/arrange",
+        json={"model_ids": [item], "quantities": {item: 3}},
+    ).json()
+
+    ids = [p["model_id"] for p in body["placements"]]
+    # The first copy keeps the model's own id, so nothing that deals in single
+    # parts has to learn about instances.
+    assert ids[0] == item
+    assert ids[1:] == [f"{item}#2", f"{item}#3"]
+
+
+def test_a_mixed_plate_asks_for_different_numbers_of_each(client: TestClient):
+    # The case `copies` cannot express at all: four clips and one lid.
+    clip = upload(client, slab_stl(20, 20, 10), name="clip.stl")
+    lid = upload(client, slab_stl(60, 60, 5), name="lid.stl")
+
+    body = client.post(
+        "/api/library/arrange",
+        json={"model_ids": [clip, lid], "quantities": {clip: 4, lid: 1}},
+    ).json()
+
+    assert len(body["placements"]) == 5
+    assert sum(1 for p in body["placements"] if p["model_id"].startswith(clip)) == 4
+
+
+def test_each_copy_keeps_the_position_it_was_dragged_to(client: TestClient):
+    item = upload(client, slab_stl(40, 30, 10))
+
+    body = client.post(
+        "/api/library/arrange",
+        json={
+            "model_ids": [item],
+            "quantities": {item: 2},
+            "check_only": True,
+            "transforms": {
+                item: {"offset_xy": [-60, 0]},
+                f"{item}#2": {"offset_xy": [60, 0]},
+            },
+        },
+    ).json()
+
+    positions = {p["model_id"]: (p["x"], p["y"]) for p in body["placements"]}
+    assert positions[item] == (-60.0, 0.0)
+    assert positions[f"{item}#2"] == (60.0, 0.0)
+    assert body["ok"] is True
+
+
+def test_copies_with_no_position_of_their_own_are_reported_as_stacked(
+    client: TestClient,
+):
+    # Falling back to the model's transform for every copy would put them all
+    # on the same spot - which slices happily and prints as a lump.
+    item = upload(client, slab_stl(40, 30, 10))
+
+    body = client.post(
+        "/api/library/arrange",
+        json={
+            "model_ids": [item],
+            "quantities": {item: 2},
+            "check_only": True,
+            "transforms": {item: {"offset_xy": [0, 0]}},
+        },
+    ).json()
+
+    assert body["ok"] is False
+    assert any("متلاصقين" in problem for problem in body["problems_ar"])
+
+
+def test_too_many_copies_to_fit_are_named_rather_than_dropped(client: TestClient):
+    item = upload(client, slab_stl(100, 100, 10))
+
+    body = client.post(
+        "/api/library/arrange",
+        json={"model_ids": [item], "quantities": {item: 20}},
+    ).json()
+
+    assert body["ok"] is False
+    assert body["unplaced"]

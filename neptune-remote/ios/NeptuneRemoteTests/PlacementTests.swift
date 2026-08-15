@@ -577,4 +577,94 @@ final class PlateArrangementTests: XCTestCase {
         XCTAssertEqual(result.rotationDeg, [90, 0, 0])
         XCTAssertEqual(result.position, CGPoint(x: 20, y: 20))
     }
+
+    // MARK: - Copies of one part
+    //
+    // The slicer's own duplicate count multiplies the whole plate, so "four
+    // clips and one lid" could not be asked for at all.
+
+    @MainActor
+    private func makeStore() -> PlacementStore {
+        PlacementStore(
+            settings: AppSettings(),
+            printer: PrinterStore(settings: AppSettings(), notifications: NotificationManager())
+        )
+    }
+
+    @MainActor
+    func testTheFirstCopyKeepsTheModelsOwnID() {
+        // Everything that only ever deals in single parts carries on working.
+        XCTAssertEqual(PlacementStore.instanceID("abc", 0), "abc")
+        XCTAssertEqual(PlacementStore.instanceID("abc", 1), "abc#2")
+        XCTAssertEqual(PlacementStore.baseID("abc#4"), "abc")
+        XCTAssertEqual(PlacementStore.baseID("abc"), "abc")
+    }
+
+    @MainActor
+    func testAModelWithNoQuantityIsOne() {
+        XCTAssertEqual(makeStore().quantity(for: "m"), 1)
+    }
+
+    @MainActor
+    func testAQuantityBecomesThatManyInstances() {
+        let store = makeStore()
+        store.setQuantity(4, for: "clip")
+
+        XCTAssertEqual(
+            store.instances(for: ["clip", "lid"]),
+            ["clip", "clip#2", "clip#3", "clip#4", "lid"]
+        )
+    }
+
+    @MainActor
+    func testAQuantityIsClampedToWhatThePiWillAccept() {
+        // The number on screen has to be the number that gets printed.
+        let store = makeStore()
+        store.setQuantity(9_000, for: "m")
+        XCTAssertEqual(store.quantity(for: "m"), PlacementStore.maxQuantity)
+
+        store.setQuantity(0, for: "m")
+        XCTAssertEqual(store.quantity(for: "m"), 1)
+    }
+
+    @MainActor
+    func testOnlyRealQuantitiesAreSent() {
+        let store = makeStore()
+        store.setQuantity(3, for: "many")
+
+        let payload = store.quantityPayload(for: ["many", "single"])
+
+        XCTAssertEqual(payload, ["many": 3])
+    }
+
+    @MainActor
+    func testGoingBackToOneForgetsWhereTheCopiesWere() {
+        // A stale offset left behind would place the next copy asked for
+        // somewhere the user never put it.
+        let store = makeStore()
+        store.setQuantity(2, for: "m")
+        store.setPosition(CGPoint(x: 40, y: 0), for: "m#2")
+        store.setPosition(CGPoint(x: -40, y: 0), for: "m")
+
+        store.setQuantity(1, for: "m")
+
+        XCTAssertEqual(store.quantity(for: "m"), 1)
+        XCTAssertNil(store.transforms["m#2"])
+        // The model's own placement is not a copy, so it stays.
+        XCTAssertEqual(store.transform(for: "m").position.x, -40, accuracy: 0.001)
+    }
+
+    @MainActor
+    func testEachCopyIsPlacedSeparately() {
+        let store = makeStore()
+        store.setQuantity(2, for: "m")
+        store.setPosition(CGPoint(x: -40, y: 0), for: "m")
+        store.setPosition(CGPoint(x: 40, y: 0), for: "m#2")
+
+        let payload = store.platePayload(for: store.instances(for: ["m"]))
+
+        XCTAssertEqual(payload["m"]?.offsetXY, [-40, 0])
+        XCTAssertEqual(payload["m#2"]?.offsetXY, [40, 0])
+    }
 }
+

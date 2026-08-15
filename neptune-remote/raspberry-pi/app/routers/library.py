@@ -623,14 +623,22 @@ async def arrange_plate(
         ArrangeResult,
         Placement,
         auto_arrange,
+        base_id,
         check,
+        expand,
     )
 
     volume = await _build_volume(state)
     bed_width, bed_depth = volume[0], volume[1]
 
+    # One entry per copy. Everything below works on instances, so a plate of
+    # four clips and one lid is arranged and checked as five parts - which is
+    # what will be printed.
+    instances = expand(request.model_ids, request.quantities)
+
     footprints: List[tuple] = []
-    for model_id in request.model_ids:
+    for instance in instances:
+        model_id = base_id(instance)
         path = state.models.path_for(model_id)
         if path is None or not path.is_file():
             raise HTTPException(
@@ -656,7 +664,7 @@ async def arrange_plate(
                 status_code=422, detail=f"مش قادر أقرا «{model_id}»: {error}"
             ) from error
         size = sized.size
-        footprints.append((model_id, float(size[0]), float(size[1])))
+        footprints.append((instance, float(size[0]), float(size[1])))
 
 
     if request.check_only:
@@ -664,12 +672,17 @@ async def arrange_plate(
         # app already holds, because rearranging here would undo the drag the
         # user just made and answer a question nobody asked.
         placements = []
-        for model_id, width, depth in footprints:
-            spec = request.transforms.get(model_id)
+        for instance, width, depth in footprints:
+            # An instance's own position first: copies of one model are placed
+            # separately, and falling back to the model's transform would stack
+            # them all on the same spot.
+            spec = request.transforms.get(instance) or request.transforms.get(
+                base_id(instance)
+            )
             offset = list(spec.offset_xy) if spec else [0.0, 0.0]
             placements.append(
                 Placement(
-                    model_id=model_id, width=width, depth=depth,
+                    model_id=instance, width=width, depth=depth,
                     x=float(offset[0]), y=float(offset[1]),
                 )
             )

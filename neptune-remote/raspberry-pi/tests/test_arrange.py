@@ -7,11 +7,15 @@ import pytest
 from app.slicer.arrange import (
     DEFAULT_MARGIN_MM,
     DEFAULT_SPACING_MM,
+    MAX_QUANTITY,
     ArrangeError,
     Placement,
     auto_arrange,
+    base_id,
     bed_size_from_limits,
     check,
+    expand,
+    instance_id,
 )
 
 BED = 320.0
@@ -222,3 +226,52 @@ def test_bed_size_ignores_homing_overtravel():
 def test_an_axis_with_no_maximum_reports_zero_rather_than_guessing():
     width, _ = bed_size_from_limits({"x": (0.0, None), "y": (0.0, 320.0)})
     assert width == 0.0
+
+
+# --------------------------------------------------------------------------- #
+# Copies of one part
+#
+# `copies` multiplies the whole plate, so "four clips and one lid" cannot be
+# expressed with it at all.
+# --------------------------------------------------------------------------- #
+
+
+def test_the_first_copy_keeps_the_models_own_id():
+    # Everything that only ever deals in single parts - transforms, thumbnails,
+    # the slice request - keeps working untouched.
+    assert instance_id("abc", 0) == "abc"
+    assert instance_id("abc", 1) == "abc#2"
+
+
+def test_an_instance_says_which_model_it_is_a_copy_of():
+    assert base_id("abc#4") == "abc"
+    assert base_id("abc") == "abc"
+
+
+def test_no_quantities_means_one_of_each():
+    assert expand(["a", "b"]) == ["a", "b"]
+
+
+def test_a_quantity_becomes_that_many_instances():
+    assert expand(["clip", "lid"], {"clip": 4}) == [
+        "clip", "clip#2", "clip#3", "clip#4", "lid",
+    ]
+
+
+def test_a_nonsense_quantity_does_not_produce_nonsense():
+    assert expand(["a"], {"a": 0}) == ["a"]
+    assert expand(["a"], {"a": -3}) == ["a"]
+
+
+def test_a_quantity_beyond_the_cap_is_capped():
+    # A number typed by mistake should not become hundreds of mesh files on the
+    # way to finding out the bed refuses them.
+    assert len(expand(["a"], {"a": 5000})) == MAX_QUANTITY
+
+
+def test_copies_are_arranged_as_separate_parts():
+    result = arrange(*[(name, 40, 40) for name in expand(["clip"], {"clip": 4})])
+
+    assert result.ok
+    assert len(result.placements) == 4
+    assert check(result.placements, bed_width=BED, bed_depth=BED) == []
