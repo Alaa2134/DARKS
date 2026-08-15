@@ -589,7 +589,7 @@ extension BackendClient {
         try await decode(BedMeshReport.self, path: "printer/bed-mesh", timeout: 25)
     }
 
-    func libraryBackups() async throws -> [LibraryBackupInfo] {
+    func backups() async throws -> [BackupInfo] {
         try await decode([BackupInfo].self, path: "backups", timeout: 25)
     }
 
