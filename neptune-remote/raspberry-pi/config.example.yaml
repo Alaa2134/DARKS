@@ -1,0 +1,322 @@
+# ---------------------------------------------------------------------------
+# Neptune 3 Plus Remote - backend configuration example
+#
+#   cp config.example.yaml config.yaml
+#   nano config.yaml
+#   sudo systemctl restart neptune-remote
+#
+# config.yaml is git-ignored. Never commit real credentials.
+# Every value here can also be supplied through environment variables
+# (see .env.example) which take priority over this file.
+# ---------------------------------------------------------------------------
+
+server:
+  host: "0.0.0.0"
+  port: 8710
+  # Optional shared secret. When non-empty every /api and /ws request must send
+  # it as the `X-API-Key` header (the iOS app stores it in the Keychain).
+  # Leave empty if you rely on Tailscale alone.
+  api_token: ""
+  cors_origins:
+    - "*"
+  log_level: "info"
+
+moonraker:
+  host: "127.0.0.1"
+  port: 7125
+  use_tls: false
+  # Only needed if you enabled Moonraker's API key authorization.
+  api_key: ""
+  timeout_seconds: 10.0
+
+paths:
+  data_dir: "~/neptune-remote-data"
+  models_dir: "~/neptune-remote-data/models"
+  gcode_dir: "~/neptune-remote-data/gcode"
+  # Slicing profiles shipped with this repository.
+  profiles_dir: "/opt/neptune-remote/profiles"
+  database: "~/neptune-remote-data/neptune.db"
+
+slicer:
+  # prusaslicer (recommended, packaged for arm64) or orcaslicer
+  engine: "prusaslicer"
+  prusaslicer_bin: "prusa-slicer"
+  orcaslicer_bin: "orca-slicer"
+  timeout_seconds: 1800
+  max_concurrent_jobs: 1
+  keep_jobs: 40
+
+power:
+  # tuya | moonraker | webhook | demo | none
+  provider: "none"
+  # Used when provider == moonraker: the [power <name>] section in moonraker.conf
+  moonraker_device: "printer"
+  webhook:
+    on_url: ""
+    off_url: ""
+    status_url: ""
+    method: "POST"
+    headers: {}
+    on_body: ""
+    off_body: ""
+    status_json_path: "state"
+    on_value: "on"
+  safety:
+    enabled: true
+    max_nozzle_temp: 50
+    max_bed_temp: 45
+    block_while_printing: true
+
+# See docs/TUYA_SETUP.md for how to obtain these from iot.tuya.com and how to
+# link your existing Smart Life device.
+tuya:
+  enabled: false
+  access_id: ""
+  access_secret: ""
+  device_id: ""
+  # Data-centre endpoint, must match the region your Smart Life account is in:
+  #   Central Europe   https://openapi.tuyaeu.com
+  #   Western America  https://openapi.tuyaus.com
+  #   China            https://openapi.tuyacn.com
+  #   India            https://openapi.tuyain.com
+  endpoint: "https://openapi.tuyaeu.com"
+  # DP code of the relay. Single-socket plugs are usually switch_1, some are switch.
+  switch_code: "switch_1"
+
+auto_power_off:
+  enabled: false
+  nozzle_below: 50
+  bed_below: 45
+  delay_seconds: 300
+  only_after_successful_print: true
+
+history:
+  enabled: true
+  max_entries: 2000
+
+# ---------------------------------------------------------------------------
+# Storage - everything Neptune Remote writes lives under this one root.
+# It never touches Klipper's own printer_data/config or printer_data/gcodes.
+# ---------------------------------------------------------------------------
+storage:
+  root: "~/printer_data/neptune_remote"
+  # Files copied (read-only) into a backup zip.
+  backup_sources:
+    - "~/printer_data/config/printer.cfg"
+    - "~/printer_data/config/moonraker.conf"
+  max_backups: 10
+
+# ---------------------------------------------------------------------------
+# Library
+#
+# Importing from a link works without any key for a direct file URL. Only
+# Thingiverse needs one: get a personal app token from
+# https://www.thingiverse.com/apps/create and put it here.
+#
+# Like every other credential, it stays on the Pi - the app never receives it,
+# and the API reports only whether it is set.
+# ---------------------------------------------------------------------------
+library:
+  thingiverse_key: ""
+
+# ---------------------------------------------------------------------------
+# Camera (USB UVC webcam on the Raspberry Pi 5)
+#
+# Preferred: point at the stream crowsnest already serves, so Mainsail, this
+# backend and the phone can all watch at the same time.
+# Fallback: read /dev/videoN directly with FFmpeg (exclusive access).
+# ---------------------------------------------------------------------------
+camera:
+  enabled: true
+  stream_url: "http://127.0.0.1/webcam/?action=stream"
+  snapshot_url: "http://127.0.0.1/webcam/?action=snapshot"
+  # An IP camera. Nothing in a phone or a browser can open RTSP, so the Pi
+  # decodes it and serves MJPEG at GET /api/camera/stream. That costs CPU for
+  # as long as somebody is watching, which is why the camera's *substream* is
+  # usually the right choice for monitoring:
+  #   main stream: rtsp://user:pass@IP:554/cam/realmonitor?channel=1&subtype=0
+  #   substream:   rtsp://user:pass@IP:554/cam/realmonitor?channel=1&subtype=1
+  # Leave empty unless you actually have one. A USB webcam does not use this.
+  rtsp_url: ""
+  rtsp_transport: "tcp"   # tcp | udp - tcp tears less on a busy wifi
+  # Pan and tilt over the camera's own HTTP API. Off by default: a camera
+  # with no motors answers with an error, and a control that cannot work
+  # should not appear in the app at all. Address and password come from
+  # rtsp_url above; set ptz_url only if the web interface is elsewhere.
+  ptz_enabled: false
+  ptz_vendor: "dahua"     # only dahua is implemented
+  ptz_url: ""
+  device: ""            # e.g. "/dev/video0" when no streamer is installed
+  width: 1280
+  height: 720
+  fps: 15
+  ffmpeg_binary: "ffmpeg"
+  # Print-bed region used by the failure monitor: [x, y, w, h] as 0..1
+  roi: null
+
+# ---------------------------------------------------------------------------
+# Video recording (real FFmpeg MP4 output)
+# ---------------------------------------------------------------------------
+recording:
+  # off | manual | full | first_layer | last_layer
+  mode: "manual"
+  video_codec: "libx264"
+  preset: "veryfast"
+  crf: 24
+  output_fps: 15
+  max_seconds: 0        # 0 = no limit
+  # never | max_size | keep_last
+  retention_policy: "max_size"
+  retention_max_gb: 8.0
+  retention_keep_last: 20
+
+# ---------------------------------------------------------------------------
+# Timelapse
+#
+# "layer" mode needs a macro in printer.cfg. Neptune Remote NEVER edits
+# printer.cfg - GET /api/timelapse/macro returns the snippet to copy.
+# ---------------------------------------------------------------------------
+timelapse:
+  mode: "off"           # off | interval | layer
+  interval_seconds: 10
+  output_fps: 25
+  crf: 20
+  min_frames: 12
+  max_frames: 20000
+  keep_frames: false
+
+# ---------------------------------------------------------------------------
+# Local print-failure detection
+#
+# Runs entirely on the Pi. No frame ever leaves the machine.
+#   provider: heuristic -> rule-based, needs no model file
+#             onnx      -> your own ONNX model (see docs/AI.md)
+#             disabled  -> off
+#   mode:     off | monitor | warn | auto_pause   (default: warn)
+# The detector can pause a print. It can NEVER switch mains power off.
+# ---------------------------------------------------------------------------
+vision:
+  mode: "warn"
+  provider: "heuristic"
+  model_path: ""
+  labels: []
+  input_size: 320
+  execution_providers: ["CPUExecutionProvider"]
+  fallback_to_heuristic: true
+
+  interval_seconds: 5.0
+  first_layer_seconds: 600
+  first_layer_interval_seconds: 3.0
+  min_confidence: 0.55
+  confirmations: 3
+  window_seconds: 30
+  cooldown_seconds: 180
+  only_while_printing: true
+  max_events: 500
+
+  # Back off automatically so Klipper always keeps its CPU.
+  throttle_cpu_percent: 80
+  throttle_temp_c: 75
+
+  roi: null
+  edge_growth_threshold: 1.55
+  change_threshold: 0.28
+
+# ---------------------------------------------------------------------------
+# Notifications
+#
+# These are the ONLY alerts that reach you while the app is closed. The app's
+# own WebSocket needs the app open and in the foreground, which is exactly not
+# the case when you are out of the house and the printer needs you.
+#
+# ntfy is the shortest path to a locked iPhone: free, no account, no Apple
+# developer programme. Pick a long random topic - the topic name IS the
+# password, anyone who guesses it reads your notifications.
+#
+#   1. install the "ntfy" app from the App Store
+#   2. subscribe it to the same topic you write below
+#   3. curl -d "hello" https://ntfy.sh/<your-topic>   (should buzz your phone)
+#
+# Never put these tokens in config.example.yaml or any file you commit.
+# ---------------------------------------------------------------------------
+notifications:
+  enabled: true
+  language: "ar"            # ar | en
+
+  # Empty = the built-in default set (everything except progress chatter).
+  # Run GET /api/alerts/preferences to see every available kind.
+  events: []
+  # The Pi owner's veto: these never notify, whatever the app asks for.
+  muted: []
+
+  min_priority: "low"       # min | low | default | high | urgent
+  dedupe_seconds: 120       # the same message inside this window is sent once
+  max_per_hour: 40
+  retries: 2
+
+  # Urgent events - power loss, filament runout, Klipper errors - ignore quiet
+  # hours entirely. That is deliberate: they are the ones that need a human.
+  quiet_hours:
+    enabled: false
+    start_hour: 23
+    end_hour: 8
+
+  ntfy:
+    enabled: false
+    server: "https://ntfy.sh"
+    topic: ""               # e.g. "neptune-a7f3c1d9e2" - make it unguessable
+    token: ""               # only for a private/self-hosted server
+
+  telegram:
+    enabled: false
+    bot_token: ""           # from @BotFather
+    chat_id: ""             # from https://api.telegram.org/bot<TOKEN>/getUpdates
+
+  webhook:
+    enabled: false
+    url: ""
+    method: "POST"
+    headers: {}
+    body_template: ""       # {title} {message} {kind} {priority} {filename}
+
+  # The dead man's switch.
+  #
+  # Everything above runs ON the Pi, so when the Pi loses power none of it can
+  # tell you anything. This inverts the signal: the Pi pings an outside URL on
+  # a schedule, and that service shouts when the pings STOP.
+  #
+  # Free option: https://healthchecks.io -> new check -> copy its ping URL.
+  # Set its period slightly above interval_seconds and give it a grace period.
+  #
+  # This says "the Pi is alive", nothing about the printer. Do not conflate.
+  heartbeat:
+    enabled: false
+    url: ""
+    interval_seconds: 300
+    method: "GET"
+    fail_suffix: "/fail"
+
+# ---------------------------------------------------------------------------
+# Power loss detection
+#
+# A Klipper shutdown and a power cut look identical in Moonraker's state, so
+# they are told apart by the MCU's USB device: cut mains to the printer and the
+# /dev/serial/by-id/... symlink disappears within a second. A Klipper error
+# unplugs nothing, so the device is still there.
+#
+# serial_path is read from [mcu] in your printer.cfg when left empty. Set it
+# only if your MCU is not on USB (CAN bus, network) or auto-detection fails.
+#
+# While a print runs, its filename/layer/height are mirrored to a small fsync'd
+# file. If the outage also kills the Pi, that file is what lets the backend say
+# on the next boot exactly what died and at which layer.
+# ---------------------------------------------------------------------------
+outage:
+  enabled: true
+  serial_path: ""
+  snapshot_interval_seconds: 20
+  notify_on_restore: true
+  # Cut mains once the Pi is back and a print is known dead. Off by default:
+  # Klipper starts with the heaters off, so a powered idle printer is not
+  # itself dangerous, and turning someone's printer off should be asked for.
+  power_off_after_outage: false

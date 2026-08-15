@@ -1,0 +1,265 @@
+import SwiftUI
+
+struct GCodeDetailView: View {
+    let file: BackendGCodeFile
+
+    @EnvironmentObject private var settings: AppSettings
+    @EnvironmentObject private var printer: PrinterStore
+    @EnvironmentObject private var files: FilesStore
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var metadata: MoonrakerFile?
+    @State private var colorChanges: [ColorChange] = []
+    @State private var shareURL: URL?
+    @State private var showingShare = false
+    @State private var showingChecklist = false
+    @State private var showingDeleteConfirm = false
+    @State private var isWorking = false
+
+    /// Whether the printer is currently working through *this* file, so the
+    /// plan can show which stops have already been passed. Compared by
+    /// basename: Moonraker reports the path it was started with, which is not
+    /// always the path this row carries.
+    private var isThisFilePrinting: Bool {
+        printer.snapshot.isActive
+            && (printer.snapshot.filename as NSString).lastPathComponent == file.filename
+    }
+
+    /// The way into the toolpath preview.
+    ///
+    /// Right under the thumbnail, because a render of the model and a drawing
+    /// of what the slicer produced answer different questions, and the second
+    /// one is the question you have just before pressing Print.
+    private var previewLink: some View {
+        NavigationLink {
+            ToolpathPreviewView(filename: file.filename, settings: settings, printer: printer)
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "square.3.layers.3d")
+                    .font(.title3)
+                    .foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localized: "preview.open")
+                        .font(.subheadline.weight(.medium))
+                    Text(localized: "preview.title")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.forward")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .card()
+        }
+        .buttonStyle(.plain)
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: Theme.spacing) {
+                // Printing and deleting go through FilesStore, so its error has
+                // to be visible here or the action fails with no sign of it.
+                if let error = files.lastError {
+                    ErrorBanner(
+                        message: error.localizedDescription,
+                        onDismiss: { files.lastError = nil }
+                    )
+                }
+                thumbnailCard
+                previewLink
+                // Before the details and the print button, because it changes
+                // what this print asks of you: you have to be in the room.
+                if !colorChanges.isEmpty {
+                    ColorPlanList(
+                        changes: colorChanges,
+                        currentLayer: isThisFilePrinting ? printer.snapshot.currentLayer : nil
+                    )
+                    .card()
+                }
+                detailsCard
+                actionsCard
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 32)
+        }
+        .background(Theme.pageFill)
+        .navigationTitle(file.filename)
+        .navigationBarTitleDisplayMode(.inline)
+        .task {
+            metadata = await files.metadata(for: file)
+            colorChanges = await files.colorChanges(for: file)
+        }
+        .sheet(isPresented: $showingShare) {
+            if let shareURL { ShareSheet(items: [shareURL]) }
+        }
+        .sheet(isPresented: $showingChecklist) {
+            PrintChecklistView {
+                Task {
+                    let started = await files.startPrint(file)
+                    showingChecklist = false
+                    // Staying put on a refusal is the point: this screen shows
+                    // `files.lastError`, and dismissing would take the message
+                    // away with it.
+                    if started { dismiss() }
+                }
+            }
+            .presentationDetents([.medium])
+        }
+        .confirmationDialog(
+            L.t("files.delete.confirm"),
+            isPresented: $showingDeleteConfirm,
+            titleVisibility: .visible
+        ) {
+            Button(L.t("common.delete"), role: .destructive) {
+                Task {
+                    await files.delete(file)
+                    dismiss()
+                }
+            }
+            Button(L.t("common.cancel"), role: .cancel) {}
+        }
+    }
+
+    private var thumbnailURL: URL? {
+        guard let path = file.thumbnailPath ?? metadata?.thumbnailPath else { return nil }
+        return printer.thumbnailURL(for: path)
+    }
+
+    private var thumbnailCard: some View {
+        ZStack {
+            if let thumbnailURL {
+                AsyncImage(url: thumbnailURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image.resizable().scaledToFit()
+                    case .failure:
+                        placeholder
+                    default:
+                        ProgressView()
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 200)
+            } else {
+                placeholder.frame(height: 160)
+            }
+        }
+        .card()
+    }
+
+    private var placeholder: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "doc.text")
+                .font(.system(size: 40))
+                .foregroundStyle(Theme.accent.opacity(0.6))
+            Text(localized: "files.no_thumbnail")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var detailsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SectionHeader("files.details", systemImage: "info.circle")
+            InfoRow(titleKey: "files.name", value: file.filename)
+            InfoRow(titleKey: "files.size", value: Format.fileSize(file.size))
+            InfoRow(titleKey: "files.modified", value: Format.date(file.modified))
+            InfoRow(titleKey: "files.estimated_time", value: Format.duration(file.estimatedTime))
+            if let grams = file.filamentWeightG {
+                InfoRow(titleKey: "files.filament_weight", value: Format.grams(grams))
+            }
+            if let mm = file.filamentTotalMM {
+                InfoRow(titleKey: "files.filament_length", value: Format.meters(mm / 1000))
+            }
+            if let height = file.layerHeight {
+                InfoRow(titleKey: "files.layer_height", value: String(format: "%.2f mm", height))
+            }
+            if let first = file.firstLayerHeight {
+                InfoRow(titleKey: "files.first_layer_height", value: String(format: "%.2f mm", first))
+            }
+            if let objectHeight = file.objectHeight {
+                InfoRow(titleKey: "files.object_height", value: String(format: "%.1f mm", objectHeight))
+            }
+            if let type = file.filamentType {
+                InfoRow(titleKey: "files.filament_type", value: type)
+            }
+            if let name = file.filamentName {
+                InfoRow(titleKey: "files.filament_name", value: name)
+            }
+            if let slicer = file.slicer {
+                InfoRow(titleKey: "files.slicer", value: slicer)
+            }
+            if let layers = file.layerCount {
+                InfoRow(titleKey: "files.layers", value: "\(layers)")
+            }
+            InfoRow(titleKey: "files.source", value: file.source)
+        }
+        .card()
+    }
+
+    private var actionsCard: some View {
+        VStack(spacing: 12) {
+            Button {
+                if settings.requirePrintChecklist {
+                    showingChecklist = true
+                } else {
+                    Task {
+                        if await files.startPrint(file) { dismiss() }
+                    }
+                }
+            } label: {
+                Label(L.t("files.print"), systemImage: "printer.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .disabled(printer.snapshot.isActive)
+
+            // The automated counterpart to the manual checklist: it reads the
+            // actual G-code and reports what is wrong with it. It existed,
+            // worked, and had no way in until the reachability check found it.
+            NavigationLink {
+                PreflightView(filename: file.path) {
+                    Task {
+                        if await files.startPrint(file) { dismiss() }
+                    }
+                }
+            } label: {
+                Label(L.t("preflight.open"), systemImage: "checklist.checked")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .disabled(printer.snapshot.isActive)
+
+            Button {
+                Task {
+                    isWorking = true
+                    shareURL = await files.download(file)
+                    isWorking = false
+                    showingShare = shareURL != nil
+                }
+            } label: {
+                HStack {
+                    if isWorking { ProgressView().controlSize(.small) }
+                    Label(L.t("files.share"), systemImage: "square.and.arrow.up")
+                }
+                .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+
+            Button(role: .destructive) {
+                showingDeleteConfirm = true
+            } label: {
+                Label(L.t("common.delete"), systemImage: "trash")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+        }
+        .card()
+    }
+}

@@ -1,0 +1,142 @@
+name: Build unsigned IPA
+
+on:
+  push:
+    branches: ["claude/**", "main"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  # head_ref on pull_request, ref on push: a branch with an open PR then
+  # shares one group instead of burning two macOS runners per commit.
+  # Both keys resolve to the bare branch name, so the push and pull_request
+  # events for one commit share a group instead of running the macOS job twice.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  # Cheap checks first: they catch most breakage without burning a macOS runner.
+  verify:
+    name: Backend tests and project checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: neptune-remote
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install backend dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r raspberry-pi/requirements.txt
+          pip install pytest pytest-asyncio
+
+      - name: Backend test suite
+        run: python -m pytest -q
+        working-directory: neptune-remote/raspberry-pi
+
+      - name: Project, localisation and secret checks
+        run: python scripts/verify_project.py
+
+  build:
+    name: Unsigned IPA
+    needs: verify
+    runs-on: macos-14
+    # Needed to publish the IPA as a release asset.
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: neptune-remote
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.4.app
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Regenerate the Xcode project
+        run: python3 scripts/generate_xcodeproj.py
+
+      - name: iOS unit tests
+        # pipefail matters: without it the pipe through xcpretty swallows
+        # xcodebuild's exit status and a failing build reports success.
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ios/NeptuneRemote.xcodeproj \
+            -scheme NeptuneRemote \
+            -destination 'platform=iOS Simulator,name=iPhone 15' \
+            CODE_SIGNING_ALLOWED=NO \
+            | xcpretty
+
+      - name: Build the unsigned IPA
+        run: bash ./scripts/build_unsigned_ipa.sh
+
+      - name: Upload the IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: NeptuneRemote-unsigned-ipa
+          path: neptune-remote/dist/*.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: neptune-remote/dist/*.log
+          if-no-files-found: ignore
+
+      # A workflow artifact is always served as a ZIP and always needs a GitHub
+      # login, so it cannot be installed from the phone that is going to run it
+      # - iOS just reports the download as an unsupported file. A release asset
+      # is the raw .ipa on a permanent, unauthenticated URL, which is what
+      # sideloading tools take directly.
+      #
+      # One rolling tag, replaced on every build of this branch.
+      # Publishes on a push *or* a same-repository pull request. Gating on
+      # push alone was wrong: the concurrency group cancels one run of each
+      # push/pull_request pair and which one survives is not deterministic, so
+      # the release step was skipped whenever the pull_request run was the one
+      # that lived. Fork pull requests are excluded because their token is
+      # read-only and gh release would fail.
+      - name: Publish the IPA as a rolling pre-release
+        if: >-
+          github.event_name == 'push' ||
+          github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="latest-ios"
+          SHA256="$(shasum -a 256 dist/NeptuneRemote-unsigned.ipa | cut -d' ' -f1)"
+          NOTES="Unsigned IPA, built from ${GITHUB_SHA}.
+
+          Not code signed. Sign it yourself, or install it with a sideloading
+          tool such as Sideloadly or AltStore. See docs/BUILD_IPA.md.
+
+          SHA-256: ${SHA256}"
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release edit "${TAG}" --notes "${NOTES}" --prerelease
+            gh release upload "${TAG}" dist/NeptuneRemote-unsigned.ipa --clobber
+          else
+            gh release create "${TAG}" dist/NeptuneRemote-unsigned.ipa \
+              --title "Neptune Remote - unsigned IPA" \
+              --notes "${NOTES}" \
+              --prerelease
+          fi
+
+          echo "Direct download:"
+          echo "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/NeptuneRemote-unsigned.ipa"

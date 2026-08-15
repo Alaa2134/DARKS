@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Same App Group as the app and the widget: the extension stages files
+	     here and the app picks them up. No credentials are shared. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.neptune.remote</string>
+	</array>
+</dict>
+</plist>

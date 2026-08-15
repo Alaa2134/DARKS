@@ -1,0 +1,33 @@
+# --- Secrets: never commit real credentials -------------------------------
+raspberry-pi/config.yaml
+raspberry-pi/.env
+*.pem
+*.key
+
+# --- Python ---------------------------------------------------------------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+*.egg-info/
+
+# --- Runtime data (lives under ~/printer_data/neptune_remote on the Pi) ---
+raspberry-pi/data/
+raspberry-pi/uploads/
+raspberry-pi/output/
+*.db
+*.db-wal
+*.db-shm
+
+# --- Xcode ----------------------------------------------------------------
+ios/build/
+ios/DerivedData/
+ios/*.xcodeproj/xcuserdata/
+ios/*.xcodeproj/project.xcworkspace/xcuserdata/
+ios/**/*.xcuserstate
+dist/
+
+# --- macOS ----------------------------------------------------------------
+.DS_Store

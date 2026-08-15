@@ -1,0 +1,4 @@
+# Optional: local AI print-failure detection with ONNX Runtime.
+# Install with scripts/install_vision.sh - the backend works fine without it
+# (it falls back to the rule-based heuristic monitor).
+onnxruntime>=1.16
