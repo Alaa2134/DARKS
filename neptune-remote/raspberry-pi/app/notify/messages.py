@@ -167,6 +167,20 @@ TEMPLATES: Dict[str, Template] = {
         priority=Priority.DEFAULT,
         tags=("white_check_mark", "package"),
     ),
+    "queue_started_next": Template(
+        ar="الطابور بدأ اللي بعدها",
+        en="The queue started the next job",
+        priority=Priority.DEFAULT,
+        tags=("printer", "arrow_forward"),
+    ),
+    # Sent rather than swallowed: an automatic queue that quietly stops is a
+    # queue you find idle in the morning with no idea why.
+    "queue_auto_blocked": Template(
+        ar="الطابور وقف",
+        en="The queue stopped itself",
+        priority=Priority.HIGH,
+        tags=("warning", "pause_button"),
+    ),
     "eject_failed": Template(
         ar="مقدرتش أزق القطعة",
         en="Could not sweep the part off",

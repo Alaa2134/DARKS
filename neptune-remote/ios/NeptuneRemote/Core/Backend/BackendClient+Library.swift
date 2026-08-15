@@ -592,6 +592,22 @@ extension BackendClient {
 
     // MARK: - Queue
 
+    /// Whether the queue may sweep the bed and start the next job by itself,
+    /// and what is standing in the way if it may not.
+    func queueAutomation() async throws -> QueueAutomation {
+        try await decode(QueueAutomation.self, path: "queue/auto")
+    }
+
+    @discardableResult
+    func setQueueAutomation(enabled: Bool) async throws -> QueueAutomation {
+        try await decode(
+            QueueAutomation.self,
+            path: "queue/auto",
+            method: "POST",
+            body: try await http.encodeBody(["enabled": enabled])
+        )
+    }
+
     func queueState() async throws -> QueueState {
         try await decode(QueueState.self, path: "queue")
     }

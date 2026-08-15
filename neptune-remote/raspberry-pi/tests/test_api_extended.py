@@ -595,3 +595,40 @@ def test_websocket_sends_a_summary_snapshot(client: TestClient):
         printer = websocket.receive_json()
         assert printer["type"] == "printer"
         assert "item" in printer["payload"]
+
+
+
+# --------------------------------------------------------------------------- #
+# A queue that runs itself
+#
+# The confirmation that the bed is clear is the whole safety of the queue. This
+# does not remove it - it earns it, by sweeping with the printer's own macro.
+# --------------------------------------------------------------------------- #
+
+
+class TestAutomaticQueue:
+    def test_it_is_off_until_somebody_turns_it_on(self, client):
+        body = client.get("/api/queue/auto").json()
+
+        assert body["enabled"] is False
+        assert body["action"] == "idle"
+
+    def test_turning_it_on_sticks(self, client):
+        client.post("/api/queue/auto", json={"enabled": True})
+
+        assert client.get("/api/queue/auto").json()["enabled"] is True
+
+    def test_turning_it_on_without_the_macro_says_what_is_missing(self, client):
+        # Allowed and reported rather than refused: the switch is the user
+        # saying what they want, and the screen shows what is still needed.
+        body = client.post("/api/queue/auto", json={"enabled": True}).json()
+
+        assert body["enabled"] is True
+        assert body["has_eject_macro"] is False
+        assert any("EJECT_PART" in problem for problem in body["blockers_ar"])
+
+    def test_it_can_be_switched_off_again(self, client):
+        client.post("/api/queue/auto", json={"enabled": True})
+        body = client.post("/api/queue/auto", json={"enabled": False}).json()
+
+        assert body["enabled"] is False

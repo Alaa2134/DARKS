@@ -1,10 +1,16 @@
 import SwiftUI
 
-/// A queue that never starts anything on its own.
+/// A queue that starts nothing without a clear bed.
 ///
-/// The only way the next job begins is: the user confirms the bed is clear,
-/// then taps start. The backend consumes that confirmation on every start, so
-/// it can never carry over to a second job.
+/// By default the only way the next job begins is: the user confirms the bed is
+/// clear, then taps start. The backend consumes that confirmation on every
+/// start, so it can never carry over to a second job.
+///
+/// Switching automation on does not remove that confirmation - it earns it. The
+/// printer sweeps the finished part off with its own `EJECT_PART` macro once
+/// the bed is cold, and a sweep that ran is the answer. No macro, no automatic
+/// anything: guessing at toolhead moves for a machine we cannot see is how a
+/// gantry gets driven into a part.
 struct QueueView: View {
     @EnvironmentObject private var inventory: InventoryStore
     @EnvironmentObject private var printer: PrinterStore
@@ -21,6 +27,7 @@ struct QueueView: View {
                 }
 
                 bedClearCard
+                automationCard
 
                 if inventory.queue.jobs.isEmpty {
                     EmptyStateView(
@@ -38,8 +45,51 @@ struct QueueView: View {
         .background(Theme.pageFill)
         .navigationTitle(L.t("queue.title"))
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await inventory.loadQueue() }
-        .task { await inventory.loadQueue() }
+        .refreshable {
+            await inventory.loadQueue()
+            await inventory.loadAutomation()
+        }
+        .task {
+            await inventory.loadQueue()
+            await inventory.loadAutomation()
+        }
+    }
+
+    /// The switch, and an honest account of whether it can do anything.
+    private var automationCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Toggle(isOn: Binding(
+                get: { inventory.automation.enabled },
+                set: { value in Task { await inventory.setAutomation(value) } }
+            )) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localized: "queue.auto.title")
+                        .font(.subheadline.weight(.medium))
+                    Text(localized: "queue.auto.explain")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            // Shown whether or not the switch is on: knowing the macro is
+            // missing *before* turning it on and walking away is the whole
+            // point of saying it.
+            ForEach(inventory.automation.blockersAr, id: \.self) { problem in
+                Label(problem, systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(Theme.paused)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if inventory.automation.enabled, !inventory.automation.detailAr.isEmpty {
+                Text(inventory.automation.detailAr)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .card()
     }
 
     private var bedClearCard: some View {

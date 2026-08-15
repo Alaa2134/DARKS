@@ -90,6 +90,10 @@ STATE_KEY_TOTAL_HOURS = "printer.total_print_hours"
 STATE_KEY_TOTAL_PRINTS = "printer.total_prints"
 STATE_KEY_TOTAL_FILAMENT = "printer.total_filament_grams"
 STATE_KEY_LAST_SCREWS = "calibration.last_screws"
+#: Whether the queue may sweep the bed and start the next job by itself.
+#: Kept in the database rather than config.yaml: it is a decision the user makes
+#: in the app, and one they will want to switch off from the app in a hurry.
+STATE_KEY_QUEUE_AUTO = "queue.auto_continue"
 
 
 class AppState:
@@ -1018,6 +1022,13 @@ class AppState:
                     self.queue.mark(job.id, "done" if result == "completed" else "failed")
             self.queue.set_bed_clear(False)
 
+        # ...and, if the user asked for it, earn that clear bed back by
+        # sweeping. Arming rather than sweeping: the ejector waits for a real
+        # temperature reading, so the part is only pushed once it will actually
+        # release.
+        with contextlib.suppress(Exception):
+            await self._arm_queue_continuation(result)
+
         # Maintenance reminders.
         with contextlib.suppress(Exception):
             due = self._maintenance_due()
@@ -1266,6 +1277,84 @@ class AppState:
             for section in config.sections_of_kind("gcode_macro")
         )
 
+    @property
+    def queue_auto_continue(self) -> bool:
+        return bool(self.db.get_state(STATE_KEY_QUEUE_AUTO, False))
+
+    def set_queue_auto_continue(self, value: bool) -> None:
+        self.db.set_state(STATE_KEY_QUEUE_AUTO, bool(value))
+
+    async def queue_auto_conditions(self, *, last_result: str = "") -> "auto.Conditions":
+        """Everything the automatic queue depends on, gathered in one place."""
+        from .printqueue import auto
+
+        config = None
+        with contextlib.suppress(Exception):
+            config = await self.refresh_live_config()
+        state = self.queue.state(printer_state=self.last_status.state)
+        return auto.Conditions(
+            enabled=self.queue_auto_continue,
+            has_eject_macro=bool(config and self._has_eject_macro(config)),
+            printer_state=self.last_status.state,
+            last_result=last_result,
+            bed_temp=self.last_status.bed.actual,
+            nozzle_temp=self.last_status.nozzle.actual,
+            bed_clear=state.bed_clear,
+            waiting_jobs=len([job for job in state.jobs if job.status == "waiting"]),
+        )
+
+    async def _arm_queue_continuation(self, result: str) -> None:
+        """Set the sweep going after a print that finished, if asked to.
+
+        Only after `completed`. A cancelled or failed print leaves something on
+        the bed that nobody has looked at, and the next job would print on top
+        of whatever went wrong.
+        """
+        from .printqueue import auto
+
+        conditions = await self.queue_auto_conditions(last_result=result)
+        decision = auto.decide(conditions)
+        if decision.action == "sweep":
+            self.eject.start(max_nozzle_c=auto.NOZZLE_SAFE_C)
+            log.info("Queue: armed the ejector to clear the bed for the next job")
+        elif decision.action == "blocked":
+            await self._emit_event(
+                "queue_auto_blocked",
+                "الطابور وقف",
+                decision.detail_ar or "الطابور مش هيكمّل لوحده دلوقتي.",
+            )
+
+    async def _continue_queue_after_sweep(self) -> None:
+        """Start the next job now that the bed has actually been cleared.
+
+        The sweep is the confirmation. Nothing else is allowed to set it: a bed
+        marked clear by a timer is a bed nobody looked at.
+        """
+        from .moonraker import MoonrakerError
+
+        if not self.queue_auto_continue:
+            return
+        self.queue.set_bed_clear(True)
+        job = self.queue.take_next(printer_state=self.last_status.state)
+        if job is None:
+            return
+        try:
+            await self.moonraker.start_print(job.gcode_path)
+        except MoonrakerError as exc:
+            self.queue.mark(job.id, "waiting")
+            self.set_queue_auto_continue(False)
+            await self._emit_event(
+                "queue_auto_blocked",
+                "الطابور وقف",
+                f"مقدرتش أبدأ «{job.gcode_path}»: {exc.message}",
+            )
+            return
+        await self._emit_event(
+            "queue_started_next",
+            "بدأت اللي بعدها",
+            f"السرير اتكنس والطابعة بدأت «{job.gcode_path}».",
+        )
+
     async def _check_armed_eject(self, status: PrinterStatusResponse) -> None:
         """Fire the sweep the moment this reading says it is safe.
 
@@ -1289,6 +1378,9 @@ class AppState:
             return
 
         self.eject.record_fired(True)
+        # The sweep is what earns the "bed is clear" the queue insists on.
+        with contextlib.suppress(Exception):
+            await self._continue_queue_after_sweep()
         await self._emit_event(
             "part_ejected",
             "القطعة اتزقت",

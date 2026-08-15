@@ -282,6 +282,24 @@ final class InventoryStore: ObservableObject {
 
     // MARK: - Print queue
 
+    /// Whether the queue may run itself, and what is stopping it.
+    @Published private(set) var automation = QueueAutomation()
+
+    func loadAutomation() async {
+        guard !settings.demoMode else { return }
+        if let fresh = try? await printer.backend.queueAutomation() { automation = fresh }
+    }
+
+    func setAutomation(_ enabled: Bool) async {
+        guard !settings.demoMode else { return }
+        do {
+            automation = try await printer.backend.setQueueAutomation(enabled: enabled)
+            Haptics.selection()
+        } catch {
+            lastError = APIError.from(error, host: settings.host)
+        }
+    }
+
     func loadQueue() async {
         guard !settings.demoMode else {
             queue = DemoInventory.queue

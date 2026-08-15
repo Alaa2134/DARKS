@@ -278,6 +278,37 @@ async def confirm_bed_clear(
     return state.queue.state(printer_state=state.last_status.state)
 
 
+@router.get("/queue/auto")
+async def queue_auto_status(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """Whether the queue may run itself, and what is stopping it."""
+    from ..printqueue import auto
+
+    conditions = await state.queue_auto_conditions()
+    decision = auto.decide(conditions)
+    return {
+        "enabled": conditions.enabled,
+        "has_eject_macro": conditions.has_eject_macro,
+        "action": decision.action,
+        "reason_key": decision.reason_key,
+        "detail_ar": decision.detail_ar,
+        "blockers_ar": auto.blockers(conditions),
+    }
+
+
+@router.post("/queue/auto")
+async def set_queue_auto(
+    enabled: bool = Body(..., embed=True), state: AppState = Depends(get_state)
+) -> Dict[str, Any]:
+    """Turn the automatic queue on or off.
+
+    Turning it on with no ejector macro installed is allowed and reported
+    rather than refused: the switch is the user saying what they want, and the
+    screen shows what is still missing for it to happen.
+    """
+    state.set_queue_auto_continue(enabled)
+    return await queue_auto_status(state)
+
+
 @router.post("/queue/start-next")
 async def start_next_job(state: AppState = Depends(get_state)) -> Dict[str, Any]:
     """Start the next queued print - only if the bed was confirmed clear."""

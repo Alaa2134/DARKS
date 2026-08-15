@@ -1634,3 +1634,48 @@ struct PTZStatus: Decodable, Equatable {
     /// actually answered to rather than what the box claimed.
     var hasOpticalZoom: Bool { directions.contains("zoom_in") }
 }
+
+/// Whether the queue runs itself, and what is stopping it.
+///
+/// The bed-clear confirmation is the whole safety of the queue: a second print
+/// started on top of the first is a ruined plate. This does not remove that
+/// confirmation - it earns it, by sweeping with the printer's own EJECT_PART
+/// macro and treating a successful sweep as the answer.
+struct QueueAutomation: Decodable, Equatable {
+    var enabled = false
+    /// False on a printer where the macro was never installed. The switch is
+    /// still offered - it is the user saying what they want - and this is what
+    /// the screen shows instead of pretending it will happen.
+    var hasEjectMacro = false
+    /// sweep | start | wait | idle | blocked
+    var action = "idle"
+    var reasonKey = ""
+    var detailAr = ""
+    var blockersAr: [String] = []
+
+    var isBlocked: Bool { action == "blocked" }
+
+    enum CodingKeys: String, CodingKey {
+        case enabled, action
+        case hasEjectMacro = "has_eject_macro"
+        case reasonKey = "reason_key"
+        case detailAr = "detail_ar"
+        case blockersAr = "blockers_ar"
+    }
+
+    /// Written out: a synthesised decoder ignores default values entirely, so a
+    /// response that leaves out a field it had no reason to send would fail to
+    /// decode at all.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+        hasEjectMacro = try container.decodeIfPresent(Bool.self, forKey: .hasEjectMacro) ?? false
+        action = try container.decodeIfPresent(String.self, forKey: .action) ?? "idle"
+        reasonKey = try container.decodeIfPresent(String.self, forKey: .reasonKey) ?? ""
+        detailAr = try container.decodeIfPresent(String.self, forKey: .detailAr) ?? ""
+        blockersAr = try container.decodeIfPresent([String].self, forKey: .blockersAr) ?? []
+    }
+
+    init() {}
+}
+

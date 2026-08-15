@@ -199,11 +199,34 @@ lands and CI must be checked after.
   slow handler reaches its blocking call. Verified by reverting one endpoint
   and watching the test fail.
 
+### Carrying on after a power cut
+- `GET /api/alerts/outage/resume` joins two things that already existed: the Pi
+  knew a print died and at which layer, and it could build a file starting from
+  a layer. Offers the layer **before** the recorded one (the layer it was on is
+  the one that did not finish), carries the file's real layer count, and
+  declines plainly for a Moonraker-only file or a file that no longer has that
+  layer.
+- The offer lives on the outage card itself (Home + alerts screen) — that card
+  is the moment the user finds out.
+
+### A queue that runs itself
+- `app/printqueue/auto.py` — the decision only, so every branch that ends in the
+  toolhead moving is provable without a printer (18 tests).
+- The bed-clear confirmation is not removed, it is **earned**: after a
+  *completed* print the ejector is armed, the existing `EjectWaiter` fires it
+  once the bed is genuinely cold, and a successful sweep sets `bed_clear` and
+  starts the next job. No `EJECT_PART` macro → nothing automatic happens at all.
+  A cancelled or failed print stops it dead; a failed sweep is never retried.
+- `GET/POST /api/queue/auto`, a switch on `QueueView` that shows its blockers
+  whether or not it is on, and `queue_started_next` / `queue_auto_blocked`
+  notifications — a queue that quietly stops is one you find idle in the morning
+  with no idea why.
+
 ---
 
 ## Current state
 
-- Backend: **1261 tests passing**.
+- Backend: **1290 tests passing**.
 - iOS: **~300 tests**. Last full CI run (`f931fd3`) compiled the whole app and
   ran 295 tests with **one failure — a wrong assertion in my own test**
   (`[0,0,1,1]` is two points, not one). Fixed, not yet re-run.

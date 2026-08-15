@@ -1743,3 +1743,5 @@
 "alerts.test.local.sent" = "Sent. If nothing arrives within a couple of seconds, permission is off in iOS Settings.";
 "alerts.outage.resume" = "Carry on from layer %d";
 "alerts.outage.resume.note" = "Look at the bed first: if the part moved or came off, resuming prints into the air. The app only prepares the file - pressing Print is yours.";
+"queue.auto.title" = "Run the queue by itself";
+"queue.auto.explain" = "When a print finishes and the bed goes cold, the printer sweeps the part off with its EJECT_PART macro and starts the next job. The sweep is the confirmation that the bed is clear - with no macro installed, nothing automatic happens. A cancelled or failed print stops the queue immediately.";
