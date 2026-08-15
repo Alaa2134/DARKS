@@ -199,14 +199,34 @@ lands and CI must be checked after.
 
 ## Next step
 
-1. Confirm CI green for the import / projects / quantities batches.
-2. **Per-object *settings*** (different infill or supports per part) is the one
-   piece of S5 still missing, and it is the expensive one: PrusaSlicer's CLI has
-   no per-object config for STL input at all — it needs a 3MF project file with
-   per-object modifiers written by us. Worth doing only after the simpler wins.
-3. Simpler wins still open: a project's own thumbnail (currently the first
-   part's), and remembering a project's slice profile so "print it again" is one
-   tap.
+Nothing in the plan is half-built; what remains is either expensive or belongs
+to the user's own machine.
+
+**Code, in order of value:**
+1. **A project remembers how it was sliced.** `successful_profile` already
+   exists per item; a project has nowhere to keep one. The `app_state` key/value
+   table would hold it without a migration, and it turns "print the whole thing
+   again" into one tap.
+2. **Per-object settings** (different infill or supports per part on one plate).
+   PrusaSlicer's CLI has no per-object config for STL input at all - it needs a
+   3MF project file with per-object modifiers written by us. Real work, and the
+   only piece of S5 still missing.
+3. **Orca cannot do plates.** `OrcaSlicerEngine` refuses more than one model by
+   name rather than guessing a flag. Fine while the engine is PrusaSlicer.
+
+**Known limits, stated rather than hidden:**
+- Import works from a direct file link or a ZIP. Printables and MakerWorld pages
+  need a login; Thingiverse needs `library.thingiverse_key` in `config.yaml`.
+- Background notifications are a safety net on iOS's schedule (15-60 min, never
+  in Low Power Mode). Instant delivery with the app terminated needs APNs, a
+  push server and a paid developer account. The Pi's ntfy/Telegram channels are
+  the way to get that today.
+
+**Waiting on the user's machine (blocks a first successful print):**
+1. Install the generated `printer.cfg`, then `FIRMWARE_RESTART`.
+2. المعايرة ← فحص البروب - never been run, and the probe has never been tested.
+3. Level the bed screws with the numbers that screen gives.
+4. A small test print.
 
 ## Three mistakes worth not repeating
 
