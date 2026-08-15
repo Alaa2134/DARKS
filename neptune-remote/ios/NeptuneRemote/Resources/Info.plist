@@ -104,6 +104,14 @@
 	<array>
 		<string>fetch</string>
 	</array>
+	<!-- Wakes the app to check the printer and post a local notification. The
+	     identifier must match BackgroundWatch.refreshIdentifier: a task
+	     submitted under an unlisted identifier throws, and the throw is the
+	     only sign anything is wrong. -->
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.neptune.remote.refresh</string>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<!-- Lock screen / Dynamic Island print progress. -->

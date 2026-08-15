@@ -140,11 +140,35 @@ lands and CI must be checked after.
   licence`, `LibraryStore.importFromURL`, `ImportLinkView` (link field forced
   LTR so a pasted URL is not reordered), reachable from the library's menu.
 
+### Projects (L2)
+- A project is a collection with parts in it, shown as one thing:
+  `Features/Library/ProjectView.swift` (parts grid, tallest part, slice the lot,
+  open the plate, rename, remove a part), a projects shelf on `LibraryView`, and
+  "add to a project" on `ModelDetailView`. `ProjectRoute` is its own navigation
+  type - a bare `String` already means "a model".
+- `PATCH /api/collections/{id}` renames one. Deleting a project deletes the
+  grouping and nothing else; the confirmation says so rather than asking "are
+  you sure".
+
+### How many of each part (S5, in the useful direction)
+- `copies` multiplies the whole plate, so "four clips and one lid" could not be
+  asked for at all. `quantities` is per model, on both `ArrangeRequest` and
+  `SliceRequest`; `arrange.expand()` turns it into one **instance** per copy
+  (`abc`, `abc#2`, `abc#3` - the first keeps the model's own id, so everything
+  that only ever dealt in single parts is untouched).
+- The job runner expands instances and writes a placed mesh per copy, so a
+  dragged copy keeps its own spot. Capped at 25 on both sides.
+- iOS: `PlacementStore.quantity/setQuantity/instances/quantityPayload`, steppers
+  on `PlateView`, part count on `SliceView` counted in parts rather than models.
+- `tests/test_slice_plate.py` is the first test of `SliceJobManager` at all -
+  the expansion sits between the request and the command line and nothing else
+  looks at it.
+
 ---
 
 ## Current state
 
-- Backend: **1233 tests passing**.
+- Backend: **1257 tests passing**.
 - iOS: **~300 tests**. Last full CI run (`f931fd3`) compiled the whole app and
   ran 295 tests with **one failure — a wrong assertion in my own test**
   (`[0,0,1,1]` is two points, not one). Fixed, not yet re-run.
@@ -154,15 +178,16 @@ lands and CI must be checked after.
 
 ## Next step
 
-1. Confirm CI green for the plate-arrangement and import batches.
-2. **L2 — a model as a project rather than a single file.** The import already
-   produces one, but only as a collection: the parts are separate items that
-   happen to share a folder. A project wants its own screen — all parts, one
-   plate, one slice, one print.
-3. **S5 — per-object settings** (different infill or supports per part on the
-   same plate).
+1. Confirm CI green for the import / projects / quantities batches.
+2. **Per-object *settings*** (different infill or supports per part) is the one
+   piece of S5 still missing, and it is the expensive one: PrusaSlicer's CLI has
+   no per-object config for STL input at all — it needs a 3MF project file with
+   per-object modifiers written by us. Worth doing only after the simpler wins.
+3. Simpler wins still open: a project's own thumbnail (currently the first
+   part's), and remembering a project's slice profile so "print it again" is one
+   tap.
 
-## Two mistakes worth not repeating
+## Three mistakes worth not repeating
 
 - I used `BackupInfo`/`deleteBackup` without checking they were free. They were
   not. **grep for a name before using it** — `verify_project.py` does not
@@ -170,6 +195,11 @@ lands and CI must be checked after.
 - Fixing that, a blanket string replace over a file I had not read renamed the
   *existing* method too, because its signature was textually identical to mine.
   **Never blanket-replace in a file you have not read.**
+- `ImportResult` was written with default values and a *synthesised* decoder. A
+  synthesised decoder ignores defaults — a missing key throws — so a response
+  without `collection_id` failed to decode entirely. **Any Decodable whose
+  fields the backend may omit needs `init(from:)` written out with
+  `decodeIfPresent`.**
 
 ---
 

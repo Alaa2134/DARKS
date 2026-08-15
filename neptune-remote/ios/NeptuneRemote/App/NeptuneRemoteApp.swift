@@ -34,5 +34,13 @@ struct NeptuneRemoteApp: App {
         .onChange(of: scenePhase) { _, phase in
             environment.handleScenePhase(phase)
         }
+        // The half of notifications that works without a push server: iOS wakes
+        // the app now and then, it asks the Pi one question, and anything that
+        // changed becomes a local notification. Registered here rather than in
+        // an AppDelegate - SwiftUI does the BGTaskScheduler registration for
+        // this identifier itself, and a task registered twice traps at launch.
+        .backgroundTask(.appRefresh(BackgroundWatch.refreshIdentifier)) {
+            await BackgroundWatch.run()
+        }
     }
 }

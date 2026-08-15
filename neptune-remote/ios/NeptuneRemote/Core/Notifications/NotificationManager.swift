@@ -10,17 +10,28 @@ import UserNotifications
 ///
 ///  * local notifications fired from the live WebSocket while the app runs
 ///    (foreground or in the background for as long as iOS keeps the socket),
-///  * a background-refresh task that polls the printer and notifies on change.
+///  * `BackgroundWatch`, which iOS wakes every so often to ask the Pi what
+///    happened and notify about anything that changed.
 ///
 /// Nothing here pretends to be APNs.
 @MainActor
-final class NotificationManager: ObservableObject {
+final class NotificationManager: NSObject, ObservableObject {
 
     @Published private(set) var authorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var lastError: String?
 
     private let center = UNUserNotificationCenter.current()
     private var deliveredEventIDs = Set<String>()
+
+    override init() {
+        super.init()
+        // Without a delegate iOS shows nothing at all while the app is on
+        // screen - it hands the notification to the app and assumes the app
+        // will present it in its own UI. So every alert raised while the user
+        // was looking at the app was silently swallowed, which is a large part
+        // of "the notifications never arrive".
+        center.delegate = self
+    }
 
     enum Event: String, CaseIterable {
         case printStarted = "print_started"
@@ -149,8 +160,51 @@ final class NotificationManager: ObservableObject {
         }
     }
 
+    /// A notification with nothing behind it, on purpose.
+    ///
+    /// Every other line on the alerts screen is a claim about what *would*
+    /// happen. This one either appears on the lock screen or it does not, which
+    /// separates "the printer never told us" from "iOS is not letting anything
+    /// through" - a distinction nobody should have to make by waiting nine
+    /// hours for a print to end.
+    func postTest() {
+        let content = UNMutableNotificationContent()
+        content.title = L.t("alerts.test.local.title")
+        content.body = L.t("alerts.test.local.body")
+        content.sound = .default
+        content.threadIdentifier = "neptune.printer"
+
+        // Three seconds out rather than immediate, so there is time to lock
+        // the phone and see it arrive the way a real one would.
+        let request = UNNotificationRequest(
+            identifier: "neptune-test-\(Int(Date().timeIntervalSince1970))",
+            content: content,
+            trigger: UNTimeIntervalNotificationTrigger(timeInterval: 3, repeats: false)
+        )
+        center.add(request) { [weak self] error in
+            guard let error else { return }
+            Task { @MainActor in self?.lastError = error.localizedDescription }
+        }
+    }
+
     func clearDelivered() {
         center.removeAllDeliveredNotifications()
         deliveredEventIDs.removeAll()
     }
 }
+
+extension NotificationManager: UNUserNotificationCenterDelegate {
+    /// Show it even when the app is in the foreground.
+    ///
+    /// A banner while the app is open is not noise here: the screen the user is
+    /// on is usually not the printer screen, and an alert that only appears
+    /// when the app is closed is an alert you cannot test.
+    nonisolated func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound, .list])
+    }
+}
+

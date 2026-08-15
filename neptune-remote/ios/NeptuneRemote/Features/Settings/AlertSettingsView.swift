@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Notifications that arrive when the app is closed - and the honest statement
 /// of whether any will.
@@ -12,6 +13,7 @@ struct AlertSettingsView: View {
     @EnvironmentObject private var notifications: NotificationManager
 
     @State private var showingSetupGuide = false
+    @State private var testSent = false
 
     var body: some View {
         List {
@@ -24,6 +26,7 @@ struct AlertSettingsView: View {
             quietHoursSection
             heartbeatSection
             localSection
+            backgroundSection
             powerHistorySection
         }
         .navigationTitle(L.t("alerts.title"))
@@ -313,12 +316,60 @@ struct AlertSettingsView: View {
                         Task { await notifications.requestAuthorization() }
                     }
                 }
+
+                // One tap that answers "is any of this even working". Every
+                // other line on this screen is a claim about what *would*
+                // happen; this one either appears on the lock screen or does
+                // not, and that is the whole question.
+                Button(L.t("alerts.test.local")) {
+                    notifications.postTest()
+                    testSent = true
+                }
+                if testSent {
+                    Text(localized: "alerts.test.local.sent")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
             }
         } header: {
             Text(localized: "alerts.section.local")
         } footer: {
             Text(localized: "alerts.section.local.footer")
         }
+    }
+
+    /// What happens with the app closed, said plainly.
+    ///
+    /// The app used to go completely silent the moment it left the screen -
+    /// every event came over a WebSocket that closed with it - and nothing on
+    /// this screen said so. It now checks in the background, but iOS decides
+    /// how often, so the honest description of the timing belongs here rather
+    /// than in a promise of instant alerts.
+    private var backgroundSection: some View {
+        Section {
+            Text(localized: "alerts.background.explain")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            if backgroundRefreshIsOff {
+                Label(L.t("alerts.background.disabled"), systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(Theme.paused)
+            }
+
+            if let error = BackgroundWatch.lastSchedulingError {
+                Text(error)
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+                    .textSelection(.enabled)
+            }
+        } header: {
+            Text(localized: "alerts.background.title")
+        }
+    }
+
+    private var backgroundRefreshIsOff: Bool {
+        UIApplication.shared.backgroundRefreshStatus != .available
     }
 
     // MARK: - History

@@ -1730,3 +1730,14 @@
 "project.add_to" = "Add to a project";
 "project.new" = "New project";
 "plate.quantity" = "How many of each part";
+
+/* Watching while the app is closed */
+"notification.background.unreachable" = "The printer was printing and the app cannot reach it.";
+"notification.background.back" = "Back in touch - “%@” is running.";
+"alerts.background.title" = "While the app is closed";
+"alerts.background.explain" = "iOS wakes the app now and then - usually every 15 to 60 minutes, sooner if you open it often, and not at all in Low Power Mode. It asks the Pi what happened and sends a notification if anything did. A safety net rather than a live feed: a print that ends while the app is closed reaches you within the hour, not the second.";
+"alerts.background.disabled" = "Background App Refresh is off for this app. Turn it on in iOS Settings → General → Background App Refresh, or nothing will arrive while the app is closed.";
+"alerts.test.local" = "Send a test notification from the app";
+"alerts.test.local.title" = "Test notification";
+"alerts.test.local.body" = "If you can see this, notifications are working.";
+"alerts.test.local.sent" = "Sent. If nothing arrives within a couple of seconds, permission is off in iOS Settings.";

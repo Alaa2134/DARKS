@@ -178,6 +178,10 @@ final class AppEnvironment: ObservableObject {
     func start() {
         printer.start()
         liveActivity.reattach()
+        // Asked for at launch as well as on the way out: a phone that is never
+        // backgrounded cleanly - killed from the switcher, say - would
+        // otherwise never have a pending request at all.
+        BackgroundWatch.schedule()
         Task {
             await notifications.refreshAuthorizationStatus()
             if settings.notificationsEnabled, notifications.authorizationStatus == .notDetermined {
@@ -220,6 +224,17 @@ final class AppEnvironment: ObservableObject {
         case .background:
             // Keep the widget snapshot fresh, then let the sockets idle out.
             printer.stop()
+            // What the app last saw, written where the background check will
+            // look. Without this a wake-up an hour later compares against a
+            // stale reading and announces a print that finished while the user
+            // was watching it finish.
+            BackgroundWatch.record(
+                state: printer.snapshot.state.rawValue,
+                klippy: printer.snapshot.klippy.rawValue,
+                filename: printer.snapshot.filename,
+                progress: printer.snapshot.progress
+            )
+            BackgroundWatch.schedule()
         default:
             break
         }
