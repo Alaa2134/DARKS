@@ -88,5 +88,31 @@ for lang in "${LANGS[@]}"; do
   done
 done
 
+# Short clips of the screens that move - the print rising, the nozzle
+# sweeping, the water drifting - since a still cannot show any of it.
+# Best effort: a recording that fails costs a clip, never the screenshots.
+record() {
+  local screen="$1" lang="$2" appearance="$3"
+  local file="$OUT/video-${lang}-${appearance}-${screen}.mp4"
+  xcrun simctl ui "$UDID" appearance "$appearance"
+  SIMCTL_CHILD_NEPTUNE_SHOWCASE="$screen" \
+  SIMCTL_CHILD_NEPTUNE_SHOWCASE_LANG="$lang" \
+  SIMCTL_CHILD_NEPTUNE_SHOWCASE_APPEARANCE="$appearance" \
+    xcrun simctl launch --terminate-running-process "$UDID" "$BUNDLE" >/dev/null
+  sleep "${SHOT_DELAY:-7}"
+  xcrun simctl io "$UDID" recordVideo --codec=h264 --force "$file" >/dev/null 2>&1 &
+  local recorder=$!
+  sleep "${CLIP_SECONDS:-9}"
+  kill -INT "$recorder" 2>/dev/null || true
+  wait "$recorder" 2>/dev/null || true
+  [[ -s "$file" ]] && echo "    $(basename "$file")" || echo "    (no clip for ${screen})"
+}
+
+echo "==> Recording"
+for clip in home-printing printing; do
+  record "$clip" ar dark || true
+  record "$clip" en dark || true
+done
+
 xcrun simctl terminate "$UDID" "$BUNDLE" 2>/dev/null || true
-echo "==> $(ls "$OUT" | wc -l | tr -d ' ') screenshots in $OUT"
+echo "==> $(ls "$OUT" | wc -l | tr -d ' ') files in $OUT"

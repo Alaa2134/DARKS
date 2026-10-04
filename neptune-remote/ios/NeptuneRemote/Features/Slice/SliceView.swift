@@ -13,6 +13,10 @@ struct SliceView: View {
     @State private var showingChecklist = false
     @State private var modelData: Data?
     @State private var isLoadingPreview = false
+    /// Which model `modelData` belongs to, so a selection made somewhere else
+    /// (a project, one-tap print) still gets its preview, and an import that
+    /// already read the file locally is not downloaded a second time.
+    @State private var previewModelID: String?
 
     private var modelTypes: [UTType] { ModelFileTypes.pickerTypes }
 
@@ -47,6 +51,7 @@ struct SliceView: View {
             .padding(.bottom, 32)
         }
         .background(Theme.pageFill)
+        .task(id: slicing.selectedModel?.id) { await loadPreviewIfNeeded() }
         .navigationTitle(L.t("tab.slice"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -752,13 +757,17 @@ struct SliceView: View {
     // MARK: - Actions
 
     private func select(_ model: BackendModelFile) {
+        // The preview follows the selection: see `loadPreviewIfNeeded`.
         slicing.selectedModel = model
         Haptics.selection()
-        Task {
-            isLoadingPreview = true
-            modelData = await files.modelData(model)
-            isLoadingPreview = false
-        }
+    }
+
+    private func loadPreviewIfNeeded() async {
+        guard let model = slicing.selectedModel, model.id != previewModelID else { return }
+        previewModelID = model.id
+        isLoadingPreview = true
+        modelData = await files.modelData(model)
+        isLoadingPreview = false
     }
 
     private func handleImport(_ result: Result<[URL], Error>) {
@@ -771,6 +780,7 @@ struct SliceView: View {
         guard case .success(let urls) = result, let url = urls.first else { return }
         Task {
             if let model = await files.upload(modelURL: url) {
+                previewModelID = model.id
                 slicing.selectedModel = model
                 isLoadingPreview = true
                 // Read locally so the preview appears instantly. The upload

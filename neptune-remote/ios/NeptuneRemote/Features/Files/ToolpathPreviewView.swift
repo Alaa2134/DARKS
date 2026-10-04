@@ -59,7 +59,7 @@ struct ToolpathPreviewView: View {
             .animation(.neptuneContent, value: store.hasContent)
         }
         .background(Theme.pageFill)
-        .navigationTitle(L.t("preview.title"))
+        .navigationTitle(L.t("toolpath.title"))
         .navigationBarTitleDisplayMode(.inline)
         .task { await store.open(filename: filename) }
         .onDisappear { store.close() }

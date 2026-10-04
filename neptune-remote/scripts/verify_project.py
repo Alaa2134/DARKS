@@ -324,6 +324,15 @@ def check_localization() -> None:
             "; ".join(f"line {number}: {text}" for number, text in malformed[:3]),
         )
 
+    # A key defined twice is silently resolved to one of the two values, so
+    # two screens that meant different things show the same words - which is
+    # how the 3D model preview ended up titled "Toolpath preview".
+    for path in (english_path, arabic_path):
+        keys = [m.group(1) for line in path.read_text(encoding="utf-8").split("\n")
+                if (m := STRING_LINE.match(line))]
+        duplicates = sorted({key for key in keys if keys.count(key) > 1})
+        check(f"{path.parent.name} has no duplicate keys", not duplicates, str(duplicates[:5]))
+
     english = parse_strings(english_path)
     arabic = parse_strings(arabic_path)
 

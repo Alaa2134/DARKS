@@ -20,10 +20,10 @@ struct DiagnosticsView: View {
                     ProgressView().padding(.vertical, 60)
                 } else {
                     EmptyStateView(
-                        titleKey: "diagnostics.title",
+                        titleKey: "system_check.title",
                         messageKey: "diagnostics.redacted",
                         systemImage: "checklist",
-                        actionTitleKey: "diagnostics.run"
+                        actionTitleKey: "system_check.run"
                     ) {
                         Task { await support.runDiagnostics() }
                     }
@@ -32,7 +32,7 @@ struct DiagnosticsView: View {
             .padding(Theme.spacing)
         }
         .background(Theme.pageFill)
-        .navigationTitle(L.t("diagnostics.title"))
+        .navigationTitle(L.t("system_check.title"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

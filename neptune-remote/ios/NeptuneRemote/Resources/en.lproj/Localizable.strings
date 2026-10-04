@@ -609,6 +609,8 @@
 "printing.no_image" = "No picture for this model yet";
 "printing.unknown_model" = "Unknown model";
 "printing.unknown_model.hint" = "This G-code was not printed from the library.";
+"printing.live_layers" = "Layers going down";
+"printing.live_layers.hint" = "An illustration of the layers, not the actual model";
 "printing.link_model" = "Link to a model";
 
 /* Library */
@@ -717,7 +719,6 @@
 "camera.devices" = "Detected cameras";
 "camera.devices.probe" = "Scan for cameras";
 "camera.devices.none" = "No /dev/video device found";
-"camera.snapshot" = "Take a photo";
 "camera.snapshot.saved" = "Photo saved on the Raspberry Pi";
 "camera.roi" = "Watched area";
 "camera.roi.explain" = "Drag a box around the print so the monitor ignores the rest.";
@@ -890,8 +891,8 @@
 "bedmesh.verdict.poor" = "Level the bed before printing";
 
 /* Diagnostics */
-"diagnostics.title" = "System check";
-"diagnostics.run" = "Run the check";
+"system_check.title" = "System check";
+"system_check.run" = "Run the check";
 "diagnostics.share" = "Share the report";
 "diagnostics.redacted" = "Tokens and secrets are removed from the report.";
 "diagnostics.overall.ok" = "Everything looks fine";
@@ -1598,7 +1599,7 @@
 
 
 /* Toolpath preview: seeing what the slicer actually produced */
-"preview.title" = "Toolpath preview";
+"toolpath.title" = "Toolpath preview";
 "preview.layer" = "Layer";
 "preview.layer_of" = "Layer %d of %d";
 "preview.indexing" = "Reading the file and indexing its layers…";

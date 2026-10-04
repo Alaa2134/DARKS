@@ -27,6 +27,7 @@
 		885AA9377D85C2DB0D56C617 /* MediaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaModels.swift"; sourceTree = "<group>"; };
 		2757068E70BAB749710A66D6 /* CalibrationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CalibrationStore.swift"; sourceTree = "<group>"; };
 		80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoCapabilities.swift"; sourceTree = "<group>"; };
+		EA3B5D3D907D98509A715A15 /* DemoMedia.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoMedia.swift"; sourceTree = "<group>"; };
 		FB1F8469EC9A1D43B6722122 /* DemoMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoMesh.swift"; sourceTree = "<group>"; };
 		2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoSimulator.swift"; sourceTree = "<group>"; };
 		3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorStore.swift"; sourceTree = "<group>"; };
@@ -82,6 +83,7 @@
 		8C157FC7556105015C454FA4 /* Hero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Hero.swift"; sourceTree = "<group>"; };
 		DAF5085D86C033A91BCF9067 /* OutageCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OutageCard.swift"; sourceTree = "<group>"; };
 		8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintChecklistView.swift"; sourceTree = "<group>"; };
+		8AB30EAC03342155C2B8362B /* PrintRise.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintRise.swift"; sourceTree = "<group>"; };
 		9FB281C16A9C172E9CE5AACD /* PrinterFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterFeedback.swift"; sourceTree = "<group>"; };
 		15451918A1627CEC3D71BF0D /* Skeleton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Skeleton.swift"; sourceTree = "<group>"; };
 		B802387A806902841A679A3B /* StartupCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "StartupCard.swift"; sourceTree = "<group>"; };
@@ -157,6 +159,7 @@
 		D2E2ED1D8E7F57805C6A87AE /* CapabilityDiscoveryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CapabilityDiscoveryTests.swift"; sourceTree = "<group>"; };
 		5C7694BC9E2CE5BCC4B493D5 /* ColorChangeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ColorChangeTests.swift"; sourceTree = "<group>"; };
 		BFB71C9A1559EAEA74E365F2 /* ConnectionDiagnosticsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConnectionDiagnosticsTests.swift"; sourceTree = "<group>"; };
+		90FDF05BA041E57178B41989 /* DemoContentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoContentTests.swift"; sourceTree = "<group>"; };
 		6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorTests.swift"; sourceTree = "<group>"; };
 		A464B815DD4754605B807349 /* EcosystemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EcosystemTests.swift"; sourceTree = "<group>"; };
 		CE2FA3344C4CBCB563B766BA /* EstimateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "EstimateTests.swift"; sourceTree = "<group>"; };
@@ -234,6 +237,7 @@
 			isa = PBXGroup;
 			children = (
 				80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */,
+				EA3B5D3D907D98509A715A15 /* DemoMedia.swift */,
 				FB1F8469EC9A1D43B6722122 /* DemoMesh.swift */,
 				2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */,
 			);
@@ -362,6 +366,7 @@
 				8C157FC7556105015C454FA4 /* Hero.swift */,
 				DAF5085D86C033A91BCF9067 /* OutageCard.swift */,
 				8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */,
+				8AB30EAC03342155C2B8362B /* PrintRise.swift */,
 				9FB281C16A9C172E9CE5AACD /* PrinterFeedback.swift */,
 				15451918A1627CEC3D71BF0D /* Skeleton.swift */,
 				B802387A806902841A679A3B /* StartupCard.swift */,
@@ -602,6 +607,7 @@
 				D2E2ED1D8E7F57805C6A87AE /* CapabilityDiscoveryTests.swift */,
 				5C7694BC9E2CE5BCC4B493D5 /* ColorChangeTests.swift */,
 				BFB71C9A1559EAEA74E365F2 /* ConnectionDiagnosticsTests.swift */,
+				90FDF05BA041E57178B41989 /* DemoContentTests.swift */,
 				6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */,
 				A464B815DD4754605B807349 /* EcosystemTests.swift */,
 				CE2FA3344C4CBCB563B766BA /* EstimateTests.swift */,
@@ -662,6 +668,7 @@
 		78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885AA9377D85C2DB0D56C617 /* MediaModels.swift */; };
 		7300268691639199AD0164C2 /* CalibrationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2757068E70BAB749710A66D6 /* CalibrationStore.swift */; };
 		E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */; };
+		27F0B9FE7A1A8A4DB4B6F3E8 /* DemoMedia.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA3B5D3D907D98509A715A15 /* DemoMedia.swift */; };
 		9834F4F8CEB7C308366787EF /* DemoMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1F8469EC9A1D43B6722122 /* DemoMesh.swift */; };
 		61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */; };
 		B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */; };
@@ -717,6 +724,7 @@
 		5184FD35FFCFE64166E51239 /* Hero.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C157FC7556105015C454FA4 /* Hero.swift */; };
 		02044D9BC6A86140D57A31A7 /* OutageCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAF5085D86C033A91BCF9067 /* OutageCard.swift */; };
 		E0BEBD9BD843AD980A176AD1 /* PrintChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */; };
+		E536417130ED67FFAB408656 /* PrintRise.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8AB30EAC03342155C2B8362B /* PrintRise.swift */; };
 		7D569945D205CF56F003C521 /* PrinterFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB281C16A9C172E9CE5AACD /* PrinterFeedback.swift */; };
 		3D77F800F1E87C48EE62457D /* Skeleton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15451918A1627CEC3D71BF0D /* Skeleton.swift */; };
 		5846B2C855DF1259827A904C /* StartupCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B802387A806902841A679A3B /* StartupCard.swift */; };
@@ -797,6 +805,7 @@
 		7B71FBEE0B649C6F86FE1F3F /* CapabilityDiscoveryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2E2ED1D8E7F57805C6A87AE /* CapabilityDiscoveryTests.swift */; };
 		3B00F2E3E13AEEF255ACB91D /* ColorChangeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C7694BC9E2CE5BCC4B493D5 /* ColorChangeTests.swift */; };
 		568C40FDA88DB16EEAB8D6C8 /* ConnectionDiagnosticsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB71C9A1559EAEA74E365F2 /* ConnectionDiagnosticsTests.swift */; };
+		8303352FFC2A52951CC42D5D /* DemoContentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90FDF05BA041E57178B41989 /* DemoContentTests.swift */; };
 		7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF57426E9B7652E6593E0A8 /* DoctorTests.swift */; };
 		E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A464B815DD4754605B807349 /* EcosystemTests.swift */; };
 		2CD1A241228D625941542824 /* EstimateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CE2FA3344C4CBCB563B766BA /* EstimateTests.swift */; };
@@ -840,6 +849,7 @@
 				78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */,
 				7300268691639199AD0164C2 /* CalibrationStore.swift in Sources */,
 				E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */,
+				27F0B9FE7A1A8A4DB4B6F3E8 /* DemoMedia.swift in Sources */,
 				9834F4F8CEB7C308366787EF /* DemoMesh.swift in Sources */,
 				61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */,
 				B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */,
@@ -895,6 +905,7 @@
 				5184FD35FFCFE64166E51239 /* Hero.swift in Sources */,
 				02044D9BC6A86140D57A31A7 /* OutageCard.swift in Sources */,
 				E0BEBD9BD843AD980A176AD1 /* PrintChecklistView.swift in Sources */,
+				E536417130ED67FFAB408656 /* PrintRise.swift in Sources */,
 				7D569945D205CF56F003C521 /* PrinterFeedback.swift in Sources */,
 				3D77F800F1E87C48EE62457D /* Skeleton.swift in Sources */,
 				5846B2C855DF1259827A904C /* StartupCard.swift in Sources */,
@@ -1046,6 +1057,7 @@
 				7B71FBEE0B649C6F86FE1F3F /* CapabilityDiscoveryTests.swift in Sources */,
 				3B00F2E3E13AEEF255ACB91D /* ColorChangeTests.swift in Sources */,
 				568C40FDA88DB16EEAB8D6C8 /* ConnectionDiagnosticsTests.swift in Sources */,
+				8303352FFC2A52951CC42D5D /* DemoContentTests.swift in Sources */,
 				7236910F71B2527336FE61AE /* DoctorTests.swift in Sources */,
 				E96AA42F24E42DA84E1564B3 /* EcosystemTests.swift in Sources */,
 				2CD1A241228D625941542824 /* EstimateTests.swift in Sources */,

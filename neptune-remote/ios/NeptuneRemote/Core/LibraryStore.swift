@@ -556,6 +556,7 @@ final class LibraryStore: ObservableObject {
     /// Absolute URL for a thumbnail / photo / video stored on the Pi.
     func mediaURL(_ relativePath: String?) -> URL? {
         guard let relativePath, !relativePath.isEmpty else { return nil }
+        if settings.demoMode { return DemoMedia.url(for: relativePath) }
         guard let base = settings.connection.backendBaseURL else { return nil }
         let encoded = relativePath
             .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? relativePath
@@ -615,6 +616,8 @@ enum DemoLibrary {
             nameAR: ar,
             nameEN: en,
             category: category,
+            thumbnail: DemoMedia.prefix + id.replacingOccurrences(of: "demo-", with: ""),
+            heroImage: DemoMedia.prefix + id.replacingOccurrences(of: "demo-", with: ""),
             modelFilename: "\(id).stl",
             modelSize: 1_048_576,
             dimensionsX: 82.4,

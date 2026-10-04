@@ -10,6 +10,9 @@ struct HeroBackground: View {
     /// that is printing glows green and one in trouble glows red.
     var glow: Color = Theme.tide
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var drift: CGFloat = 0
+
     var body: some View {
         ZStack {
             Theme.abyss
@@ -27,8 +30,16 @@ struct HeroBackground: View {
             )
             // Printed layers laid down as a sea - the same motif as the icon,
             // faint enough to be texture rather than picture.
-            LayerWaves()
+            LayerWaves(drift: drift)
                 .stroke(Color.white.opacity(0.07), lineWidth: 1.2)
+        }
+        .onAppear {
+            // A slow swell, one wavelength every fourteen seconds: enough to
+            // read as water, too slow to pull the eye off the numbers.
+            guard !reduceMotion else { return }
+            withAnimation(.linear(duration: 14).repeatForever(autoreverses: false)) {
+                drift = 1
+            }
         }
     }
 }
@@ -36,13 +47,20 @@ struct HeroBackground: View {
 /// Four gentle waves along the bottom of a surface.
 struct LayerWaves: Shape {
     var count = 4
+    /// 0...1 is one full wavelength, so a looping animation is seamless.
+    var drift: CGFloat = 0
+
+    var animatableData: CGFloat {
+        get { drift }
+        set { drift = newValue }
+    }
 
     func path(in rect: CGRect) -> Path {
         var path = Path()
         for index in 0..<count {
             let y = rect.maxY - CGFloat(index) * 13 - 14
             let amplitude: CGFloat = 6
-            let phase = CGFloat(index) * 0.9
+            let phase = CGFloat(index) * 0.9 + drift * .pi * 2 * (index.isMultiple(of: 2) ? 1 : -1)
             path.move(to: CGPoint(x: rect.minX, y: y))
             var x = rect.minX
             while x <= rect.maxX {

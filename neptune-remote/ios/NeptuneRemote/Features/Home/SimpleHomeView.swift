@@ -160,6 +160,14 @@ struct SimpleHomeView: View {
                     PrinterIllustration()
                         .frame(width: 118, height: 118)
                         .padding(.top, -6)
+                } else {
+                    PrintRise(
+                        progress: snapshot.progress,
+                        seed: snapshot.filename,
+                        paused: snapshot.isPaused
+                    )
+                    .frame(width: 118, height: 118)
+                    .padding(.top, -6)
                 }
             }
 

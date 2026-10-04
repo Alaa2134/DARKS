@@ -31,7 +31,7 @@ struct SupportView: View {
                     DiagnosticsView()
                 } label: {
                     HStack {
-                        Label(L.t("diagnostics.title"), systemImage: "checklist")
+                        Label(L.t("system_check.title"), systemImage: "checklist")
                         Spacer()
                         if !support.failedChecks.isEmpty {
                             Text("\(support.failedChecks.count)")

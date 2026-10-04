@@ -609,6 +609,8 @@
 "printing.no_image" = "لسه مفيش صورة للموديل ده";
 "printing.unknown_model" = "موديل غير معروف";
 "printing.unknown_model.hint" = "ملف الـ G-code ده مش متطبوع من المكتبة.";
+"printing.live_layers" = "الطبقات وهي بتتبني";
+"printing.live_layers.hint" = "شكل توضيحي للطبقات، مش الموديل الحقيقي";
 "printing.link_model" = "اربطه بموديل";
 
 /* المكتبة */
@@ -717,7 +719,6 @@
 "camera.devices" = "الكاميرات المكتشفة";
 "camera.devices.probe" = "دوّر على الكاميرات";
 "camera.devices.none" = "مفيش جهاز /dev/video";
-"camera.snapshot" = "صوّر";
 "camera.snapshot.saved" = "الصورة اتحفظت على الراسبيري باي";
 "camera.roi" = "المنطقة المراقبة";
 "camera.roi.explain" = "ارسم مربع حوالين الطبعة علشان المراقب يتجاهل الباقي.";
@@ -890,8 +891,8 @@
 "bedmesh.verdict.poor" = "عاير السطح قبل ما تطبع";
 
 /* الفحص */
-"diagnostics.title" = "فحص النظام";
-"diagnostics.run" = "شغّل الفحص";
+"system_check.title" = "فحص النظام";
+"system_check.run" = "شغّل الفحص";
 "diagnostics.share" = "شارك التقرير";
 "diagnostics.redacted" = "التوكنات والأسرار بتتشال من التقرير.";
 "diagnostics.overall.ok" = "كل حاجة تمام";
@@ -1597,7 +1598,7 @@
 
 
 /* Toolpath preview: seeing what the slicer actually produced */
-"preview.title" = "معاينة المسار";
+"toolpath.title" = "معاينة المسار";
 "preview.layer" = "الطبقة";
 "preview.layer_of" = "طبقة %d من %d";
 "preview.indexing" = "بقرا الملف وبفهرس الطبقات…";

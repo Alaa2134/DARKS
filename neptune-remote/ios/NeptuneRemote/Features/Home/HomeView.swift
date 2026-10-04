@@ -304,6 +304,14 @@ struct PrinterStateCard: View {
                 PrinterIllustration()
                     .frame(width: 112, height: 112)
                     .padding(.top, -6)
+            } else {
+                PrintRise(
+                    progress: snapshot.progress,
+                    seed: snapshot.filename,
+                    paused: snapshot.isPaused
+                )
+                .frame(width: 112, height: 112)
+                .padding(.top, -6)
             }
         }
         // Conditions are rendered as their own cards below, so this one does

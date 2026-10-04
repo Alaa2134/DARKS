@@ -41,7 +41,7 @@ struct GCodeDetailView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(localized: "preview.open")
                         .font(.subheadline.weight(.medium))
-                    Text(localized: "preview.title")
+                    Text(localized: "toolpath.title")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                 }

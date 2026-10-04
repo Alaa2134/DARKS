@@ -11,8 +11,11 @@ struct PrintLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: PrintActivityAttributes.self) { context in
             lockScreen(context)
-                .activityBackgroundTint(Color.black.opacity(0.35))
+                .background(WidgetBackdrop(glow: WidgetTheme.color(for: context.state.state)))
+                .activityBackgroundTint(WidgetTheme.abyssDeep)
                 .activitySystemActionForegroundColor(.white)
+                .environment(\.colorScheme, .dark)
+                .fontDesign(.rounded)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
@@ -21,11 +24,12 @@ struct PrintLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.trailing) {
                     VStack(alignment: .trailing, spacing: 2) {
                         Text(percent(context.state.progress))
-                            .font(.title3.weight(.semibold).monospacedDigit())
+                            .font(.title3.weight(.heavy).monospacedDigit())
+                            .foregroundStyle(WidgetTheme.tide)
                         if let finish = context.state.estimatedFinish {
                             Text(finish, style: .timer)
                                 .font(.caption2.monospacedDigit())
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(WidgetTheme.emberWarm)
                                 .multilineTextAlignment(.trailing)
                         }
                     }
@@ -49,8 +53,7 @@ struct PrintLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     VStack(spacing: 6) {
-                        ProgressView(value: clamped(context.state.progress))
-                            .tint(WidgetTheme.color(for: context.state.state))
+                        progressBar(context.state.progress, state: context.state.state)
                         HStack(spacing: 14) {
                             temperature(
                                 symbol: "thermometer.high",
@@ -73,7 +76,8 @@ struct PrintLiveActivity: Widget {
                     .foregroundStyle(WidgetTheme.color(for: context.state.state))
             } compactTrailing: {
                 Text(percent(context.state.progress))
-                    .font(.caption2.monospacedDigit())
+                    .font(.caption2.weight(.bold).monospacedDigit())
+                    .foregroundStyle(WidgetTheme.tide)
             } minimal: {
                 ProgressView(value: clamped(context.state.progress))
                     .progressViewStyle(.circular)
@@ -95,12 +99,12 @@ struct PrintLiveActivity: Widget {
                     .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
 
-                ProgressView(value: clamped(context.state.progress))
-                    .tint(WidgetTheme.color(for: context.state.state))
+                progressBar(context.state.progress, state: context.state.state)
 
                 HStack(spacing: 10) {
                     Text(percent(context.state.progress))
-                        .font(.caption.weight(.medium).monospacedDigit())
+                        .font(.subheadline.weight(.heavy).monospacedDigit())
+                        .foregroundStyle(.white)
                     if let layer = context.state.layerText {
                         Text(layer)
                             .font(.caption2.monospacedDigit())
@@ -109,9 +113,9 @@ struct PrintLiveActivity: Widget {
                     Spacer(minLength: 0)
                     if let finish = context.state.estimatedFinish {
                         Text(finish, style: .timer)
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: 60, alignment: .trailing)
+                            .font(.caption.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(WidgetTheme.emberWarm)
+                            .frame(maxWidth: 64, alignment: .trailing)
                     }
                 }
 
@@ -132,23 +136,42 @@ struct PrintLiveActivity: Widget {
     private func thumbnail(_ attributes: PrintActivityAttributes, size: CGFloat) -> some View {
         ZStack {
             RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(WidgetTheme.printing.opacity(0.18))
+                .fill(LinearGradient(
+                    colors: [WidgetTheme.tideDeep.opacity(0.55), WidgetTheme.abyssMid],
+                    startPoint: .top,
+                    endPoint: .bottom
+                ))
             if let url = attributes.thumbnailURL {
                 AsyncImage(url: url) { phase in
                     if case .success(let image) = phase {
                         image.resizable().aspectRatio(contentMode: .fill)
                     } else {
-                        Image(systemName: "cube")
-                            .foregroundStyle(.secondary)
+                        Image(systemName: "square.stack.3d.up.fill")
+                            .foregroundStyle(WidgetTheme.tide)
                     }
                 }
             } else {
-                Image(systemName: "cube")
-                    .foregroundStyle(.secondary)
+                Image(systemName: "square.stack.3d.up.fill")
+                    .foregroundStyle(WidgetTheme.tide)
             }
         }
         .frame(width: size, height: size)
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+
+    /// The same tide-coloured bar as the app, glowing at its leading edge.
+    private func progressBar(_ progress: Double, state: PrinterState) -> some View {
+        let tint = state == .printing ? WidgetTheme.tide : WidgetTheme.color(for: state)
+        return GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.white.opacity(0.14))
+                Capsule()
+                    .fill(LinearGradient(colors: [tint.opacity(0.65), tint], startPoint: .leading, endPoint: .trailing))
+                    .frame(width: max(6, proxy.size.width * CGFloat(clamped(progress))))
+                    .shadow(color: tint.opacity(0.7), radius: 4)
+            }
+        }
+        .frame(height: 6)
     }
 
     private func temperature(symbol: String, actual: Double, target: Double, tint: Color) -> some View {

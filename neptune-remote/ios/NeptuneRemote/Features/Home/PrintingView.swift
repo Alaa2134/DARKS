@@ -75,27 +75,32 @@ struct PrintingView: View {
         }
     }
 
+    @ViewBuilder
     private var modelPanel: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let item {
-                ModelImage(
-                    url: library.mediaURL(item.heroImage ?? item.thumbnail),
-                    name: item.displayName,
-                    category: item.category,
-                    cornerRadius: Theme.cornerRadius
-                )
-                .aspectRatio(4 / 3, contentMode: .fit)
+        if let item {
+            knownModelPanel(item)
+        } else {
+            liveLayersPanel
+        }
+    }
 
-                Text(item.displayName)
-                    .font(.title3.weight(.semibold))
-                    .lineLimit(2)
-                if !item.recommendedMaterial.isEmpty {
-                    Text(item.recommendedMaterial)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                unknownModelPanel
+    private func knownModelPanel(_ item: PrintingItemInfo) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ModelImage(
+                url: library.mediaURL(item.heroImage ?? item.thumbnail),
+                name: item.displayName,
+                category: item.category,
+                cornerRadius: Theme.cornerRadius
+            )
+            .aspectRatio(4 / 3, contentMode: .fit)
+
+            Text(item.displayName)
+                .font(.title3.weight(.semibold))
+                .lineLimit(2)
+            if !item.recommendedMaterial.isEmpty {
+                Text(item.recommendedMaterial)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             // The filename is deliberately small, secondary and last.
@@ -110,26 +115,34 @@ struct PrintingView: View {
         .card()
     }
 
-    private var unknownModelPanel: some View {
-        VStack(spacing: 10) {
-            RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
-                .fill(Theme.idle.opacity(0.12))
-                .aspectRatio(4 / 3, contentMode: .fit)
-                .overlay {
-                    VStack(spacing: 10) {
-                        Image(systemName: "questionmark.square.dashed")
-                            .font(.system(size: 38, weight: .light))
-                            .foregroundStyle(.secondary)
-                        Text(localized: "printing.unknown_model")
-                            .font(.headline)
-                        Text(localized: "printing.unknown_model.hint")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 20)
-                    }
-                }
+    /// A file the library does not know: no picture of the part exists, so
+    /// the panel shows the print itself - the layers going down at the real
+    /// progress - and says plainly that it is an illustration.
+    private var liveLayersPanel: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            PrintRise(
+                progress: snapshot.progress,
+                seed: snapshot.filename,
+                paused: snapshot.isPaused,
+                layers: 40
+            )
+            .aspectRatio(4 / 3, contentMode: .fit)
+            .frame(maxWidth: .infinity)
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(Format.printName(snapshot.filename))
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(2)
+                Text(localized: "printing.live_layers.hint")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.62))
+                Text(localized: "printing.unknown_model.hint")
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.45))
+            }
         }
+        .heroCard(glow: snapshot.isPaused ? Theme.paused : Theme.tide, padding: 16)
     }
 
     @ViewBuilder
