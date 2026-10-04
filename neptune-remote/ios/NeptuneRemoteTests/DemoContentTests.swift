@@ -7,14 +7,14 @@ final class DemoContentTests: XCTestCase {
     func testEveryDemoLibraryItemHasAPicture() throws {
         for item in DemoLibrary.items {
             let path = try XCTUnwrap(item.thumbnail, item.id)
-            let url = try XCTUnwrap(DemoMedia.url(for: path), "no bundled picture for \(item.id)")
+            let url = try XCTUnwrap(DemoPictures.url(for: path), "no bundled picture for \(item.id)")
             XCTAssertTrue(url.isFileURL)
             XCTAssertGreaterThan((try? Data(contentsOf: url))?.count ?? 0, 1_000, item.id)
         }
     }
 
     func testDemoMediaIgnoresRealPaths() {
-        XCTAssertNil(DemoMedia.url(for: "thumbnails/abc.png"))
+        XCTAssertNil(DemoPictures.url(for: "thumbnails/abc.png"))
     }
 
     func testPrintRiseSilhouettesStayInsideTheirBox() {

@@ -10,7 +10,7 @@ import UIKit
 /// through exactly the same `AsyncImage` path as a picture served by the Pi,
 /// and every screen that shows a model picture shows these without knowing
 /// demo mode exists.
-enum DemoMedia {
+enum DemoPictures {
     static let prefix = "demo/"
     /// Bump when the pictures change, so a cached copy is never shown stale.
     private static let version = 1
