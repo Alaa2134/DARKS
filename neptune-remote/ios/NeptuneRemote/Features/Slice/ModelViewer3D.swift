@@ -211,7 +211,10 @@ struct ModelPreviewView: View {
                 )
             }
         }
-        .task(id: filename) { await load() }
+        // Keyed on the data as well as the name: when the file arrives after
+        // the view (same name, nil then bytes), a name-only key never
+        // reloaded and the preview stayed on "choose a model" for good.
+        .task(id: "\(filename)#\(data?.count ?? -1)") { await load() }
     }
 
     private func load() async {
