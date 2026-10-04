@@ -231,7 +231,9 @@ final class FilesStore: ObservableObject {
     }
 
     func modelData(_ model: BackendModelFile) async -> Data? {
-        guard !settings.demoMode else { return nil }
+        // Demo models have no file behind them; the demo mesh stands in, so
+        // the preview shows an object instead of an empty placeholder.
+        guard !settings.demoMode else { return DemoMesh.waveVase }
         do {
             return try await printer.backend.downloadModel(id: model.id)
         } catch {

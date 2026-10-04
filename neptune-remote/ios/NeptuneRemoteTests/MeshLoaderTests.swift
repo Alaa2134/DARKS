@@ -55,6 +55,21 @@ final class MeshLoaderTests: XCTestCase {
         XCTAssertEqual(mesh.size.x, 10, accuracy: 0.001)
     }
 
+    /// Demo mode's stand-in object must load through the same path as a
+    /// real upload, sit on the bed and have outward-facing normals.
+    func testDemoMeshLoads() throws {
+        let mesh = try MeshLoader.load(data: DemoMesh.waveVase, filename: "wave_vase.stl")
+        XCTAssertEqual(mesh.triangleCount, 64 * 72 * 2 + 72)
+        XCTAssertEqual(mesh.minimum.z, 0, accuracy: 0.001)
+        XCTAssertEqual(mesh.maximum.z, 120, accuracy: 0.001)
+        XCTAssertGreaterThan(mesh.size.x, 50)
+        XCTAssertLessThan(mesh.size.x, 220)
+        // A wall triangle on the +x side must point outward (+x).
+        let wall = zip(mesh.positions, mesh.normals).first { $0.0.x > 30 && abs($0.0.y) < 1 && $0.0.z > 10 }
+        XCTAssertNotNil(wall)
+        if let wall { XCTAssertGreaterThan(wall.1.x, 0) }
+    }
+
     func testASCIISTL() throws {
         let mesh = try MeshLoader.load(data: Data(asciiSTL.utf8), filename: "cube.stl")
         XCTAssertEqual(mesh.triangleCount, 1)

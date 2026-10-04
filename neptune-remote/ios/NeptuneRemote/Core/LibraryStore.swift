@@ -413,7 +413,7 @@ final class LibraryStore: ObservableObject {
     }
 
     func modelData(_ item: LibraryItem) async -> Data? {
-        guard !settings.demoMode else { return nil }
+        guard !settings.demoMode else { return DemoMesh.waveVase }
         return try? await printer.backend.downloadLibraryModel(id: item.id)
     }
 

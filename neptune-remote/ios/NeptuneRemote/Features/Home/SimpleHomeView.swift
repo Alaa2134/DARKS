@@ -210,6 +210,8 @@ struct SimpleHomeView: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
                         .monospacedDigit()
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.75)
                 }
                 Label(
                     L.t("printing.remaining", Format.duration(snapshot.estimatedTimeLeft)),

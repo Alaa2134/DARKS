@@ -27,6 +27,7 @@
 		885AA9377D85C2DB0D56C617 /* MediaModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MediaModels.swift"; sourceTree = "<group>"; };
 		2757068E70BAB749710A66D6 /* CalibrationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "CalibrationStore.swift"; sourceTree = "<group>"; };
 		80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoCapabilities.swift"; sourceTree = "<group>"; };
+		FB1F8469EC9A1D43B6722122 /* DemoMesh.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoMesh.swift"; sourceTree = "<group>"; };
 		2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DemoSimulator.swift"; sourceTree = "<group>"; };
 		3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DoctorStore.swift"; sourceTree = "<group>"; };
 		DBF35E15DAF9D9C1B7E84225 /* ErrorSink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ErrorSink.swift"; sourceTree = "<group>"; };
@@ -233,6 +234,7 @@
 			isa = PBXGroup;
 			children = (
 				80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */,
+				FB1F8469EC9A1D43B6722122 /* DemoMesh.swift */,
 				2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */,
 			);
 			path = "Demo";
@@ -660,6 +662,7 @@
 		78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 885AA9377D85C2DB0D56C617 /* MediaModels.swift */; };
 		7300268691639199AD0164C2 /* CalibrationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2757068E70BAB749710A66D6 /* CalibrationStore.swift */; };
 		E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80AD5AEAE0B933A9B64CD999 /* DemoCapabilities.swift */; };
+		9834F4F8CEB7C308366787EF /* DemoMesh.swift in Sources */ = {isa = PBXBuildFile; fileRef = FB1F8469EC9A1D43B6722122 /* DemoMesh.swift */; };
 		61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2A69C198C78B55453D5E4F2B /* DemoSimulator.swift */; };
 		B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA110B34D4B0AFA388BD61E /* DoctorStore.swift */; };
 		6C0A71D7B8DD05090399B811 /* ErrorSink.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBF35E15DAF9D9C1B7E84225 /* ErrorSink.swift */; };
@@ -837,6 +840,7 @@
 				78D52B57C75A86BA9A546589 /* MediaModels.swift in Sources */,
 				7300268691639199AD0164C2 /* CalibrationStore.swift in Sources */,
 				E56F5C6DC0417D0259E39847 /* DemoCapabilities.swift in Sources */,
+				9834F4F8CEB7C308366787EF /* DemoMesh.swift in Sources */,
 				61C0EC34FEF7DC1C0289F863 /* DemoSimulator.swift in Sources */,
 				B0C1EB085A69B9BBFB762B1A /* DoctorStore.swift in Sources */,
 				6C0A71D7B8DD05090399B811 /* ErrorSink.swift in Sources */,
