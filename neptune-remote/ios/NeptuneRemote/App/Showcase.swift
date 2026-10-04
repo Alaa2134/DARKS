@@ -51,11 +51,11 @@ enum Showcase {
     }
 
     /// Whether the shot wants the demo printer part-way through a print.
-    static var wantsPrinting: Bool { screen == "home-printing" }
+    static var wantsPrinting: Bool { screen == "home-printing" || screen == "printing" }
 
     /// Screens that are not a tab of their own.
     enum Route: Hashable {
-        case queue, alerts, slice
+        case queue, alerts, slice, printing
     }
 
     static func destination(for screen: String) -> Destination {
@@ -68,6 +68,7 @@ enum Showcase {
         case "queue": return .pushed(.queue)
         case "alerts": return .pushed(.alerts)
         case "slice": return .pushed(.slice)
+        case "printing": return .pushed(.printing)
         case "settings": return .settings
         default: return .tab(.home)
         }
@@ -100,6 +101,7 @@ extension View {
             case .queue: QueueView()
             case .alerts: AlertSettingsView()
             case .slice: SliceView().modifier(ShowcaseSelectsModel())
+            case .printing: PrintingView()
             }
         }
     }
