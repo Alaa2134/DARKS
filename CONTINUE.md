@@ -261,6 +261,9 @@ lands and CI must be checked after.
   shareable invoice), entry at the top of More, Showcase screens `business
   orders order accounts production invoice`. Demo data (`DemoBusiness`) adds
   up exactly; `BusinessTests` checks it against the orders.
+- Marketing: `neptune-remote/docs/showcase/` (banner + 8 slides, from CI
+  screenshots via scratchpad templates); showcase page published as an
+  Artifact (https://claude.ai/artifact/CSidnJzDpAXcrjxGVD1Pr1).
 - Single printer today. The data model has no printer column yet; a print farm
   needs per-printer Moonraker clients first.
 

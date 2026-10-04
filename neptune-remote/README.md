@@ -1,5 +1,19 @@
 # Neptune 3 Plus Remote
 
+![Neptune Remote](docs/showcase/banner.jpg)
+
+<p align="center">
+  <img src="docs/showcase/01-printing.jpg" width="19%">
+  <img src="docs/showcase/03-library.jpg" width="19%">
+  <img src="docs/showcase/06-business.jpg" width="19%">
+  <img src="docs/showcase/07-accounts.jpg" width="19%">
+  <img src="docs/showcase/04-slice.jpg" width="19%">
+</p>
+
+Every picture above is the app itself, photographed on an iPhone simulator by
+CI in demo mode (`scripts/take_screenshots.sh`); the 3D printer and models are
+renders of real geometry, not illustrations.
+
 Remote control, mobile slicing and a print-monitoring ecosystem for an
 **Elegoo Neptune 3 Plus** running Klipper / Moonraker / Mainsail on a
 **Raspberry Pi 5**, reachable from anywhere over **Tailscale**.
