@@ -1,0 +1,256 @@
+"""Notifications, the heartbeat, and the record of what the power cut off.
+
+Everything a phone needs to answer three questions: will I be told, was I told,
+and what happened while I was out.
+
+Secrets never come back out of here. Channel credentials - ntfy tokens,
+Telegram bot tokens, the heartbeat URL - live in ``config.yaml`` on the Pi and
+are reported only as "configured" or "not configured". The phone can change
+*which events* notify and *when*, because that is a preference; it cannot read
+or set the credentials, because a sideloaded app is not a good place to keep
+them.
+"""
+
+from __future__ import annotations
+
+import asyncio
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, HTTPException
+
+from ..deps import get_state
+from ..gcode.preview import load_or_build_index
+from .files import _preview_cache_dir
+from ..notify import all_event_kinds
+from ..schemas import NotificationPreferencesRequest
+from ..security import require_token
+from ..state import AppState
+
+router = APIRouter(dependencies=[Depends(require_token)])
+
+
+@router.get("/alerts/status")
+async def alerts_status(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """Is anything actually going to reach a phone that is out of the house?"""
+    notifications = state.notifications.status()
+    heartbeat = state.heartbeat.status()
+
+    # Stated plainly rather than left for the app to infer: a printer with no
+    # channel configured is a printer that will fail silently.
+    reachable = notifications["configured"]
+    return {
+        "notifications": notifications,
+        "heartbeat": heartbeat,
+        "reachable_when_app_is_closed": reachable,
+        "advice": _advice(reachable, heartbeat["enabled"]),
+    }
+
+
+def _advice(reachable: bool, heartbeat_enabled: bool) -> Dict[str, str]:
+    if not reachable:
+        return {
+            "level": "warning",
+            "ar": (
+                "مفيش أي قناة إشعارات متظبطة. الإشعارات هتوصلك بس والتطبيق "
+                "مفتوح قدامك - ولو حصلت مشكلة وانت بره مش هتعرف."
+            ),
+            "en": "No notification channel is configured; alerts only arrive while the app is open.",
+        }
+    if not heartbeat_enabled:
+        return {
+            "level": "info",
+            "ar": (
+                "الإشعارات شغالة. فاضل الـ heartbeat: لو الكهرباء فصلت عن "
+                "الراسبيري نفسه، مفيش حاجة عليه تقدر تبعتلك - الحل إن خدمة "
+                "برة تراقب توقف النبضات."
+            ),
+            "en": (
+                "Notifications work. Without the heartbeat, an outage that "
+                "takes the Pi down cannot report itself."
+            ),
+        }
+    return {
+        "level": "ok",
+        "ar": "الإشعارات والـ heartbeat الاتنين شغالين.",
+        "en": "Notifications and the heartbeat are both active.",
+    }
+
+
+@router.get("/alerts/preferences")
+async def get_preferences(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    return {
+        "preferences": state.notifications.preferences.to_dict(),
+        "available_events": all_event_kinds(),
+        "critical_events": state.notifications.status()["critical_events"],
+    }
+
+
+@router.put("/alerts/preferences")
+async def put_preferences(
+    request: NotificationPreferencesRequest,
+    state: AppState = Depends(get_state),
+) -> Dict[str, Any]:
+    updated = state.notifications.update_preferences(
+        request.model_dump(exclude_none=True)
+    )
+    return {"preferences": updated.to_dict()}
+
+
+@router.post("/alerts/test")
+async def send_test(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """Prove delivery end to end, bypassing every filter.
+
+    A test that quiet hours could silently swallow would be worse than no test
+    at all: it would report success for a message nobody received.
+    """
+    if not state.notifications.available:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "No notification channel is configured. Set notifications.ntfy "
+                "or notifications.telegram in config.yaml on the Pi."
+            ),
+        )
+    return await state.notifications.send_test()
+
+
+@router.post("/alerts/heartbeat/test")
+async def test_heartbeat(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    if not state.heartbeat.enabled:
+        raise HTTPException(
+            status_code=409,
+            detail="No heartbeat URL is configured (notifications.heartbeat.url).",
+        )
+    ok = await state.heartbeat.ping()
+    return {"ok": ok, **state.heartbeat.status()}
+
+
+@router.get("/alerts/history")
+async def alert_history(limit: int = 25, state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """Recent notifications *including the ones that were not sent*.
+
+    The suppressed ones carry the reason, which is the only way to tell "the
+    printer never said anything" apart from "quiet hours ate it".
+    """
+    return {"notifications": state.notifications.recent(max(1, min(limit, 100)))}
+
+
+@router.get("/alerts/outage")
+async def outage_status(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    return state.outage.status()
+
+
+@router.post("/alerts/outage/{record_id}/acknowledge")
+async def acknowledge_outage(
+    record_id: str, state: AppState = Depends(get_state)
+) -> Dict[str, Any]:
+    if not state.outage.acknowledge(record_id):
+        raise HTTPException(status_code=404, detail="No outage with that id")
+    return {"ok": True, "outage": state.outage.status()}
+
+
+# --------------------------------------------------------------------------- #
+# Carrying on after a power cut
+#
+# The Pi already knows a print died and at which layer, and it can already build
+# a file that starts from a given layer. Nothing joined the two, so the app said
+# "الكهربا قطعت عند الطبقة ٢١٤" and left the user to find the file, count to 214
+# and set it up by hand - the one moment they are least inclined to.
+# --------------------------------------------------------------------------- #
+
+
+@router.get("/alerts/outage/resume")
+async def outage_resume_plan(state: AppState = Depends(get_state)) -> Dict[str, Any]:
+    """What it would take to carry on with the print the power cut killed.
+
+    Reported rather than done: resuming onto a part that is still stuck to the
+    bed - or was knocked off while the power was out - is a decision that needs
+    eyes on the machine. This only says whether it is possible, and from where.
+    """
+    record = _resumable_outage(state)
+    if record is None:
+        return {"available": False, "reason_ar": "مفيش طباعة اتقطعت محتاجة استكمال."}
+
+    snapshot = record.snapshot
+    layer = int(snapshot.current_layer or 0)
+    if layer <= 0:
+        return {
+            "available": False,
+            "reason_ar": "الطباعة وقفت قبل ما تخلص أول طبقة، فمفيش حاجة تتكمّل.",
+            "filename": snapshot.filename,
+        }
+
+    path = state.gcodes.path_for(snapshot.filename)
+    if not path.is_file():
+        return {
+            "available": False,
+            # The file lives on Moonraker for a print started from Mainsail.
+            # Saying so beats a 404 that reads like the feature is broken.
+            "reason_ar": (
+                f"«{snapshot.filename}» مش موجود على الباي نفسه. الاستكمال بيشتغل "
+                "على الملفات اللي اتقطعت من التطبيق."
+            ),
+            "filename": snapshot.filename,
+            "layer": layer,
+        }
+
+    # The real layer count, read from the file rather than from the snapshot.
+    # The app's resume screen needs it to bound its slider, and a count of zero
+    # leaves that screen inert - it cannot even ask the Pi for a plan.
+    try:
+        index = await asyncio.to_thread(
+            load_or_build_index, path, _preview_cache_dir(state)
+        )
+        layer_count = index.layer_count
+    except Exception as error:                              # noqa: BLE001
+        return {
+            "available": False,
+            "reason_ar": f"مش قادر أقرا «{snapshot.filename}»: {error}",
+            "filename": snapshot.filename,
+            "layer": layer,
+        }
+
+    if layer >= layer_count:
+        # The file on the Pi is not the file that was printing - re-sliced,
+        # renamed onto, or a different job with the same name. Resuming into a
+        # layer that does not exist would produce an empty file.
+        return {
+            "available": False,
+            "reason_ar": (
+                f"«{snapshot.filename}» اللي على الباي فيه {layer_count} طبقة بس، "
+                f"والطباعة وقفت عند {layer}. الملف اتغيّر."
+            ),
+            "filename": snapshot.filename,
+            "layer": layer,
+            "layer_count": layer_count,
+        }
+
+    return {
+        "available": True,
+        "outage_id": record.id,
+        "layer_count": layer_count,
+        "filename": snapshot.filename,
+        # One layer back: the layer the printer was *on* when the power went is
+        # the layer that did not finish, and starting on top of half a layer
+        # leaves a seam and a gap. Redoing it costs one layer of plastic.
+        "layer": max(0, layer - 1),
+        "recorded_layer": layer,
+        "z": snapshot.z_height,
+        "nozzle_temp": snapshot.nozzle_target,
+        "bed_temp": snapshot.bed_target,
+        "detected_at": record.detected_at,
+        "cause_ar": record.cause,
+    }
+
+
+def _resumable_outage(state: AppState):
+    """The newest interruption that killed a print, acknowledged or not.
+
+    Acknowledged records still count: dismissing the card is how you say "I have
+    seen it", not "I have dealt with it", and the print is often only picked up
+    the next morning.
+    """
+    for record in reversed(state.outage.records):
+        if record.was_printing and record.snapshot and record.snapshot.filename:
+            return record
+    return None

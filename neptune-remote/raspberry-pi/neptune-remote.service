@@ -1,0 +1,33 @@
+[Unit]
+Description=Neptune 3 Plus Remote backend (FastAPI)
+Documentation=https://github.com/alaa2134/darks/tree/main/neptune-remote
+After=network-online.target moonraker.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=__USER__
+Group=__GROUP__
+WorkingDirectory=__INSTALL_DIR__
+Environment=PYTHONUNBUFFERED=1
+Environment=NEPTUNE_CONFIG=__INSTALL_DIR__/config.yaml
+# host and port come from config.yaml (server.host / server.port)
+ExecStart=__INSTALL_DIR__/venv/bin/python -m app.main
+Restart=always
+RestartSec=5
+TimeoutStopSec=20
+KillMode=mixed
+
+# --- hardening -------------------------------------------------------------
+# The backend only needs its own install dir, its data dir and the network.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=false
+ProtectKernelTunables=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+ReadWritePaths=__DATA_DIR__ __INSTALL_DIR__
+
+[Install]
+WantedBy=multi-user.target
