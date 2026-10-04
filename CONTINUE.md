@@ -222,14 +222,36 @@ lands and CI must be checked after.
   notifications — a queue that quietly stops is one you find idle in the morning
   with no idea why.
 
+### A design with an identity (competition pass)
+- **Neptune**: deep water for the machine and its state (`Theme.abyss*`,
+  `Theme.tide` #22D3EE / `tideDeep` #0891B2), molten amber (`emberHot/Warm`)
+  only for heat. System backgrounds stay neutral; the brand lives in hero
+  cards (`Features/Common/Hero.swift`: `HeroBackground`, `.heroCard`,
+  `StatusChip`, `LayerWaves`, `PrinterIllustration`), the accent, gradients
+  and icons. Rounded type everywhere (`.fontDesign(.rounded)` + UIKit nav bar
+  appearance in `NeptuneRemoteApp.init`).
+- Art: `PrinterHero` imageset and a new opaque app icon (trident hotend + wave
+  layers), drawn as HTML/SVG and rendered with headless Chromium.
+- `Format.printName` turns `trident_wave_vase.gcode` into "trident wave vase".
+- Demo mode has a real object: `Core/Demo/DemoMesh.swift` builds a binary STL
+  wave vase, returned by `FilesStore/LibraryStore.modelData` in demo mode.
+
+### Seeing the app without a Mac
+- `App/Showcase.swift` (DEBUG only): launch with `NEPTUNE_SHOWCASE=<screen>`
+  (+ `_LANG`, `_APPEARANCE`) and the app opens that screen on demo data, with
+  notifications off. Demo data never reaches a real printer.
+- `scripts/take_screenshots.sh` + the `Screenshots` CI job shoot every screen in
+  ar/en x dark/light and publish them to the rolling release
+  **`screenshots-latest/screenshots.zip`**. Download from there: the sandbox
+  proxy blocks workflow-artifact blob storage, but release assets work. The IPA
+  is likewise at `latest-ios/NeptuneRemote-unsigned.ipa`.
+
 ---
 
 ## Current state
 
 - Backend: **1290 tests passing**.
-- iOS: **~300 tests**. Last full CI run (`f931fd3`) compiled the whole app and
-  ran 295 tests with **one failure — a wrong assertion in my own test**
-  (`[0,0,1,1]` is two points, not one). Fixed, not yet re-run.
+- iOS: ~350 test methods; CI green on every push since the design pass.
 - No known Critical or High defects outstanding.
 
 ---
