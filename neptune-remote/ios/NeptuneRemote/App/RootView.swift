@@ -9,6 +9,7 @@ struct RootView: View {
     @State private var showingSettings = false
     @State private var homePath = NavigationPath()
     @State private var libraryPath = NavigationPath()
+    @State private var morePath = NavigationPath()
 
     enum Tab: Hashable {
         case home, library, control, slice, files, camera, more
@@ -72,9 +73,12 @@ struct RootView: View {
             .tabItem { Label(L.t("tab.camera"), systemImage: "video.fill") }
             .tag(Tab.camera)
 
-            NavigationStack {
+            NavigationStack(path: $morePath) {
                 MoreView(showingSettings: $showingSettings)
                     .withLibraryDestinations()
+                    #if DEBUG
+                    .withShowcaseDestinations()
+                    #endif
             }
             .tabItem { Label(L.t("more.title"), systemImage: "ellipsis.circle.fill") }
             .tag(Tab.more)
@@ -88,7 +92,26 @@ struct RootView: View {
         .onOpenURL { url in
             handle(url: url)
         }
+        #if DEBUG
+        .task { openShowcaseScreen() }
+        #endif
     }
+
+    #if DEBUG
+    /// Screenshot mode: open the screen CI asked for. See `Showcase`.
+    private func openShowcaseScreen() {
+        guard let screen = Showcase.screen else { return }
+        switch Showcase.destination(for: screen) {
+        case .tab(let tab):
+            selectedTab = tab
+        case .pushed(let route):
+            selectedTab = .more
+            morePath = NavigationPath([route])
+        case .settings:
+            showingSettings = true
+        }
+    }
+    #endif
 
     /// `neptuneremote://home`, `neptuneremote://library`, ... used by App Intents,
     /// the widget and the Share Extension.

@@ -12,6 +12,7 @@
 		3C97419E84D5F5326256F09A /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppEnvironment.swift"; sourceTree = "<group>"; };
 		BAF3C57686396C4C6A77853F /* NeptuneRemoteApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NeptuneRemoteApp.swift"; sourceTree = "<group>"; };
 		07E17A55F8A083F2F7B0AFA4 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "RootView.swift"; sourceTree = "<group>"; };
+		72476693A22C0FC53569865F /* Showcase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Showcase.swift"; sourceTree = "<group>"; };
 		026D397BFF969A1B77D7F8EF /* AlertStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlertStore.swift"; sourceTree = "<group>"; };
 		366FB50F73E04589BD4BACE9 /* AlertModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AlertModels.swift"; sourceTree = "<group>"; };
 		6787B4EB58713EDEC5DB1854 /* BackendClient+Doctor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "BackendClient+Doctor.swift"; sourceTree = "<group>"; };
@@ -203,6 +204,7 @@
 				3C97419E84D5F5326256F09A /* AppEnvironment.swift */,
 				BAF3C57686396C4C6A77853F /* NeptuneRemoteApp.swift */,
 				07E17A55F8A083F2F7B0AFA4 /* RootView.swift */,
+				72476693A22C0FC53569865F /* Showcase.swift */,
 			);
 			path = "App";
 			sourceTree = "<group>";
@@ -639,6 +641,7 @@
 		2D153AFFF9EB705D68040075 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C97419E84D5F5326256F09A /* AppEnvironment.swift */; };
 		DA11EFB5BC0590263ADC038E /* NeptuneRemoteApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAF3C57686396C4C6A77853F /* NeptuneRemoteApp.swift */; };
 		C6E287565EB79F97BA9DC87E /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07E17A55F8A083F2F7B0AFA4 /* RootView.swift */; };
+		1E60C26F82FAA67EC8FD8D24 /* Showcase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72476693A22C0FC53569865F /* Showcase.swift */; };
 		84BA45A091DC0B1F9AC7CD9D /* AlertStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026D397BFF969A1B77D7F8EF /* AlertStore.swift */; };
 		F208827DCB75728BB6770D03 /* AlertModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 366FB50F73E04589BD4BACE9 /* AlertModels.swift */; };
 		D82FAFF8B8F46F823AD68294 /* BackendClient+Doctor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6787B4EB58713EDEC5DB1854 /* BackendClient+Doctor.swift */; };
@@ -813,6 +816,7 @@
 				2D153AFFF9EB705D68040075 /* AppEnvironment.swift in Sources */,
 				DA11EFB5BC0590263ADC038E /* NeptuneRemoteApp.swift in Sources */,
 				C6E287565EB79F97BA9DC87E /* RootView.swift in Sources */,
+				1E60C26F82FAA67EC8FD8D24 /* Showcase.swift in Sources */,
 				84BA45A091DC0B1F9AC7CD9D /* AlertStore.swift in Sources */,
 				F208827DCB75728BB6770D03 /* AlertModels.swift in Sources */,
 				D82FAFF8B8F46F823AD68294 /* BackendClient+Doctor.swift in Sources */,

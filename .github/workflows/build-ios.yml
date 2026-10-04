@@ -43,6 +43,37 @@ jobs:
       - name: Project, localisation and secret checks
         run: python scripts/verify_project.py
 
+  # Runs the real app on a simulator in demo mode and photographs it. This is
+  # the only place a design change can be seen before it ships: nobody working
+  # on this app has a Mac.
+  screenshots:
+    name: Screenshots
+    needs: verify
+    runs-on: macos-14
+    defaults:
+      run:
+        working-directory: neptune-remote
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Select Xcode
+        run: sudo xcode-select -switch /Applications/Xcode_15.4.app
+
+      - name: Regenerate the Xcode project
+        run: python3 scripts/generate_xcodeproj.py
+
+      - name: Launch and photograph every screen
+        run: bash ./scripts/take_screenshots.sh dist/screenshots
+
+      - name: Upload the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: neptune-remote/dist/screenshots/*.png
+          if-no-files-found: warn
+          retention-days: 30
+
   build:
     name: Unsigned IPA
     needs: verify

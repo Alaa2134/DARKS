@@ -52,6 +52,12 @@ final class AppEnvironment: ObservableObject {
         placement = PlacementStore(settings: settings, printer: printer)
         liveActivity = LiveActivityController()
 
+        #if DEBUG
+        // Before anything reads the settings: screenshot mode has to be in
+        // demo, in the right language, before the first frame is drawn.
+        Showcase.prepare(settings)
+        #endif
+
         // Wired here rather than inside each store: a store should not have to
         // know about a presenter, and the alternative - remembering to show
         // every store's error on every screen that touches it - was already
