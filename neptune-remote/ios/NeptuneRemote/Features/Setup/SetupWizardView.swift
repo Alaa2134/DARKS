@@ -47,19 +47,27 @@ struct SetupWizardView: View {
 
     private var welcomeStep: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Image(systemName: "printer.fill")
-                .font(.system(size: 56))
-                .foregroundStyle(Theme.accent)
-                .frame(maxWidth: .infinity)
+            // The first screen anyone sees. The machine, on deep water, with
+            // the app's name under it - not an SF Symbol in a void.
+            VStack(spacing: 14) {
+                PrinterIllustration()
+                    .frame(height: 210)
+                    .frame(maxWidth: .infinity)
+                Text(localized: "setup.welcome.title")
+                    .font(.largeTitle.weight(.heavy))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                Text(localized: "setup.welcome.message")
+                    .font(.body)
+                    .foregroundStyle(.white.opacity(0.75))
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+            }
+            .heroCard(padding: 24)
 
-            Text(localized: "setup.welcome.title")
-                .font(.largeTitle.weight(.bold))
-            Text(localized: "setup.welcome.message")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(alignment: .leading, spacing: 14) {
                 bullet("setup.welcome.point1", systemImage: "bolt.fill")
                 bullet("setup.welcome.point2", systemImage: "thermometer.medium")
                 bullet("setup.welcome.point3", systemImage: "cube.transparent")
@@ -79,10 +87,12 @@ struct SetupWizardView: View {
     }
 
     private func bullet(_ key: String, systemImage: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 12) {
             Image(systemName: systemImage)
-                .foregroundStyle(Theme.accent)
-                .frame(width: 24)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white)
+                .frame(width: 32, height: 32)
+                .background(Theme.tideGradient, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             Text(localized: key)
                 .font(.subheadline)
                 .fixedSize(horizontal: false, vertical: true)

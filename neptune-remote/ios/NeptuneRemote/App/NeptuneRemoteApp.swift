@@ -29,6 +29,11 @@ struct NeptuneRemoteApp: App {
                 .environment(\.locale, environment.settings.locale)
                 .environment(\.layoutDirection, environment.settings.layoutDirection)
                 .tint(Theme.accent)
+                // Rounded numerals: temperatures, percentages and times are
+                // most of what this app shows, and the rounded design reads
+                // friendlier and more legible at a glance. Arabic text keeps
+                // its own face; this only changes the Latin and the digits.
+                .fontDesign(.rounded)
                 .task { environment.start() }
         }
         .onChange(of: scenePhase) { _, phase in

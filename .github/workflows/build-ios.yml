@@ -50,6 +50,11 @@ jobs:
     name: Screenshots
     needs: verify
     runs-on: macos-14
+    # A hung simulator should cost forty minutes, not the six-hour default.
+    timeout-minutes: 40
+    # Publishing the pictures as a release asset needs write access.
+    permissions:
+      contents: write
     defaults:
       run:
         working-directory: neptune-remote
@@ -73,6 +78,30 @@ jobs:
           path: neptune-remote/dist/screenshots/*.png
           if-no-files-found: warn
           retention-days: 30
+
+      # Also as one zip on a rolling release, for the same reason the IPA is:
+      # a workflow artifact needs a GitHub login and lives on a storage host
+      # that not every tool can reach, while a release asset is a plain URL.
+      - name: Publish the screenshots as a rolling release asset
+        if: >-
+          success() && (github.event_name == 'push' ||
+          github.event.pull_request.head.repo.full_name == github.repository)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="screenshots-latest"
+          (cd dist && zip -q -r screenshots.zip screenshots)
+          NOTES="Simulator screenshots of the app in demo mode, built from ${GITHUB_SHA}."
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release edit "${TAG}" --notes "${NOTES}" --prerelease
+            gh release upload "${TAG}" dist/screenshots.zip --clobber
+          else
+            gh release create "${TAG}" dist/screenshots.zip \
+              --title "Neptune Remote - screenshots" \
+              --notes "${NOTES}" \
+              --prerelease
+          fi
 
   build:
     name: Unsigned IPA

@@ -78,6 +78,7 @@
 		2E1788ACF4320141030627FA /* ConditionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConditionCard.swift"; sourceTree = "<group>"; };
 		26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ConnectionTestPanel.swift"; sourceTree = "<group>"; };
 		2F1073378CE0245C0F744117 /* DocumentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DocumentPicker.swift"; sourceTree = "<group>"; };
+		8C157FC7556105015C454FA4 /* Hero.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Hero.swift"; sourceTree = "<group>"; };
 		DAF5085D86C033A91BCF9067 /* OutageCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OutageCard.swift"; sourceTree = "<group>"; };
 		8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrintChecklistView.swift"; sourceTree = "<group>"; };
 		9FB281C16A9C172E9CE5AACD /* PrinterFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PrinterFeedback.swift"; sourceTree = "<group>"; };
@@ -355,6 +356,7 @@
 				2E1788ACF4320141030627FA /* ConditionCard.swift */,
 				26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */,
 				2F1073378CE0245C0F744117 /* DocumentPicker.swift */,
+				8C157FC7556105015C454FA4 /* Hero.swift */,
 				DAF5085D86C033A91BCF9067 /* OutageCard.swift */,
 				8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */,
 				9FB281C16A9C172E9CE5AACD /* PrinterFeedback.swift */,
@@ -707,6 +709,7 @@
 		64906A251A84361C9FE8235D /* ConditionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1788ACF4320141030627FA /* ConditionCard.swift */; };
 		8FCBC5E92CA2956AD680784B /* ConnectionTestPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 26DEB7584F8A1CD64EB59AF3 /* ConnectionTestPanel.swift */; };
 		CC326328B77221AB5E8E3F40 /* DocumentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F1073378CE0245C0F744117 /* DocumentPicker.swift */; };
+		5184FD35FFCFE64166E51239 /* Hero.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C157FC7556105015C454FA4 /* Hero.swift */; };
 		02044D9BC6A86140D57A31A7 /* OutageCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = DAF5085D86C033A91BCF9067 /* OutageCard.swift */; };
 		E0BEBD9BD843AD980A176AD1 /* PrintChecklistView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A6AF5AC00E9F896BD1A4F35 /* PrintChecklistView.swift */; };
 		7D569945D205CF56F003C521 /* PrinterFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB281C16A9C172E9CE5AACD /* PrinterFeedback.swift */; };
@@ -882,6 +885,7 @@
 				64906A251A84361C9FE8235D /* ConditionCard.swift in Sources */,
 				8FCBC5E92CA2956AD680784B /* ConnectionTestPanel.swift in Sources */,
 				CC326328B77221AB5E8E3F40 /* DocumentPicker.swift in Sources */,
+				5184FD35FFCFE64166E51239 /* Hero.swift in Sources */,
 				02044D9BC6A86140D57A31A7 /* OutageCard.swift in Sources */,
 				E0BEBD9BD843AD980A176AD1 /* PrintChecklistView.swift in Sources */,
 				7D569945D205CF56F003C521 /* PrinterFeedback.swift in Sources */,

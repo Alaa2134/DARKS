@@ -101,6 +101,9 @@ struct RootView: View {
     /// Screenshot mode: open the screen CI asked for. See `Showcase`.
     private func openShowcaseScreen() {
         guard let screen = Showcase.screen else { return }
+        if Showcase.wantsPrinting {
+            printer.demoShowcaseMidPrint(filename: "trident_wave_vase.gcode", progress: 0.62)
+        }
         switch Showcase.destination(for: screen) {
         case .tab(let tab):
             selectedTab = tab
@@ -156,7 +159,7 @@ struct MoreView: View {
             Section {
                 NavigationLink { QueueView() } label: {
                     HStack {
-                        Label(L.t("queue.title"), systemImage: "list.number")
+                        MenuRow(titleKey: "queue.title", systemImage: "list.number", color: Theme.tideDeep)
                         Spacer()
                         if inventory.queue.waiting.count > 0 {
                             Text("\(inventory.queue.waiting.count)")
@@ -166,13 +169,13 @@ struct MoreView: View {
                     }
                 }
                 NavigationLink { HistoryView() } label: {
-                    Label(L.t("history.title"), systemImage: "clock.arrow.circlepath")
+                    MenuRow(titleKey: "history.title", systemImage: "clock.arrow.circlepath", color: Color(rgb: 0x6366F1))
                 }
                 NavigationLink { VideosView() } label: {
-                    Label(L.t("video.title"), systemImage: "film")
+                    MenuRow(titleKey: "video.title", systemImage: "film", color: Color(rgb: 0xEC4899))
                 }
                 NavigationLink { VisionView() } label: {
-                    Label(L.t("vision.title"), systemImage: "eye")
+                    MenuRow(titleKey: "vision.title", systemImage: "eye", color: Color(rgb: 0x8B5CF6))
                 }
             } header: {
                 Text(localized: "more.section.printing")
@@ -180,14 +183,14 @@ struct MoreView: View {
 
             Section {
                 NavigationLink { ControlView() } label: {
-                    Label(L.t("tab.control"), systemImage: "slider.horizontal.3")
+                    MenuRow(titleKey: "tab.control", systemImage: "slider.horizontal.3", color: Color(rgb: 0x0EA5E9))
                 }
                 NavigationLink { SliceView() } label: {
-                    Label(L.t("tab.slice"), systemImage: "cube.transparent")
+                    MenuRow(titleKey: "tab.slice", systemImage: "cube.transparent", color: Color(rgb: 0x14B8A6))
                 }
                 if settings.advancedMode {
                     NavigationLink { TerminalView() } label: {
-                        Label(L.t("terminal.title"), systemImage: "terminal")
+                        MenuRow(titleKey: "terminal.title", systemImage: "terminal", color: Color(rgb: 0x334155))
                     }
                 }
             } header: {
@@ -196,13 +199,13 @@ struct MoreView: View {
 
             Section {
                 NavigationLink { FilamentView() } label: {
-                    Label(L.t("filament.title"), systemImage: "circle.hexagongrid")
+                    MenuRow(titleKey: "filament.title", systemImage: "circle.hexagongrid", color: Theme.emberHot)
                 }
                 NavigationLink { CostView() } label: {
-                    Label(L.t("cost.title"), systemImage: "banknote")
+                    MenuRow(titleKey: "cost.title", systemImage: "banknote", color: Color(rgb: 0x22C55E))
                 }
                 NavigationLink { ProductsView() } label: {
-                    Label(L.t("products.title"), systemImage: "tag")
+                    MenuRow(titleKey: "products.title", systemImage: "tag", color: Color(rgb: 0xF59E0B))
                 }
             } header: {
                 Text(localized: "more.section.materials")
@@ -210,16 +213,16 @@ struct MoreView: View {
 
             Section {
                 NavigationLink { FixMyPrinterView() } label: {
-                    Label(L.t("doctor.title"), systemImage: "stethoscope")
+                    MenuRow(titleKey: "doctor.title", systemImage: "stethoscope", color: Color(rgb: 0xEF4444))
                 }
                 NavigationLink { CalibrationHubView() } label: {
-                    Label(L.t("calibration.title"), systemImage: "wand.and.stars")
+                    MenuRow(titleKey: "calibration.title", systemImage: "wand.and.stars", color: Color(rgb: 0xA855F7))
                 }
                 NavigationLink { MaintenanceView() } label: {
-                    Label(L.t("maintenance.title"), systemImage: "wrench.and.screwdriver")
+                    MenuRow(titleKey: "maintenance.title", systemImage: "wrench.and.screwdriver", color: Color(rgb: 0x64748B))
                 }
                 NavigationLink { PrinterHealthView() } label: {
-                    Label(L.t("health.title"), systemImage: "heart.text.square")
+                    MenuRow(titleKey: "health.title", systemImage: "heart.text.square", color: Color(rgb: 0xF43F5E))
                 }
             } header: {
                 Text(localized: "more.section.health")
@@ -227,19 +230,19 @@ struct MoreView: View {
 
             Section {
                 NavigationLink { PrinterCapabilitiesView() } label: {
-                    Label(L.t("capabilities.title"), systemImage: "list.bullet.clipboard")
+                    MenuRow(titleKey: "capabilities.title", systemImage: "list.bullet.clipboard", color: Color(rgb: 0x0284C7))
                 }
                 NavigationLink { ConfigVersionsView() } label: {
-                    Label(L.t("config.versions.title"), systemImage: "doc.on.doc")
+                    MenuRow(titleKey: "config.versions.title", systemImage: "doc.on.doc", color: Color(rgb: 0x475569))
                 }
                 NavigationLink { LibraryBackupView() } label: {
-                    Label(L.t("library.backup.title"), systemImage: "externaldrive.badge.timemachine")
+                    MenuRow(titleKey: "library.backup.title", systemImage: "externaldrive.badge.timemachine", color: Color(rgb: 0x059669))
                 }
                 NavigationLink { SystemInfoView() } label: {
-                    Label(L.t("system.title"), systemImage: "cpu")
+                    MenuRow(titleKey: "system.title", systemImage: "cpu", color: Color(rgb: 0x52525B))
                 }
                 NavigationLink { SupportView() } label: {
-                    Label(L.t("support.title"), systemImage: "questionmark.circle")
+                    MenuRow(titleKey: "support.title", systemImage: "questionmark.circle", color: Color(rgb: 0x3B82F6))
                 }
             } header: {
                 Text(localized: "more.section.system")
@@ -259,7 +262,7 @@ struct MoreView: View {
                 Button {
                     showingSettings = true
                 } label: {
-                    Label(L.t("settings.title"), systemImage: "gearshape")
+                    MenuRow(titleKey: "settings.title", systemImage: "gearshape", color: Color(rgb: 0x6B7280))
                 }
             } header: {
                 Text(localized: "more.section.app")

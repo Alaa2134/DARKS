@@ -19,6 +19,13 @@ enum PrinterPhase: String {
         }
     }
 
+    /// The colour the hero glows with. Ready is the brand's own tide rather
+    /// than the accent, because on deep water the accent's light-mode shade
+    /// would be too dark to glow.
+    var heroColor: Color {
+        self == .ready ? Theme.tide : color
+    }
+
     var systemImage: String {
         switch self {
         case .off: return "power"
@@ -128,25 +135,32 @@ struct SimpleHomeView: View {
     // MARK: - State
 
     private var stateCard: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 14) {
-                ZStack {
-                    Circle()
-                        .fill(phase.color.opacity(0.16))
-                        .frame(width: 62, height: 62)
-                    Image(systemName: phase.systemImage)
-                        .font(.title2)
-                        .foregroundStyle(phase.color)
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(localized: phase.localizationKey)
-                        .font(.title3.weight(.semibold))
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 10) {
+                    StatusChip(
+                        text: L.t(phase.localizationKey),
+                        color: phase.heroColor,
+                        pulsing: phase == .printing || phase == .ready
+                    )
+                    Text(settings.printerName.isEmpty ? "Neptune 3 Plus" : settings.printerName)
+                        .font(.title2.weight(.bold))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
                     Text(hintText)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.72))
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 0)
+                // The machine itself while there is no print to show; the
+                // print takes its place the moment there is one.
+                if phase != .printing {
+                    PrinterIllustration()
+                        .frame(width: 118, height: 118)
+                        .padding(.top, -6)
+                }
             }
 
             if phase == .printing {
@@ -158,7 +172,7 @@ struct SimpleHomeView: View {
                 .buttonStyle(.plain)
             }
         }
-        .card(tint: phase.color)
+        .heroCard(glow: phase.heroColor)
     }
 
     private var hintText: String {
@@ -178,32 +192,49 @@ struct SimpleHomeView: View {
     }
 
     private var printingSummary: some View {
-        HStack(spacing: 12) {
-            ModelImage(
-                url: library.mediaURL(printer.summary?.item?.thumbnail),
-                name: printer.summary?.item?.displayName ?? "",
-                category: printer.summary?.item?.category ?? "other",
-                showsPlaceholderLabel: false
-            )
-            .frame(width: 64, height: 64)
-
-            VStack(alignment: .leading, spacing: 6) {
-                ProgressView(value: snapshot.progress)
-                    .tint(Theme.printing)
-                HStack {
-                    Text(Format.percent(snapshot.progress))
-                        .font(.caption.weight(.semibold))
-                        .monospacedDigit()
-                    Spacer()
-                    Text(L.t("printing.remaining", Format.duration(snapshot.estimatedTimeLeft)))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+        HStack(spacing: 16) {
+            ZStack {
+                ProgressRing(
+                    progress: snapshot.progress,
+                    lineWidth: 9,
+                    tint: Theme.tide,
+                    label: Format.percent(snapshot.progress)
+                )
             }
+            .frame(width: 92, height: 92)
+
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 10) {
+                    ModelImage(
+                        url: library.mediaURL(printer.summary?.item?.thumbnail),
+                        name: printer.summary?.item?.displayName ?? "",
+                        category: printer.summary?.item?.category ?? "other",
+                        showsPlaceholderLabel: false
+                    )
+                    .frame(width: 40, height: 40)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                    Text(printer.summary?.item?.displayName ?? snapshot.filename)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .lineLimit(2)
+                }
+                Label(
+                    L.t("printing.remaining", Format.duration(snapshot.estimatedTimeLeft)),
+                    systemImage: "clock"
+                )
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.white.opacity(0.75))
+                .monospacedDigit()
+            }
+            Spacer(minLength: 0)
             Image(systemName: "chevron.forward")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.5))
+                .flipsForRightToLeftLayoutDirection(true)
         }
+        .padding(14)
+        .background(.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
     }
 
     // MARK: - Primary action
@@ -318,7 +349,21 @@ struct SimpleHomeView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 18)
-        .background(tint, in: RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [tint, tint.opacity(0.78)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay {
+                    RoundedRectangle(cornerRadius: Theme.cornerRadius, style: .continuous)
+                        .strokeBorder(Color.white.opacity(0.25), lineWidth: 1)
+                }
+        }
+        .shadow(color: tint.opacity(0.35), radius: 14, x: 0, y: 6)
         .foregroundStyle(.white)
     }
 

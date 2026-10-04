@@ -44,26 +44,54 @@ struct ModelImage: View {
     }
 
     private var placeholder: some View {
-        LinearGradient(
-            colors: [Theme.accent.opacity(0.22), Theme.accent.opacity(0.06)],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        .overlay {
+        // A model with no picture yet is still drawn as an object worth
+        // printing: deep water, lit from above, its category glyph in light -
+        // and a hue of its own per category, so a shelf of models without
+        // thumbnails is not a row of identical tiles.
+        let hue = Self.hue(for: category)
+        return ZStack {
+            LinearGradient(
+                colors: [
+                    Color(hue: hue, saturation: 0.55, brightness: 0.42),
+                    Color(hue: hue, saturation: 0.70, brightness: 0.18)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            RadialGradient(
+                colors: [Color(hue: hue, saturation: 0.45, brightness: 1).opacity(0.45), .clear],
+                center: UnitPoint(x: 0.5, y: 0.3),
+                startRadius: 2,
+                endRadius: 120
+            )
+            LayerWaves(count: 3)
+                .stroke(Color.white.opacity(0.10), lineWidth: 1)
             VStack(spacing: 8) {
                 Image(systemName: LibraryCategoryCatalog.icon(for: category))
-                    .font(.system(size: 30, weight: .light))
-                    .foregroundStyle(Theme.accent.opacity(0.75))
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .shadow(color: Color(hue: hue, saturation: 0.6, brightness: 1).opacity(0.8), radius: 12)
                 if showsPlaceholderLabel, !name.isEmpty {
                     Text(name)
-                        .font(.caption2.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.85))
                         .lineLimit(2)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal, 8)
                 }
             }
         }
+    }
+
+    /// A stable hue per category, kept inside the cool half of the wheel so the
+    /// library stays in the app's water palette rather than becoming a rainbow.
+    static func hue(for category: String) -> Double {
+        var hash: UInt64 = 1469598103934665603
+        for byte in category.utf8 {
+            hash = (hash ^ UInt64(byte)) &* 1099511628211
+        }
+        let palette: [Double] = [0.52, 0.55, 0.58, 0.62, 0.66, 0.72, 0.47, 0.08]
+        return palette[Int(hash % UInt64(palette.count))]
     }
 }
 

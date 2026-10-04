@@ -211,6 +211,24 @@ final class DemoSimulator {
         onUpdate?(snapshot)
     }
 
+    #if DEBUG
+    /// A print already well under way, for screenshot mode only: hot, homed,
+    /// part-way up the model, so the printing screen can be photographed
+    /// without waiting forty minutes for the demo to get there.
+    func showcaseMidPrint(filename: String, progress: Double, estimatedSeconds: Double = 3 * 3600, layers: Int = 412) {
+        startPrint(filename: filename, estimatedSeconds: estimatedSeconds, layers: layers)
+        snapshot.printDuration = estimatedSeconds * progress
+        snapshot.totalDuration = snapshot.printDuration + 95
+        snapshot.progress = progress
+        snapshot.currentLayer = Int(progress * Double(layers))
+        snapshot.filamentUsedMM = 1.8 * snapshot.printDuration
+        snapshot.nozzleActual = 209.6
+        snapshot.bedActual = 59.8
+        snapshot.fanSpeed = 1.0
+        onUpdate?(snapshot)
+    }
+    #endif
+
     func pause() {
         guard snapshot.state == .printing else { return }
         snapshot.state = .paused

@@ -1645,6 +1645,14 @@ final class PrinterStore: ObservableObject {
         demo.startPrint(filename: filename, estimatedSeconds: estimatedSeconds, layers: layers)
     }
 
+    #if DEBUG
+    /// Screenshot mode only - see `Showcase`.
+    func demoShowcaseMidPrint(filename: String, progress: Double) {
+        guard settings.demoMode else { return }
+        demo.showcaseMidPrint(filename: filename, progress: progress)
+    }
+    #endif
+
     func thumbnailURL(for relativePath: String) -> URL? {
         guard let base = settings.connection.moonrakerBaseURL else { return nil }
         let encoded = relativePath

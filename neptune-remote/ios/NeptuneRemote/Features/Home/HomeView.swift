@@ -246,55 +246,60 @@ struct PrinterStateCard: View {
     let snapshot: PrinterSnapshot
     let printerName: String
 
+    private var stateColor: Color {
+        let color = Theme.color(for: snapshot.state)
+        // The accent's light-mode shade is too dark to glow on deep water.
+        return snapshot.state == .standby ? Theme.tide : color
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(printerName)
-                        .font(.title3.weight(.bold))
-                    Text(localized: snapshot.klippy.localizationKey)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+        HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    StatusChip(
+                        text: L.t(snapshot.state.localizationKey),
+                        color: stateColor,
+                        pulsing: snapshot.isActive
+                    )
+                    StatusChip(
+                        text: L.t(snapshot.isOnline ? "status.online" : "status.offline"),
+                        color: snapshot.isOnline ? Theme.printing : Theme.danger,
+                        systemImage: snapshot.isOnline ? "wifi" : "wifi.slash"
+                    )
                 }
-                Spacer()
-                StatusPill(
-                    text: L.t(snapshot.isOnline ? "status.online" : "status.offline"),
-                    color: snapshot.isOnline ? Theme.printing : Theme.danger,
-                    pulsing: snapshot.isOnline
-                )
-            }
-
-            HStack(spacing: 12) {
-                Image(systemName: snapshot.state.symbolName)
-                    .font(.system(size: 30))
-                    .foregroundStyle(Theme.color(for: snapshot.state))
-                    .frame(width: 44)
-
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(localized: snapshot.state.localizationKey)
-                        .font(.headline)
-                        .foregroundStyle(Theme.color(for: snapshot.state))
+                Text(printerName.isEmpty ? "Neptune 3 Plus" : printerName)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Group {
                     if !snapshot.filename.isEmpty {
                         Text(snapshot.filename)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
                     } else if !snapshot.stateMessage.isEmpty {
                         Text(snapshot.stateMessage)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
                             .lineLimit(2)
+                    } else {
+                        Text(localized: snapshot.klippy.localizationKey)
                     }
                 }
-                Spacer()
+                .font(.subheadline)
+                .foregroundStyle(.white.opacity(0.72))
             }
-
-            // Conditions are rendered as their own cards below, so this one no
-            // longer repeats the message - that repetition was how a single
-            // Klipper state ended up described two or three times on screen.
+            Spacer(minLength: 0)
+            // The machine itself, until there is a print to show instead -
+            // the progress card below takes over the picture then.
+            if !snapshot.isActive {
+                PrinterIllustration()
+                    .frame(width: 112, height: 112)
+                    .padding(.top, -6)
+            }
         }
-        .card(tint: Theme.color(for: snapshot.state))
+        // Conditions are rendered as their own cards below, so this one does
+        // not repeat the message - that repetition was how a single Klipper
+        // state ended up described two or three times on screen.
+        .heroCard(glow: stateColor)
     }
 }
 

@@ -30,7 +30,8 @@ enum Showcase {
         // The permission prompt would sit on top of every screenshot.
         settings.notificationsEnabled = false
         settings.hasCompletedSetup = screen != "setup"
-        settings.advancedMode = screen != "home-simple"
+        // The simple home is what most people see, so the printing shot uses it.
+        settings.advancedMode = !["home-simple", "home-printing"].contains(screen)
         switch environment["NEPTUNE_SHOWCASE_LANG"] {
         case "en": settings.language = .english
         default: settings.language = .arabic
@@ -49,6 +50,9 @@ enum Showcase {
         case settings
     }
 
+    /// Whether the shot wants the demo printer part-way through a print.
+    static var wantsPrinting: Bool { screen == "home-printing" }
+
     /// Screens that are not a tab of their own.
     enum Route: Hashable {
         case queue, alerts, slice
@@ -56,6 +60,7 @@ enum Showcase {
 
     static func destination(for screen: String) -> Destination {
         switch screen {
+        case "home-printing": return .tab(.home)
         case "library": return .tab(.library)
         case "files": return .tab(.files)
         case "camera": return .tab(.camera)

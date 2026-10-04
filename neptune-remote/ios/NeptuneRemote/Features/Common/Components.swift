@@ -15,15 +15,60 @@ struct SectionHeader: View {
     }
 
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             if let systemImage {
+                // In a tile rather than loose, the way iOS Settings marks its
+                // rows: a section is found by its icon long before its title
+                // is read.
                 Image(systemName: systemImage)
-                    .foregroundStyle(Theme.accent)
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 28, height: 28)
+                    .background(
+                        LinearGradient(
+                            colors: [Theme.tide, Theme.tideDeep],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    )
             }
             Text(localized: titleKey)
                 .font(.headline)
             Spacer(minLength: 0)
             trailing
+        }
+    }
+}
+
+// MARK: - Menu row
+
+/// A list row with its icon in a coloured tile, the way iOS Settings does it.
+///
+/// Seventeen destinations in a list are found by colour and shape long before
+/// their titles are read. One accent colour for every glyph made the list a
+/// wall of identical blue marks.
+struct MenuRow: View {
+    let titleKey: String
+    let systemImage: String
+    var color: Color = Theme.accent
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 30, height: 30)
+                .background(
+                    LinearGradient(
+                        colors: [color.opacity(0.85), color],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
+            Text(localized: titleKey)
+                .foregroundStyle(.primary)
         }
     }
 }
@@ -207,8 +252,19 @@ struct BigActionButton: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background {
+                let color = isDestructive ? Theme.danger : tint
                 RoundedRectangle(cornerRadius: Theme.smallCornerRadius, style: .continuous)
-                    .fill((isDestructive ? Theme.danger : tint).opacity(isEnabled ? 0.15 : 0.06))
+                    .fill(
+                        LinearGradient(
+                            colors: [color.opacity(isEnabled ? 0.20 : 0.06), color.opacity(isEnabled ? 0.10 : 0.04)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .overlay {
+                        RoundedRectangle(cornerRadius: Theme.smallCornerRadius, style: .continuous)
+                            .strokeBorder(color.opacity(isEnabled ? 0.28 : 0.08), lineWidth: 1)
+                    }
             }
             .foregroundStyle(isEnabled ? (isDestructive ? Theme.danger : tint) : Color.secondary)
         }
@@ -289,12 +345,14 @@ struct ProgressRing: View {
                     style: StrokeStyle(lineWidth: lineWidth, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
+                .shadow(color: tint.opacity(0.45), radius: 8)
                 .animation(.easeInOut(duration: 0.6), value: progress)
 
             VStack(spacing: 2) {
                 Text(label ?? Format.percent(progress))
-                    .font(.title2.weight(.bold))
+                    .font(.title2.weight(.heavy))
                     .monospacedDigit()
+                    .contentTransition(.numericText())
                 if let caption {
                     Text(caption)
                         .font(.caption2)
@@ -342,9 +400,36 @@ struct TemperatureBadge: View {
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
             }
-            ProgressView(value: min(1, max(0, target > 0 ? actual / target : actual / 300)))
-                .tint(tint)
+            HeatBar(
+                fraction: min(1, max(0, target > 0 ? actual / target : actual / 300)),
+                gradient: LinearGradient(
+                    colors: [tint.opacity(0.75), tint],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            )
         }
+    }
+}
+
+/// A capsule that fills with heat, and glows at the end that is moving.
+struct HeatBar: View {
+    let fraction: Double
+    var gradient: LinearGradient = Theme.emberGradient
+
+    var body: some View {
+        GeometryReader { geometry in
+            let width = max(8, geometry.size.width * fraction)
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.primary.opacity(0.08))
+                Capsule()
+                    .fill(gradient)
+                    .frame(width: width)
+                    .shadow(color: Color.orange.opacity(fraction > 0.02 ? 0.35 : 0), radius: 6)
+                    .animation(.easeInOut(duration: 0.6), value: fraction)
+            }
+        }
+        .frame(height: 8)
     }
 }
 
@@ -399,23 +484,59 @@ struct EmptyStateView: View {
     var action: (() -> Void)?
 
     var body: some View {
-        VStack(spacing: 12) {
-            Image(systemName: systemImage)
-                .font(.system(size: 42))
-                .foregroundStyle(.secondary)
+        VStack(spacing: 14) {
+            // An empty screen is still a screen somebody is looking at. A grey
+            // glyph in a void reads as "broken"; a lit one with the brand's
+            // waves under it reads as "nothing here yet".
+            ZStack {
+                Circle()
+                    .fill(Theme.tide.opacity(0.10))
+                    .frame(width: 120, height: 120)
+                Circle()
+                    .strokeBorder(Theme.tide.opacity(0.18), lineWidth: 1)
+                    .frame(width: 96, height: 96)
+                LayerWaves(count: 3)
+                    .stroke(Theme.tide.opacity(0.22), lineWidth: 1.2)
+                    .frame(width: 120, height: 60)
+                    .offset(y: 26)
+                    .mask(Circle().frame(width: 120, height: 120))
+                Image(systemName: systemImage)
+                    .font(.system(size: 38, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Theme.tide, Theme.tideDeep],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .shadow(color: Theme.tide.opacity(0.35), radius: 10)
+            }
+            .padding(.bottom, 4)
+
             Text(localized: titleKey)
-                .font(.headline)
+                .font(.title3.weight(.bold))
+                .multilineTextAlignment(.center)
             Text(localized: messageKey)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
             if let actionTitleKey, let action {
-                Button(L.t(actionTitleKey), action: action)
-                    .buttonStyle(.borderedProminent)
+                Button(action: action) {
+                    Text(localized: actionTitleKey)
+                        .font(.headline)
+                        .padding(.horizontal, 22)
+                        .padding(.vertical, 12)
+                        .foregroundStyle(.white)
+                        .background(Theme.tideGradient, in: Capsule())
+                        .shadow(color: Theme.tide.opacity(0.35), radius: 10, y: 4)
+                }
+                .buttonStyle(.plain)
+                .padding(.top, 4)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 40)
+        .padding(.vertical, 36)
         .padding(.horizontal, 24)
     }
 }
