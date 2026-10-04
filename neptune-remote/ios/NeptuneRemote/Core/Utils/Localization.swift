@@ -48,6 +48,7 @@ final class LocalizationManager {
 
     func apply(_ language: AppLanguage) {
         self.language = language
+        Format.locale = locale
         guard let code = language.localeIdentifier,
               let path = Bundle.main.path(forResource: code, ofType: "lproj"),
               let localized = Bundle(path: path)
@@ -56,6 +57,16 @@ final class LocalizationManager {
             return
         }
         bundle = localized
+    }
+
+    /// The locale dates are written in: the app's language, with Latin digits
+    /// in Arabic so a date matches the prices and temperatures beside it.
+    var locale: Locale {
+        switch language {
+        case .arabic: return Locale(identifier: "ar_EG@numbers=latn")
+        case .english: return Locale(identifier: "en_US")
+        case .system: return .autoupdatingCurrent
+        }
     }
 
     func string(_ key: String) -> String {

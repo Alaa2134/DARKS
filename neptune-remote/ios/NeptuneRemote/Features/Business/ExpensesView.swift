@@ -73,7 +73,7 @@ struct ExpensesView: View {
                             Text(expense.note.isEmpty ? L.t(expense.kind.localizationKey) : expense.note)
                                 .font(.subheadline.weight(.medium))
                                 .lineLimit(1)
-                            Text("\(L.t(expense.kind.localizationKey)) · \(Format.relativeDate(expense.spentAt))")
+                            Text(verbatim: "\(L.t(expense.kind.localizationKey)) · \(Format.relativeDate(expense.spentAt))")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

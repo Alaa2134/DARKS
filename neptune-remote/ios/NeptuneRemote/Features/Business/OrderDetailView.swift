@@ -170,7 +170,7 @@ struct OrderDetailView: View {
                     }
                     HStack(spacing: 8) {
                         MadeBar(progress: line.progress)
-                        Text("\(line.printed)/\(line.quantity)")
+                        Text(verbatim: "\(line.printed)/\(line.quantity)")
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(.secondary)
                             .environment(\.layoutDirection, .leftToRight)

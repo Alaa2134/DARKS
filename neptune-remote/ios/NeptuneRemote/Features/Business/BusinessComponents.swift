@@ -78,7 +78,7 @@ struct OrderRow: View {
             if order.status.isOpen, order.units > 0 {
                 HStack(spacing: 8) {
                     MadeBar(progress: order.progress)
-                    Text("\(order.printed)/\(order.units)")
+                    Text(verbatim: "\(order.printed)/\(order.units)")
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(.secondary)
                         .environment(\.layoutDirection, .leftToRight)

@@ -30,16 +30,22 @@ struct HeroBackground: View {
             )
             // Printed layers laid down as a sea - the same motif as the icon,
             // faint enough to be texture rather than picture.
-            LayerWaves(drift: drift)
-                .stroke(Color.white.opacity(0.07), lineWidth: 1.2)
-        }
-        .onAppear {
             // A slow swell, one wavelength every fourteen seconds: enough to
             // read as water, too slow to pull the eye off the numbers.
+            //
+            // Scoped to the waves with `.animation(_:value:)`, never started
+            // with `withAnimation`: a forever-repeating transaction opened on
+            // appear swallowed whatever else changed in the same moment, so
+            // figures loading as the card appeared faded in over fourteen
+            // seconds.
+            LayerWaves(drift: drift)
+                .stroke(Color.white.opacity(0.07), lineWidth: 1.2)
+                .animation(reduceMotion ? nil : .linear(duration: 14).repeatForever(autoreverses: false),
+                           value: drift)
+        }
+        .onAppear {
             guard !reduceMotion else { return }
-            withAnimation(.linear(duration: 14).repeatForever(autoreverses: false)) {
-                drift = 1
-            }
+            drift = 1
         }
     }
 }
@@ -121,6 +127,7 @@ struct StatusChip: View {
                     .frame(width: 7, height: 7)
                     .shadow(color: color, radius: breathe ? 6 : 2)
                     .scaleEffect(breathe ? 1.15 : 0.9)
+                    .animation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true), value: breathe)
             }
             Text(text)
                 .font(.caption.weight(.semibold))
@@ -133,9 +140,7 @@ struct StatusChip: View {
         .overlay(Capsule().strokeBorder(color.opacity(0.35), lineWidth: 1))
         .onAppear {
             guard pulsing else { return }
-            withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) {
-                breathe = true
-            }
+            breathe = true
         }
     }
 }
@@ -154,13 +159,12 @@ struct PrinterIllustration: View {
             .resizable()
             .scaledToFit()
             .offset(y: up ? -3 : 3)
+            .animation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true), value: up)
             .shadow(color: Theme.tide.opacity(0.25), radius: 18, y: 8)
             .accessibilityHidden(true)
             .onAppear {
                 guard floats else { return }
-                withAnimation(.easeInOut(duration: 3.2).repeatForever(autoreverses: true)) {
-                    up = true
-                }
+                up = true
             }
     }
 }

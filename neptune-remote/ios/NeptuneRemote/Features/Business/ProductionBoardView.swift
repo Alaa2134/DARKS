@@ -83,7 +83,7 @@ struct ProductionBoardView: View {
             }
             HStack(spacing: 8) {
                 MadeBar(progress: line.progress, tint: line.late ? Theme.danger : Theme.tide)
-                Text("\(line.printed)/\(line.quantity)")
+                Text(verbatim: "\(line.printed)/\(line.quantity)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
                     .environment(\.layoutDirection, .leftToRight)

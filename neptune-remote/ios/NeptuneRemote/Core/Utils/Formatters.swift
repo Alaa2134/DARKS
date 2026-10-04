@@ -100,9 +100,14 @@ enum Format {
         fileSize(bytes.map(Int64.init))
     }
 
+    /// The locale dates are written in. Set by the app when its language
+    /// changes; the widget, which shares this file, keeps the system's.
+    static var locale: Locale = .autoupdatingCurrent
+
     static func date(_ timestamp: TimeInterval?) -> String {
         guard let timestamp, timestamp > 0 else { return "--" }
         let formatter = DateFormatter()
+        formatter.locale = Format.locale
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: Date(timeIntervalSince1970: timestamp))
@@ -111,6 +116,7 @@ enum Format {
     static func relativeDate(_ timestamp: TimeInterval?) -> String {
         guard let timestamp, timestamp > 0 else { return "--" }
         let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Format.locale
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: Date(timeIntervalSince1970: timestamp), relativeTo: Date())
     }

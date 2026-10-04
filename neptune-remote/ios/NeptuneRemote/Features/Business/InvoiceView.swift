@@ -147,7 +147,7 @@ struct InvoiceCard: View {
                         HStack(alignment: .firstTextBaseline) {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(item.name).font(.subheadline.weight(.medium))
-                                Text("\(item.quantity) × \(money(item.unitPrice))")
+                                Text(verbatim: "\(item.quantity) × \(money(item.unitPrice))")
                                     .font(.caption)
                                     .foregroundStyle(.secondary)
                             }

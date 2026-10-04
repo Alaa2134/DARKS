@@ -31,16 +31,18 @@ struct Shimmer: ViewModifier {
                         )
                         .frame(width: width * 0.55)
                         .offset(x: phase * width * 1.6)
+                        .animation(reduceMotion ? nil : .linear(duration: 1.4).repeatForever(autoreverses: false),
+                                   value: phase)
                     }
                     .allowsHitTesting(false)
                 }
             }
             .mask(content)
             .onAppear {
+                // Scoped to the sweep above, not `withAnimation`: an open
+                // forever-transaction would animate the real content arriving.
                 guard !reduceMotion else { return }
-                withAnimation(.linear(duration: 1.4).repeatForever(autoreverses: false)) {
-                    phase = 1
-                }
+                phase = 1
             }
     }
 }
