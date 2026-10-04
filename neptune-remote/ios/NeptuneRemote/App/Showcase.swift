@@ -74,6 +74,22 @@ enum Showcase {
     }
 }
 
+/// The slicer with a model already chosen, so its picture shows the profiles,
+/// the preview and the parameters rather than an empty picker.
+private struct ShowcaseSelectsModel: ViewModifier {
+    @EnvironmentObject private var files: FilesStore
+    @EnvironmentObject private var slicing: SliceStore
+
+    func body(content: Content) -> some View {
+        content.task {
+            await files.loadModels()
+            if slicing.selectedModel == nil {
+                slicing.selectedModel = files.models.first
+            }
+        }
+    }
+}
+
 extension View {
     /// The pushed screens screenshot mode can reach. Registered on the More
     /// stack so a pushed screen is photographed with its tab bar and back
@@ -83,7 +99,7 @@ extension View {
             switch route {
             case .queue: QueueView()
             case .alerts: AlertSettingsView()
-            case .slice: SliceView()
+            case .slice: SliceView().modifier(ShowcaseSelectsModel())
             }
         }
     }

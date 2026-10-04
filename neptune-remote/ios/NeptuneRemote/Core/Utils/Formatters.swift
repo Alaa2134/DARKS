@@ -39,6 +39,23 @@ enum Format {
         return String(format: "%.0f°", value)
     }
 
+    /// A G-code filename as something a person would call the print:
+    /// `trident_wave_vase.gcode` becomes "trident wave vase". The file is not
+    /// the thing on the bed, and the name should not read like one.
+    static func printName(_ filename: String) -> String {
+        var name = (filename as NSString).lastPathComponent
+        for suffix in [".gcode", ".gco", ".g", ".bgcode"] where name.lowercased().hasSuffix(suffix) {
+            name = String(name.dropLast(suffix.count))
+            break
+        }
+        let spaced = name
+            .replacingOccurrences(of: "_", with: " ")
+            .replacingOccurrences(of: "-", with: " ")
+            .split(separator: " ", omittingEmptySubsequences: true)
+            .joined(separator: " ")
+        return spaced.isEmpty ? filename : spaced
+    }
+
     static func percent(_ fraction: Double?) -> String {
         guard let fraction, fraction.isFinite else { return "--" }
         return String(format: "%.0f%%", fraction * 100)

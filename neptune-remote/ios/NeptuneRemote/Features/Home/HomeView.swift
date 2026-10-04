@@ -21,7 +21,7 @@ struct HomeView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: Theme.spacing) {
-                if settings.demoMode { demoBanner }
+                if showsDemoBanner { demoBanner }
 
                 // First, because until this is done nothing below it means
                 // anything - and because "which of the four steps is stuck" is
@@ -225,6 +225,16 @@ struct HomeView: View {
         return printer.thumbnailURL(for: path)
     }
 
+    /// The demo banner, except in screenshot mode: those pictures are of the
+    /// interface, and the showcase that uses them says plainly that the data is
+    /// the built-in demo. Everywhere a person can reach, demo mode says so.
+    private var showsDemoBanner: Bool {
+        #if DEBUG
+        if Showcase.isActive { return false }
+        #endif
+        return settings.demoMode
+    }
+
     private var demoBanner: some View {
         HStack(spacing: 10) {
             Image(systemName: "wand.and.stars")
@@ -274,7 +284,7 @@ struct PrinterStateCard: View {
                     .minimumScaleFactor(0.7)
                 Group {
                     if !snapshot.filename.isEmpty {
-                        Text(snapshot.filename)
+                        Text(Format.printName(snapshot.filename))
                             .lineLimit(1)
                             .truncationMode(.middle)
                     } else if !snapshot.stateMessage.isEmpty {

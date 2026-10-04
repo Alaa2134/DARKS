@@ -74,7 +74,7 @@ struct SimpleHomeView: View {
     var body: some View {
         ScrollView {
             LazyVStack(spacing: Theme.spacing) {
-                if settings.demoMode { demoBanner }
+                if showsDemoBanner { demoBanner }
 
                 // Replaces the old offline banner. That one could only say
                 // "not connected"; this says which of the four steps between
@@ -185,7 +185,10 @@ struct SimpleHomeView: View {
             }
             return L.t("home.state.error")
         case .printing:
-            return printer.summary?.item?.displayName ?? snapshot.filename
+            // The model's own name when the library knows it; otherwise the
+            // filename made readable. `trident_wave_vase.gcode` is a file;
+            // "trident wave vase" is the thing on the bed.
+            return printer.summary?.item?.displayName ?? Format.printName(snapshot.filename)
         default:
             return L.t(phase.hintKey)
         }
@@ -193,39 +196,33 @@ struct SimpleHomeView: View {
 
     private var printingSummary: some View {
         HStack(spacing: 16) {
-            ZStack {
-                ProgressRing(
-                    progress: snapshot.progress,
-                    lineWidth: 9,
-                    tint: Theme.tide,
-                    label: Format.percent(snapshot.progress)
-                )
-            }
+            ProgressRing(
+                progress: snapshot.progress,
+                lineWidth: 9,
+                tint: Theme.tide,
+                label: Format.percent(snapshot.progress)
+            )
             .frame(width: 92, height: 92)
 
             VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 10) {
-                    ModelImage(
-                        url: library.mediaURL(printer.summary?.item?.thumbnail),
-                        name: printer.summary?.item?.displayName ?? "",
-                        category: printer.summary?.item?.category ?? "other",
-                        showsPlaceholderLabel: false
-                    )
-                    .frame(width: 40, height: 40)
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-
-                    Text(printer.summary?.item?.displayName ?? snapshot.filename)
+                if let layer = snapshot.currentLayer, let total = snapshot.totalLayer, total > 0 {
+                    Label(L.t("printing.layer", layer, total), systemImage: "square.stack.3d.up.fill")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.white)
-                        .lineLimit(2)
+                        .monospacedDigit()
                 }
                 Label(
                     L.t("printing.remaining", Format.duration(snapshot.estimatedTimeLeft)),
                     systemImage: "clock"
                 )
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.white.opacity(0.75))
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Theme.emberWarm)
                 .monospacedDigit()
+                if let finish = snapshot.estimatedFinishDate {
+                    Label(finish.formatted(date: .omitted, time: .shortened), systemImage: "flag.checkered")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                }
             }
             Spacer(minLength: 0)
             Image(systemName: "chevron.forward")
@@ -546,6 +543,16 @@ struct SimpleHomeView: View {
     }
 
     // MARK: - Banners
+
+    /// The demo banner, except in screenshot mode: those pictures are of the
+    /// interface, and the showcase that uses them says plainly that the data is
+    /// the built-in demo. Everywhere a person can reach, demo mode says so.
+    private var showsDemoBanner: Bool {
+        #if DEBUG
+        if Showcase.isActive { return false }
+        #endif
+        return settings.demoMode
+    }
 
     private var demoBanner: some View {
         HStack(spacing: 10) {

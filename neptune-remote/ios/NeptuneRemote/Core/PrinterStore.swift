@@ -1647,6 +1647,12 @@ final class PrinterStore: ObservableObject {
 
     #if DEBUG
     /// Screenshot mode only - see `Showcase`.
+    func demoShowcaseHomed() {
+        guard settings.demoMode else { return }
+        demo.showcaseHomed()
+    }
+
+    /// Screenshot mode only - see `Showcase`.
     func demoShowcaseMidPrint(filename: String, progress: Double) {
         guard settings.demoMode else { return }
         demo.showcaseMidPrint(filename: filename, progress: progress)

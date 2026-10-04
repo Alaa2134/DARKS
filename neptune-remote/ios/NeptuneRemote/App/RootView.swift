@@ -101,6 +101,7 @@ struct RootView: View {
     /// Screenshot mode: open the screen CI asked for. See `Showcase`.
     private func openShowcaseScreen() {
         guard let screen = Showcase.screen else { return }
+        printer.demoShowcaseHomed()
         if Showcase.wantsPrinting {
             printer.demoShowcaseMidPrint(filename: "trident_wave_vase.gcode", progress: 0.62)
         }

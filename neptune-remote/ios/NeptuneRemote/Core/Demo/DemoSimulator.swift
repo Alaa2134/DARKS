@@ -212,6 +212,14 @@ final class DemoSimulator {
     }
 
     #if DEBUG
+    /// Homed and ready, for screenshot mode: a freshly started demo is
+    /// unhomed, which is honest but puts a "needs Home" card on top of every
+    /// picture of the home screen.
+    func showcaseHomed() {
+        snapshot.homedAxes = "xyz"
+        onUpdate?(snapshot)
+    }
+
     /// A print already well under way, for screenshot mode only: hot, homed,
     /// part-way up the model, so the printing screen can be photographed
     /// without waiting forty minutes for the demo to get there.

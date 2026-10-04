@@ -177,35 +177,44 @@ struct PrintingView: View {
     // MARK: - Progress
 
     private var progressCard: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 16) {
-                ProgressRing(
-                    progress: snapshot.progress,
-                    tint: Theme.color(for: snapshot.state),
-                    caption: layerCaption
-                )
-                .frame(width: 100, height: 100)
+        // The one number everybody opens this screen for, on the deep-water
+        // surface: the ring big, the time left beside it in the largest type on
+        // the screen, everything else secondary.
+        HStack(spacing: 18) {
+            ProgressRing(
+                progress: snapshot.progress,
+                lineWidth: 12,
+                tint: snapshot.isPaused ? Theme.paused : Theme.tide,
+                caption: layerCaption
+            )
+            .frame(width: 124, height: 124)
 
-                VStack(alignment: .leading, spacing: 8) {
-                    if let layer = snapshot.currentLayer, let total = snapshot.totalLayer, total > 0 {
-                        Text(L.t("printing.layer", layer, total))
-                            .font(.subheadline.weight(.medium))
-                    }
-                    InfoRow(titleKey: "printing.elapsed", value: Format.clock(snapshot.printDuration))
-                    InfoRow(
-                        titleKey: "print.remaining",
-                        value: Format.duration(snapshot.estimatedTimeLeft)
-                    )
-                    if let finish = snapshot.estimatedFinishDate {
-                        InfoRow(
-                            titleKey: "print.eta",
-                            value: finish.formatted(date: .omitted, time: .shortened)
-                        )
-                    }
+            VStack(alignment: .leading, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(localized: "print.remaining")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.6))
+                    Text(Format.duration(snapshot.estimatedTimeLeft))
+                        .font(.title.weight(.heavy))
+                        .foregroundStyle(.white)
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
                 }
+                if let finish = snapshot.estimatedFinishDate {
+                    Label(finish.formatted(date: .omitted, time: .shortened), systemImage: "flag.checkered")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.emberWarm)
+                }
+                Label(Format.clock(snapshot.printDuration), systemImage: "timer")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.7))
+                    .monospacedDigit()
             }
+            Spacer(minLength: 0)
         }
-        .card(tint: Theme.color(for: snapshot.state))
+        .heroCard(glow: snapshot.isPaused ? Theme.paused : Theme.printing)
     }
 
     private var layerCaption: String? {

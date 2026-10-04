@@ -1,9 +1,30 @@
 import SwiftUI
+import UIKit
 
 @main
 struct NeptuneRemoteApp: App {
     @StateObject private var environment = AppEnvironment()
     @Environment(\.scenePhase) private var scenePhase
+
+    init() {
+        Self.styleNavigationBars()
+    }
+
+    /// Rounded, heavy navigation titles to match the rounded numerals inside.
+    ///
+    /// `.fontDesign` reaches SwiftUI text only; the navigation bar is UIKit
+    /// and keeps the default face unless it is told otherwise - which left
+    /// every screen with a title in one typeface and content in another.
+    private static func styleNavigationBars() {
+        func rounded(_ size: CGFloat, _ weight: UIFont.Weight) -> UIFont {
+            let base = UIFont.systemFont(ofSize: size, weight: weight)
+            guard let descriptor = base.fontDescriptor.withDesign(.rounded) else { return base }
+            return UIFont(descriptor: descriptor, size: size)
+        }
+        let appearance = UINavigationBar.appearance()
+        appearance.largeTitleTextAttributes = [.font: rounded(34, .heavy)]
+        appearance.titleTextAttributes = [.font: rounded(17, .bold)]
+    }
 
     var body: some Scene {
         WindowGroup {
