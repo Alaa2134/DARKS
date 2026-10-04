@@ -39,6 +39,7 @@ struct NeptuneRemoteApp: App {
                 .environmentObject(environment.library)
                 .environmentObject(environment.media)
                 .environmentObject(environment.inventory)
+                .environmentObject(environment.business)
                 .environmentObject(environment.support)
                 .environmentObject(environment.doctor)
                 .environmentObject(environment.alerts)

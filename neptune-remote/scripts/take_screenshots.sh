@@ -16,7 +16,7 @@ DEVICE="${SCREENSHOT_DEVICE:-iPhone 15 Pro}"
 BUNDLE="com.neptune.remote"
 DERIVED="build/screenshots-derived"
 
-SCREENS=(home-printing printing home home-simple library files more queue alerts slice settings setup)
+SCREENS=(home-printing printing home home-simple library files more queue alerts slice settings setup business orders order accounts production invoice)
 LANGS=(ar en)
 APPEARANCES=(dark light)
 

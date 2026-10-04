@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from .config import AppConfig, get_config, load_config, set_config
 from .routers import (
     alerts,
+    business,
     core,
     doctor,
     files,
@@ -102,6 +103,7 @@ def create_app(config: Optional[AppConfig] = None) -> FastAPI:
     app.include_router(vision.router, prefix="/api", tags=["vision"])
     app.include_router(doctor.router, prefix="/api", tags=["doctor"])
     app.include_router(inventory.router, prefix="/api", tags=["inventory"])
+    app.include_router(business.router, prefix="/api", tags=["business"])
     app.include_router(support.router, prefix="/api", tags=["support"])
     app.include_router(alerts.router, prefix="/api", tags=["alerts"])
     app.include_router(websocket.router, tags=["realtime"])

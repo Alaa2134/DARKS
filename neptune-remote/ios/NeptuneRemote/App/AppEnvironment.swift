@@ -14,6 +14,7 @@ final class AppEnvironment: ObservableObject {
     let library: LibraryStore
     let media: MediaStore
     let inventory: InventoryStore
+    let business: BusinessStore
     let support: SupportStore
     let doctor: DoctorStore
     let alerts: AlertStore
@@ -45,6 +46,7 @@ final class AppEnvironment: ObservableObject {
         library = LibraryStore(settings: settings, printer: printer)
         media = MediaStore(settings: settings, printer: printer)
         inventory = InventoryStore(settings: settings, printer: printer)
+        business = BusinessStore(settings: settings, printer: printer)
         support = SupportStore(settings: settings, printer: printer)
         doctor = DoctorStore(settings: settings, printer: printer)
         alerts = AlertStore(settings: settings, printer: printer)
@@ -72,6 +74,7 @@ final class AppEnvironment: ObservableObject {
         errors.observe(library.$lastError)
         errors.observe(media.$lastError)
         errors.observe(inventory.$lastError)
+        errors.observe(business.$lastError)
         errors.observe(support.$lastError)
         errors.observe(doctor.$lastError)
         errors.observe(alerts.$lastError)

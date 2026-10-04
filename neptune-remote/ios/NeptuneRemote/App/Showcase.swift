@@ -56,6 +56,7 @@ enum Showcase {
     /// Screens that are not a tab of their own.
     enum Route: Hashable {
         case queue, alerts, slice, printing
+        case business, orders, order, accounts, production, invoice
     }
 
     static func destination(for screen: String) -> Destination {
@@ -69,6 +70,12 @@ enum Showcase {
         case "alerts": return .pushed(.alerts)
         case "slice": return .pushed(.slice)
         case "printing": return .pushed(.printing)
+        case "business": return .pushed(.business)
+        case "orders": return .pushed(.orders)
+        case "order": return .pushed(.order)
+        case "accounts": return .pushed(.accounts)
+        case "production": return .pushed(.production)
+        case "invoice": return .pushed(.invoice)
         case "settings": return .settings
         default: return .tab(.home)
         }
@@ -91,6 +98,31 @@ private struct ShowcaseSelectsModel: ViewModifier {
     }
 }
 
+/// Business screens that read an order by id need the demo book loaded first.
+private struct ShowcaseLoadsBusiness: ViewModifier {
+    @EnvironmentObject private var business: BusinessStore
+
+    func body(content: Content) -> some View {
+        content.task { await business.load() }
+    }
+}
+
+/// The invoice for a finished demo order.
+private struct ShowcaseInvoice: View {
+    @EnvironmentObject private var business: BusinessStore
+
+    var body: some View {
+        Group {
+            if let order = business.order(id: "ord-5") {
+                InvoiceView(order: order)
+            } else {
+                ProgressView()
+            }
+        }
+        .task { await business.load() }
+    }
+}
+
 extension View {
     /// The pushed screens screenshot mode can reach. Registered on the More
     /// stack so a pushed screen is photographed with its tab bar and back
@@ -102,6 +134,12 @@ extension View {
             case .alerts: AlertSettingsView()
             case .slice: SliceView().modifier(ShowcaseSelectsModel())
             case .printing: PrintingView()
+            case .business: BusinessHomeView()
+            case .orders: OrdersView().modifier(ShowcaseLoadsBusiness())
+            case .order: OrderDetailView(orderID: "ord-7").modifier(ShowcaseLoadsBusiness())
+            case .accounts: AccountsView()
+            case .production: ProductionBoardView()
+            case .invoice: ShowcaseInvoice()
             }
         }
     }

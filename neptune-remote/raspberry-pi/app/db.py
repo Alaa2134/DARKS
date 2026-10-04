@@ -254,6 +254,9 @@ COLUMN_MIGRATIONS = (
     ("library_items", "source_url", "ALTER TABLE library_items ADD COLUMN source_url TEXT NOT NULL DEFAULT ''"),
     ("library_items", "author", "ALTER TABLE library_items ADD COLUMN author TEXT NOT NULL DEFAULT ''"),
     ("library_items", "licence", "ALTER TABLE library_items ADD COLUMN licence TEXT NOT NULL DEFAULT ''"),
+    # Which order line a queued print is making, so a finished part is
+    # counted against the customer's order without anyone ticking it off.
+    ("print_queue", "order_item_id", "ALTER TABLE print_queue ADD COLUMN order_item_id TEXT"),
 )
 
 

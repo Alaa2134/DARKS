@@ -64,6 +64,7 @@ from .power import (
 from .printer_state import fetch_status
 from .printqueue.store import PrintQueueStore
 from .products.store import ProductStore
+from .business.store import BusinessStore
 from .recording.service import RecordingError, RecordingService
 from .recording.store import VideoStore
 from .schemas import PrinterEvent, PrinterStatusResponse, SliceJob
@@ -141,6 +142,13 @@ class AppState:
         self.products = ProductStore(self.db)
         self.maintenance = MaintenanceStore(self.db)
         self.queue = PrintQueueStore(self.db)
+        self.business = BusinessStore(
+            self.db,
+            self.cost,
+            library_item=self.library.get_item,
+            library_gcodes=self.library.list_gcodes,
+            product=self.products.get,
+        )
         self.backups = BackupService(config, self.layout)
 
         # ---- safety, diagnosis and calibration ----------------------------
@@ -1020,6 +1028,9 @@ class AppState:
             for job in self.queue.list():
                 if job.status == "printing":
                     self.queue.mark(job.id, "done" if result == "completed" else "failed")
+                    # A part made for an order counts against that order.
+                    if result == "completed" and job.order_item_id:
+                        self.business.record_printed(job.order_item_id)
             self.queue.set_bed_clear(False)
 
         # ...and, if the user asked for it, earn that clear bed back by

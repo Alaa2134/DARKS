@@ -16,6 +16,22 @@ Two halves, both real:
 
 ## What it does
 
+### The workshop (orders, production, accounts)
+* **Orders** for named or walk-in customers, priced from your products or from
+  the cost calculator for any library model, with due dates, discounts,
+  shipping and a deposit.
+* **Production board**: every part still to make, soonest due first, with the
+  hour the machine gets to each one and a warning when that is after the due
+  date. One tap puts an order line's copies on the print queue; every part the
+  queue finishes is counted against its order automatically, and the order
+  moves itself to *in production* and *ready*.
+* **Payments and expenses**, and **accounts** in two views that are never mixed
+  up: the orders view (sales − cost of goods − overheads) and the cash view
+  (money in − money out), plus what customers still owe, the six-month trend
+  and the best sellers.
+* **Customers** with their balance, a call / WhatsApp button and every order.
+* **Invoices** sent as an image or as text.
+
 ### Fix My Printer
 * One guided diagnostic that inspects the Pi, Moonraker, Klipper, the MCU, the
   live `printer.cfg`, heaters, thermistors, fans, endstops, the probe, the

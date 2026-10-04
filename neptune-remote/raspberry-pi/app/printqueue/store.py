@@ -31,6 +31,7 @@ class QueueJob(BaseModel):
     created_at: float = 0.0
     started_at: Optional[float] = None
     finished_at: Optional[float] = None
+    order_item_id: Optional[str] = None
 
 
 class QueueJobCreate(BaseModel):
@@ -40,6 +41,7 @@ class QueueJobCreate(BaseModel):
     material: str = ""
     estimated_seconds: Optional[float] = None
     filament_g: Optional[float] = None
+    order_item_id: Optional[str] = None
 
 
 class QueueState(BaseModel):
@@ -68,13 +70,14 @@ class PrintQueueStore:
             """
             INSERT INTO print_queue(
                 id, item_id, gcode_path, display_name, material, estimated_seconds,
-                filament_g, position, status, created_at, started_at, finished_at
-            ) VALUES (?,?,?,?,?,?,?,?,'waiting',?,NULL,NULL)
+                filament_g, position, status, created_at, started_at, finished_at, order_item_id
+            ) VALUES (?,?,?,?,?,?,?,?,'waiting',?,NULL,NULL,?)
             """,
             (
                 job_id, payload.item_id, payload.gcode_path,
                 payload.display_name or payload.gcode_path, payload.material,
                 payload.estimated_seconds, payload.filament_g, position, now,
+                payload.order_item_id,
             ),
         )
         job = self.get(job_id)

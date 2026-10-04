@@ -383,6 +383,25 @@ class HistoryDB:
             ).fetchall()
         return [_row_to_entry(row) for row in rows]
 
+    def printing_seconds_since(self, since: float) -> float:
+        """Seconds the machine spent printing after ``since`` - the factory's
+        utilisation. A print that started before the window counts only from
+        the window's start."""
+        with self._lock:
+            row = self._conn.execute(
+                """
+                SELECT COALESCE(SUM(
+                    MAX(0, COALESCE(finish_time, start_time + COALESCE(duration, 0))
+                        - MAX(start_time, ?))
+                ), 0) AS seconds
+                  FROM print_history
+                 WHERE result != 'in_progress'
+                   AND COALESCE(finish_time, start_time + COALESCE(duration, 0)) > ?
+                """,
+                (since, since),
+            ).fetchone()
+        return float(row["seconds"] or 0.0)
+
     def stats(self) -> HistoryStats:
         with self._lock:
             row = self._conn.execute(

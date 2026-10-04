@@ -157,6 +157,24 @@ struct MoreView: View {
 
     var body: some View {
         List {
+            // The workshop first: for someone who prints to sell, orders and
+            // money are what this app is opened for most mornings.
+            Section {
+                NavigationLink { BusinessHomeView() } label: {
+                    MenuRow(titleKey: "business.title", systemImage: "building.2.fill", color: Theme.tideDeep)
+                }
+                NavigationLink { OrdersView() } label: {
+                    MenuRow(titleKey: "business.orders.title", systemImage: "list.clipboard.fill",
+                            color: Color(rgb: 0x0EA5E9))
+                }
+                NavigationLink { AccountsView() } label: {
+                    MenuRow(titleKey: "business.accounts.title", systemImage: "chart.bar.xaxis",
+                            color: Theme.printing)
+                }
+            } header: {
+                Text(localized: "more.section.business")
+            }
+
             Section {
                 NavigationLink { QueueView() } label: {
                     HStack {

@@ -246,11 +246,29 @@ lands and CI must be checked after.
   proxy blocks workflow-artifact blob storage, but release assets work. The IPA
   is likewise at `latest-ios/NeptuneRemote-unsigned.ipa`.
 
+### The workshop (factory + accounts)
+- Backend `app/business/` (models + store, own tables via `executescript`) and
+  `routers/business.py` under `/api/business/...`: customers, orders, order
+  lines, payments, expenses, `accounts` (orders view and cash view kept apart;
+  `materials` expenses excluded from overheads because plastic is already in
+  each part's cost) and `production` (floor ordered by due date, projected
+  finish, late flags, utilisation from print history).
+- `print_queue.order_item_id` (column migration): `POST /order-items/{id}/queue`
+  adds copies (never starts a print); `_finish_print` counts a completed queued
+  part against its order. Refusals carry `business.*` keys the app translates.
+- iOS: `BusinessStore`, `Features/Business/*` (home, orders, order detail, new
+  order, customers, expenses, accounts with Swift Charts, production board,
+  shareable invoice), entry at the top of More, Showcase screens `business
+  orders order accounts production invoice`. Demo data (`DemoBusiness`) adds
+  up exactly; `BusinessTests` checks it against the orders.
+- Single printer today. The data model has no printer column yet; a print farm
+  needs per-printer Moonraker clients first.
+
 ---
 
 ## Current state
 
-- Backend: **1290 tests passing**.
+- Backend: **1318 tests passing**.
 - iOS: ~350 test methods; CI green on every push since the design pass.
 - No known Critical or High defects outstanding.
 
